@@ -10,6 +10,7 @@ import (
 	"github.com/railwayapp/railpack-go/core/providers"
 	"github.com/railwayapp/railpack-go/core/providers/procfile"
 	"github.com/railwayapp/railpack-go/core/resolver"
+	"github.com/railwayapp/railpack-go/core/utils"
 )
 
 type GenerateBuildPlanOptions struct{}
@@ -69,7 +70,7 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 
 	buildPlan.Start.BaseImage = ctx.Start.BaseImage
 	buildPlan.Start.Command = ctx.Start.Command
-	buildPlan.Start.Paths = ctx.Start.Paths
+	buildPlan.Start.Paths = utils.RemoveDuplicates(ctx.Start.Paths)
 	buildPlan.Start.Env = ctx.Start.Env
 
 	buildResult := &BuildResult{

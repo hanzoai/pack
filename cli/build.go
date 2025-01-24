@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	PRINT_BUILD_RESULT = false
+	PRINT_BUILD_RESULT = true
 )
 
 var BuildCommand = &cli.Command{

@@ -1,6 +1,9 @@
 package generate
 
-import "github.com/railwayapp/railpack-go/core/plan"
+import (
+	"github.com/railwayapp/railpack-go/core/plan"
+	"github.com/railwayapp/railpack-go/core/utils"
+)
 
 type CommandStepBuilder struct {
 	DisplayName string
@@ -39,9 +42,9 @@ func (b *CommandStepBuilder) AddCommands(commands []plan.Command) {
 func (b *CommandStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
 
-	step.DependsOn = b.DependsOn
+	step.DependsOn = utils.RemoveDuplicates(b.DependsOn)
+	step.Outputs = utils.RemoveDuplicates(b.Outputs)
 	step.Commands = b.Commands
-	step.Outputs = b.Outputs
 	step.Assets = b.Assets
 
 	return step, nil

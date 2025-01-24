@@ -2,6 +2,7 @@ package generate
 
 import (
 	"github.com/railwayapp/railpack-go/core/plan"
+	"github.com/railwayapp/railpack-go/core/utils"
 )
 
 const (
@@ -32,7 +33,7 @@ func (b *AptStepBuilder) AddAptPackage(pkg string) {
 
 func (b *AptStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
-	step.DependsOn = b.DependsOn
+	step.DependsOn = utils.RemoveDuplicates(b.DependsOn)
 
 	step.AddCommands([]plan.Command{
 		options.NewAptInstallCommand(b.Packages),
