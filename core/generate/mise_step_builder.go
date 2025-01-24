@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	PackagesStepName = "packages"
+	MisePackageStepName = "packages:mise"
 )
 
-type PackageStepBuilder struct {
+type MiseStepBuilder struct {
 	DisplayName           string
 	Resolver              *resolver.Resolver
 	SupportingAptPackages []string
@@ -28,9 +28,9 @@ type PackageStepBuilder struct {
 	env *a.Environment
 }
 
-func (c *GenerateContext) NewPackageStep(name string) *PackageStepBuilder {
-	step := &PackageStepBuilder{
-		DisplayName:           c.GetStepName(name),
+func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
+	step := &MiseStepBuilder{
+		DisplayName:           c.GetStepName(MisePackageStepName),
 		Resolver:              c.resolver,
 		MisePackages:          []*resolver.PackageRef{},
 		SupportingAptPackages: []string{},
@@ -46,11 +46,11 @@ func (c *GenerateContext) NewPackageStep(name string) *PackageStepBuilder {
 	return step
 }
 
-func (b *PackageStepBuilder) AddAptPackage(name string) {
+func (b *MiseStepBuilder) AddAptPackage(name string) {
 	b.SupportingAptPackages = append(b.SupportingAptPackages, name)
 }
 
-func (b *PackageStepBuilder) Default(name string, defaultVersion string) resolver.PackageRef {
+func (b *MiseStepBuilder) Default(name string, defaultVersion string) resolver.PackageRef {
 	for _, pkg := range b.MisePackages {
 		if pkg.Name == name {
 			return *pkg
@@ -62,11 +62,11 @@ func (b *PackageStepBuilder) Default(name string, defaultVersion string) resolve
 	return pkg
 }
 
-func (b *PackageStepBuilder) Version(name resolver.PackageRef, version string, source string) {
+func (b *MiseStepBuilder) Version(name resolver.PackageRef, version string, source string) {
 	b.Resolver.Version(name, version, source)
 }
 
-func (b *PackageStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
+func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
 
 	step.DependsOn = b.DependsOn
@@ -165,7 +165,7 @@ var miseConfigFiles = []string{
 	".nvmrc",
 }
 
-func (b *PackageStepBuilder) GetSupportingMiseConfigFiles(path string) []string {
+func (b *MiseStepBuilder) GetSupportingMiseConfigFiles(path string) []string {
 	files := []string{}
 
 	for _, file := range miseConfigFiles {

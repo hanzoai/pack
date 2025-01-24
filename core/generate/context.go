@@ -19,14 +19,19 @@ type StepBuilder interface {
 }
 
 type GenerateContext struct {
-	App         *a.App
-	Env         *a.Environment
-	Variables   map[string]string
-	Steps       []StepBuilder
-	Start       StartContext
-	Caches      map[string]*plan.Cache
-	resolver    *resolver.Resolver
+	App *a.App
+	Env *a.Environment
+
+	Steps []StepBuilder
+	Start StartContext
+
+	Caches    map[string]*plan.Cache
+	Variables map[string]string
+
 	SubContexts []string
+
+	resolver        *resolver.Resolver
+	miseStepBuilder *MiseStepBuilder
 }
 
 func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error) {
@@ -44,6 +49,13 @@ func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error
 		Caches:    make(map[string]*plan.Cache),
 		resolver:  resolver,
 	}, nil
+}
+
+func (c *GenerateContext) GetMiseStepBuilder() *MiseStepBuilder {
+	if c.miseStepBuilder == nil {
+		c.miseStepBuilder = c.newMiseStepBuilder()
+	}
+	return c.miseStepBuilder
 }
 
 func (c *GenerateContext) EnterSubContext(subContext string) *GenerateContext {

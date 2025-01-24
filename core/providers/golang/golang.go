@@ -61,7 +61,7 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 	return false, nil
 }
 
-func (p *GoProvider) Build(ctx *generate.GenerateContext, packages *generate.PackageStepBuilder, install *generate.CommandStepBuilder) (*generate.CommandStepBuilder, error) {
+func (p *GoProvider) Build(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder, install *generate.CommandStepBuilder) (*generate.CommandStepBuilder, error) {
 	var buildCmd string
 
 	if binName := ctx.Env.GetConfigVariable("GO_BIN"); binName != "" {
@@ -102,7 +102,7 @@ func (p *GoProvider) Build(ctx *generate.GenerateContext, packages *generate.Pac
 	return build, nil
 }
 
-func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.PackageStepBuilder) (*generate.CommandStepBuilder, error) {
+func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder) (*generate.CommandStepBuilder, error) {
 	if !p.isGoMod(ctx) {
 		return nil, nil
 	}
@@ -118,7 +118,7 @@ func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.P
 
 	// If CGO is enabled, we need to install the gcc packages
 	if p.hasCGOEnabled(ctx) {
-		aptStep := ctx.NewAptStep("apt")
+		aptStep := ctx.NewAptStepBuilder("apt")
 		aptStep.Packages = []string{"gcc", "g++", "libc6-dev", "libgcc-9-dev", "libstdc++-9-dev"}
 		install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
 	} else {
@@ -130,8 +130,8 @@ func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.P
 	return install, nil
 }
 
-func (p *GoProvider) Packages(ctx *generate.GenerateContext) (*generate.PackageStepBuilder, error) {
-	packages := ctx.NewPackageStep("packages")
+func (p *GoProvider) Packages(ctx *generate.GenerateContext) (*generate.MiseStepBuilder, error) {
+	packages := ctx.GetMiseStepBuilder()
 
 	goPkg := packages.Default("go", DEFAULT_GO_VERSION)
 

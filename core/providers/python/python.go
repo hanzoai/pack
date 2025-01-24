@@ -133,7 +133,7 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 }
 
 func (p *PythonProvider) packages(ctx *generate.GenerateContext) error {
-	packages := ctx.NewPackageStep("packages")
+	packages := ctx.GetMiseStepBuilder()
 
 	python := packages.Default("python", DEFAULT_PYTHON_VERSION)
 

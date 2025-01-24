@@ -94,7 +94,7 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.Co
 	return nil, nil
 }
 
-func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate.PackageStepBuilder, packageJson *PackageJson) (*generate.CommandStepBuilder, error) {
+func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder, packageJson *PackageJson) (*generate.CommandStepBuilder, error) {
 	var corepackStepName string
 	if p.usesCorepack(packageJson) {
 		corepackStep := ctx.NewCommandStep("corepack")
@@ -120,10 +120,10 @@ func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate
 	return install, nil
 }
 
-func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *PackageJson) (*generate.PackageStepBuilder, error) {
+func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *PackageJson) (*generate.MiseStepBuilder, error) {
 	packageManager := p.getPackageManager(ctx.App)
 
-	packages := ctx.NewPackageStep("packages")
+	packages := ctx.GetMiseStepBuilder()
 
 	// Node
 	node := packages.Default("node", DEFAULT_NODE_VERSION)

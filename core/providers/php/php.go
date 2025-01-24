@@ -36,7 +36,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 	}
 
 	// Install nginx
-	nginxPackages := ctx.NewAptStep("packages:nginx")
+	nginxPackages := ctx.NewAptStepBuilder("packages:nginx")
 	nginxPackages.Packages = []string{"nginx", "git", "zip", "unzip"}
 	nginxPackages.DependsOn = []string{imageStep.DisplayName}
 
