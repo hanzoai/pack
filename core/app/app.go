@@ -18,14 +18,19 @@ type App struct {
 }
 
 func NewApp(path string) (*App, error) {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
+	var source string
 
-	source, err := filepath.Abs(filepath.Join(currentDir, path))
-	if err != nil {
-		return nil, errors.New("failed to read app source directory")
+	if filepath.IsAbs(path) {
+		source = path
+	} else {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		source, err = filepath.Abs(filepath.Join(currentDir, path))
+		if err != nil {
+			return nil, errors.New("failed to read app source directory")
+		}
 	}
 
 	if _, err := os.Stat(source); err != nil {

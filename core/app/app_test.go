@@ -1,6 +1,7 @@
 package app
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -40,4 +41,15 @@ func TestApp(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, len(files), 1)
 	require.Equal(t, files[0], "index.ts")
+}
+
+func TestAppAbsolutePath(t *testing.T) {
+	relPath := "../../examples/node-bun"
+	absPath, err := filepath.Abs(relPath)
+	require.NoError(t, err)
+
+	app, err := NewApp(absPath)
+	require.NoError(t, err)
+
+	require.Equal(t, app.Source, absPath)
 }
