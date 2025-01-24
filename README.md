@@ -10,7 +10,7 @@ _Huge work in progress_
 - [x] Convert plan to LLB
 - [x] Build LLB with a Buildkit client
 - [x] Buildkit frontend that can be used as an image
-- [ ] Optimized build plan to LLB generation
+- [x] Optimized build plan to LLB generation
 - [ ] Solidify build plan configuration
 - [ ] Support configuring Railpack with a config file
 
