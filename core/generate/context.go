@@ -11,7 +11,7 @@ import (
 
 type BuildStepOptions struct {
 	ResolvedPackages map[string]*resolver.ResolvedPackage
-	Caches           map[string]*plan.Cache
+	Caches           *CacheContext
 }
 
 type StepBuilder interface {
@@ -25,7 +25,7 @@ type GenerateContext struct {
 	Steps []StepBuilder
 	Start StartContext
 
-	Caches    map[string]*plan.Cache
+	Caches    *CacheContext
 	Variables map[string]string
 
 	SubContexts []string
@@ -46,7 +46,7 @@ func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error
 		Variables: map[string]string{},
 		Steps:     make([]StepBuilder, 0),
 		Start:     *NewStartContext(),
-		Caches:    make(map[string]*plan.Cache),
+		Caches:    NewCacheContext(),
 		resolver:  resolver,
 	}, nil
 }
@@ -80,7 +80,9 @@ func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackag
 	return c.resolver.ResolvePackages()
 }
 
-func (c *GenerateContext) AddCache(key string, directory string) string {
-	c.Caches[key] = plan.NewCache(directory)
-	return key
+func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {
+	return plan.NewExecCommand("sh -c 'apt-get update && apt-get install -y "+strings.Join(pkgs, " ")+" && rm -rf /var/lib/apt/lists/*'", plan.ExecOptions{
+		CustomName: "install apt packages: " + strings.Join(pkgs, " "),
+		CacheKey:   o.Caches.GetAptCache(),
+	})
 }

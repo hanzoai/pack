@@ -71,15 +71,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 
 	step.DependsOn = b.DependsOn
 
-	if _, ok := options.Caches["apt"]; !ok {
-		aptCache := plan.NewCache("/var/cache/apt")
-		aptCache.Type = plan.CacheTypeLocked
-		options.Caches["apt"] = aptCache
-	}
-
-	if _, ok := options.Caches["mise"]; !ok {
-		options.Caches["mise"] = plan.NewCache("/mise/cache")
-	}
+	miseCache := options.Caches.AddCache("mise", "/mise/cache")
 
 	// Install mise
 	if len(b.MisePackages) > 0 {
@@ -89,14 +81,11 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 			plan.NewVariableCommand("MISE_INSTALL_PATH", "/usr/local/bin/mise"),
 			plan.NewVariableCommand("MISE_CACHE_DIR", "/mise/cache"),
 			plan.NewPathCommand("/mise/shims"),
-			plan.NewExecCommand("sh -c 'apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*'", plan.ExecOptions{
-				CustomName: "install curl",
-				CacheKey:   "apt",
-			}),
+			options.NewAptInstallCommand([]string{"curl", "ca-certificates"}),
 			plan.NewExecCommand("sh -c 'curl -fsSL https://mise.run | sh'",
 				plan.ExecOptions{
 					CustomName: "install mise",
-					CacheKey:   "mise",
+					CacheKey:   miseCache,
 				}),
 		})
 
@@ -111,12 +100,8 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 
 	// Setup apt commands
 	if len(b.SupportingAptPackages) > 0 {
-		pkgString := strings.Join(b.SupportingAptPackages, " ")
 		step.AddCommands([]plan.Command{
-			plan.NewExecCommand("sh -c 'apt-get update && apt-get install -y "+pkgString+" && rm -rf /var/lib/apt/lists/*'", plan.ExecOptions{
-				CustomName: "install apt packages: " + pkgString,
-				CacheKey:   "apt",
-			}),
+			options.NewAptInstallCommand(b.SupportingAptPackages),
 		})
 	}
 
@@ -148,7 +133,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 			}),
 			plan.NewExecCommand("sh -c 'mise trust -a && mise install'", plan.ExecOptions{
 				CustomName: "install mise packages: " + strings.Join(pkgNames, ", "),
-				CacheKey:   "mise",
+				CacheKey:   miseCache,
 			}),
 		})
 	}

@@ -87,7 +87,7 @@ func (p *GoProvider) Build(ctx *generate.GenerateContext, packages *generate.Mis
 	build.AddCommands([]plan.Command{
 		plan.NewCopyCommand("."),
 		plan.NewExecCommand(buildCmd, plan.ExecOptions{
-			CacheKey: GO_BUILD_CACHE_KEY,
+			CacheKey: p.goBuildCacheKey(ctx),
 		}),
 	})
 
@@ -112,7 +112,7 @@ func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.M
 		plan.NewCopyCommand("go.mod"),
 		plan.NewCopyCommand("go.sum"),
 		plan.NewExecCommand("go mod download", plan.ExecOptions{
-			CacheKey: ctx.AddCache(GO_BUILD_CACHE_KEY, "/root/.cache/go-build"),
+			CacheKey: p.goBuildCacheKey(ctx),
 		}),
 	})
 
@@ -154,6 +154,10 @@ func (p *GoProvider) Packages(ctx *generate.GenerateContext) (*generate.MiseStep
 	}
 
 	return packages, nil
+}
+
+func (p *GoProvider) goBuildCacheKey(ctx *generate.GenerateContext) string {
+	return ctx.Caches.AddCache(GO_BUILD_CACHE_KEY, "/root/.cache/go-build")
 }
 
 func (p *GoProvider) hasRootGoFiles(ctx *generate.GenerateContext) bool {
