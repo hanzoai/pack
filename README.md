@@ -1,5 +1,7 @@
 # Railpack Go
 
+[![CI](https://github.com/railwayapp/railpack-go/actions/workflows/ci.yml/badge.svg)](https://github.com/railwayapp/railpack-go/actions/workflows/ci.yml)
+
 _Huge work in progress_
 
 ## Todo
