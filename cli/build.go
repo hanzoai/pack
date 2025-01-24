@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	PRINT_GRAPH = false
+	PRINT_BUILD_RESULT = false
 )
 
 var BuildCommand = &cli.Command{
@@ -57,7 +57,7 @@ var BuildCommand = &cli.Command{
 			return cli.Exit(err, 1)
 		}
 
-		if PRINT_GRAPH {
+		if PRINT_BUILD_RESULT {
 			log.Debug(string(serializedPlan))
 		}
 

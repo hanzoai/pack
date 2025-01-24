@@ -8,9 +8,10 @@ type BuildPlan struct {
 }
 
 type Start struct {
-	BaseImage string   `json:"base_image,omitempty"`
-	Command   string   `json:"cmd,omitempty"`
-	Paths     []string `json:"paths,omitempty"`
+	BaseImage string            `json:"baseImage,omitempty"`
+	Command   string            `json:"cmd,omitempty"`
+	Paths     []string          `json:"paths,omitempty"`
+	Env       map[string]string `json:"env,omitempty"`
 }
 
 func NewBuildPlan() *BuildPlan {

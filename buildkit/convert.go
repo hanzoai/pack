@@ -42,7 +42,7 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 	}
 
 	state = *graphOutput.State
-	imageEnv := getImageEnv(graphOutput)
+	imageEnv := getImageEnv(graphOutput, plan)
 
 	state = getStartState(state, plan, platform)
 
@@ -83,7 +83,7 @@ func getStartState(buildState llb.State, plan *p.BuildPlan, platform specs.Platf
 		}))
 
 		// The base image to start from
-		startState = llb.Image(plan.Start.BaseImage, llb.Platform(platform))
+		startState = llb.Image(plan.Start.BaseImage, llb.Platform(platform)).Dir(WorkingDir)
 
 		// Copy over necessary files to the start image
 		for _, path := range plan.Start.Paths {
@@ -108,7 +108,7 @@ func getStartState(buildState llb.State, plan *p.BuildPlan, platform specs.Platf
 	return startState
 }
 
-func getImageEnv(graphOutput *BuildGraphOutput) []string {
+func getImageEnv(graphOutput *BuildGraphOutput, plan *p.BuildPlan) []string {
 	pathString := strings.Join(graphOutput.PathList, ":")
 
 	var pathEnv string
@@ -124,16 +124,22 @@ func getImageEnv(graphOutput *BuildGraphOutput) []string {
 		imageEnv = append(imageEnv, fmt.Sprintf("%s=%s", k, v))
 	}
 
+	for k, v := range plan.Start.Env {
+		imageEnv = append(imageEnv, fmt.Sprintf("%s=%s", k, v))
+	}
+
 	return imageEnv
 }
 
 func getBaseState(platform specs.Platform) llb.State {
-	state := llb.Image("ubuntu:noble",
+	state := llb.Image("debian:bookworm-slim",
 		llb.Platform(platform),
 	)
 
-	state.Run(llb.Shlex("sh -c 'apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*'"), llb.WithCustomName("install base packages"))
-	state.Dir(WorkingDir)
+	state = state.Run(llb.Shlex("sh -c 'apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*'"), llb.WithCustomName("install base packages")).Root()
+	state = state.AddEnv("SSL_CERT_FILE", "/etc/ssl/certs/ca-certificates.crt")
+	state = state.AddEnv("SSL_CERT_DIR", "/etc/ssl/certs")
+	state = state.Dir(WorkingDir)
 
 	return state
 }

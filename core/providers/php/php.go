@@ -50,7 +50,6 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 			plan.NewExecCommand("composer install --ignore-platform-reqs"),
 		})
 
-		install.DependsOn = []string{}
 		install.DependsOn = []string{nginxPackages.DisplayName}
 	}
 
@@ -217,7 +216,7 @@ func readFileOrTemplateWithDefault(ctx *generate.GenerateContext, filename strin
 }
 
 func getPhpImage(phpVersion string) string {
-	return fmt.Sprintf("php:%s-fpm-bookworm", phpVersion)
+	return fmt.Sprintf("php:%s-fpm", phpVersion)
 }
 
 func (p *PhpProvider) readComposerJson(ctx *generate.GenerateContext) (map[string]interface{}, error) {

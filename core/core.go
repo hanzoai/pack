@@ -70,6 +70,7 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	buildPlan.Start.BaseImage = ctx.Start.BaseImage
 	buildPlan.Start.Command = ctx.Start.Command
 	buildPlan.Start.Paths = ctx.Start.Paths
+	buildPlan.Start.Env = ctx.Start.Env
 
 	buildResult := &BuildResult{
 		Plan:             buildPlan,

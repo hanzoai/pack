@@ -83,13 +83,19 @@ func (a *App) findGlob(pattern string) ([]string, error) {
 	return matches, nil
 }
 
-// HasMatch checks if a path matching a glob exists
+// HasMatch checks if a path matching a glob exists (files or directories)
 func (a *App) HasMatch(pattern string) bool {
-	matches, err := a.FindFiles(pattern)
+	files, err := a.FindFiles(pattern)
 	if err != nil {
 		return false
 	}
-	return len(matches) > 0
+
+	dirs, err := a.FindDirectories(pattern)
+	if err != nil {
+		return false
+	}
+
+	return len(files) > 0 || len(dirs) > 0
 }
 
 // ReadFile reads the contents of a file
