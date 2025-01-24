@@ -30,6 +30,8 @@ type GenerateContext struct {
 
 	SubContexts []string
 
+	Metadata *Metadata
+
 	resolver        *resolver.Resolver
 	miseStepBuilder *MiseStepBuilder
 }
@@ -47,6 +49,7 @@ func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error
 		Steps:     make([]StepBuilder, 0),
 		Start:     *NewStartContext(),
 		Caches:    NewCacheContext(),
+		Metadata:  NewMetadata(),
 		resolver:  resolver,
 	}, nil
 }

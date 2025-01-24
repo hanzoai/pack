@@ -2,6 +2,7 @@ package python
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/railwayapp/railpack-go/core/generate"
 	"github.com/railwayapp/railpack-go/core/plan"
@@ -60,6 +61,14 @@ func (p *PythonProvider) start(ctx *generate.GenerateContext) error {
 	return nil
 }
 
+// Mapping of python dependencies to required apt packages
+var pythonDepRequirements = map[string][]string{
+	"cairo":     {"libcairo2-dev"},
+	"pdf2image": {"poppler-utils"},
+	"pydub":     {"ffmpeg"},
+	"pymovie":   {"ffmpeg", "qt5-qmake", "qtbase5-dev", "qtbase5-dev-tools", "qttools5-dev-tools", "libqt5core5a", "python3-pyqt5"},
+}
+
 func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 	install := ctx.NewCommandStep("install")
 	install.AddCommands([]plan.Command{
@@ -72,6 +81,17 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 	hasPoetry := p.hasPoetry(ctx)
 	hasPdm := p.hasPdm(ctx)
 	hasUv := p.hasUv(ctx)
+
+	install.AddCommands([]plan.Command{
+		plan.NewVariableCommand("PYTHONFAULTHANDLER", "1"),
+		plan.NewVariableCommand("PYTHONUNBUFFERED", "1"),
+		plan.NewVariableCommand("PYTHONHASHSEED", "random"),
+		plan.NewVariableCommand("PYTHONDONTWRITEBYTECODE", "1"),
+		plan.NewVariableCommand("PIP_NO_CACHE_DIR", "1"),
+		plan.NewVariableCommand("PIP_DISABLE_PIP_VERSION_CHECK", "1"),
+		plan.NewVariableCommand("PIP_DEFAULT_TIMEOUT", "100"),
+		plan.NewExecCommand("pip install --upgrade setuptools"),
+	})
 
 	if hasRequirements {
 		install.AddCommands([]plan.Command{
@@ -126,7 +146,16 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 				plan.NewExecCommand("pipenv install --skip-lock"),
 			})
 		}
+	}
 
+	aptStep := ctx.NewAptStepBuilder("packages:apt")
+	aptStep.Packages = []string{"python3-distutils", "gcc", "pkg-config"}
+	install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
+
+	for dep, requiredPkgs := range pythonDepRequirements {
+		if p.usesDep(ctx, dep) {
+			aptStep.Packages = append(aptStep.Packages, requiredPkgs...)
+		}
 	}
 
 	return nil
@@ -158,6 +187,17 @@ func (p *PythonProvider) packages(ctx *generate.GenerateContext) error {
 	}
 
 	return nil
+}
+
+func (p *PythonProvider) usesDep(ctx *generate.GenerateContext, dep string) bool {
+	for _, file := range []string{"requirements.txt", "pyproject.toml", "Pipfile"} {
+		if contents, err := ctx.App.ReadFile(file); err == nil {
+			if strings.Contains(strings.ToLower(contents), strings.ToLower(dep)) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 var pipfileVersionRegex = regexp.MustCompile(`(python_version|python_full_version)\s*=\s*['"]([0-9.]*)"?`)

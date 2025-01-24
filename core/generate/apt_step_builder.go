@@ -36,7 +36,7 @@ func (b *AptStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step.DependsOn = utils.RemoveDuplicates(b.DependsOn)
 
 	step.AddCommands([]plan.Command{
-		options.NewAptInstallCommand(b.Packages),
+		options.NewAptInstallCommand(utils.RemoveDuplicates(b.Packages)),
 	})
 
 	return step, nil

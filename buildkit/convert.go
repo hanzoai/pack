@@ -136,7 +136,7 @@ func getBaseState(platform specs.Platform) llb.State {
 		llb.Platform(platform),
 	)
 
-	state = state.Run(llb.Shlex("sh -c 'apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*'"), llb.WithCustomName("install base packages")).Root()
+	state = state.Run(llb.Shlex("sh -c 'apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*'"), llb.WithCustomName("install base packages")).Root()
 	state = state.AddEnv("SSL_CERT_FILE", "/etc/ssl/certs/ca-certificates.crt")
 	state = state.AddEnv("SSL_CERT_DIR", "/etc/ssl/certs")
 	state = state.Dir(WorkingDir)

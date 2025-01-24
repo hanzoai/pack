@@ -40,6 +40,7 @@ func main() {
 		},
 		Commands: []*urfave.Command{
 			cli.PlanCommand,
+			cli.InfoCommand,
 			cli.BuildCommand,
 			cli.FrontendCommand,
 		},
