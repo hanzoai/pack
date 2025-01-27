@@ -3,6 +3,7 @@ package golang
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/railwayapp/railpack-go/core/generate"
@@ -19,7 +20,7 @@ const (
 type GoProvider struct{}
 
 func (p *GoProvider) Name() string {
-	return "go"
+	return "golang"
 }
 
 func (p *GoProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
@@ -58,7 +59,9 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 		ctx.Start.Env["GIN_MODE"] = "release"
 	}
 
-	return false, nil
+	p.addMetadata(ctx)
+
+	return true, nil
 }
 
 func (p *GoProvider) Build(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder, install *generate.CommandStepBuilder) (*generate.CommandStepBuilder, error) {
@@ -154,6 +157,13 @@ func (p *GoProvider) Packages(ctx *generate.GenerateContext) (*generate.MiseStep
 	}
 
 	return packages, nil
+}
+
+func (p *GoProvider) addMetadata(ctx *generate.GenerateContext) {
+	ctx.Metadata.Set("hasGoMod", strconv.FormatBool(p.isGoMod(ctx)))
+	ctx.Metadata.Set("hasRootGoFiles", strconv.FormatBool(p.hasRootGoFiles(ctx)))
+	ctx.Metadata.Set("hasGin", strconv.FormatBool(p.isGin(ctx)))
+	ctx.Metadata.Set("hasCGOEnabled", strconv.FormatBool(p.hasCGOEnabled(ctx)))
 }
 
 func (p *GoProvider) goBuildCacheKey(ctx *generate.GenerateContext) string {

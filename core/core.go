@@ -18,6 +18,7 @@ type GenerateBuildPlanOptions struct{}
 type BuildResult struct {
 	Plan             *plan.BuildPlan                      `json:"plan"`
 	ResolvedPackages map[string]*resolver.ResolvedPackage `json:"resolved_packages"`
+	Metadata         map[string]string                    `json:"metadata"`
 }
 
 func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*BuildResult, error) {
@@ -34,6 +35,7 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 
 		if matched {
 			log.Debugf("Provider `%s` matched", provider.Name())
+			ctx.Metadata.Set("provider", provider.Name())
 			break
 		}
 	}
@@ -76,6 +78,7 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	buildResult := &BuildResult{
 		Plan:             buildPlan,
 		ResolvedPackages: resolvedPackages,
+		Metadata:         ctx.Metadata.Properties,
 	}
 
 	return buildResult, nil

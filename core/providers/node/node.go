@@ -122,6 +122,7 @@ func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate
 
 func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *PackageJson) (*generate.MiseStepBuilder, error) {
 	packageManager := p.getPackageManager(ctx.App)
+	ctx.Metadata.Set("packageManager", string(packageManager))
 
 	packages := ctx.GetMiseStepBuilder()
 

@@ -52,12 +52,20 @@ var (
 			Bold(true)
 )
 
-func PrettyPrintBuildResult(buildResult *BuildResult) {
-	output := FormatBuildResult(buildResult)
+type PrintOptions struct {
+	Metadata bool
+}
+
+func PrettyPrintBuildResult(buildResult *BuildResult, options ...PrintOptions) {
+	output := FormatBuildResult(buildResult, options...)
 	fmt.Print(output)
 }
 
-func FormatBuildResult(br *BuildResult) string {
+func FormatBuildResult(br *BuildResult, options ...PrintOptions) string {
+	var opts PrintOptions
+	if len(options) > 0 {
+		opts = options[0]
+	}
 	var output strings.Builder
 
 	// Header section
@@ -136,7 +144,6 @@ func FormatBuildResult(br *BuildResult) string {
 
 				stepCount++
 			}
-
 		}
 	}
 
@@ -144,6 +151,20 @@ func FormatBuildResult(br *BuildResult) string {
 		output.WriteString(sectionHeaderStyle.MarginTop(1).Render("Start"))
 		output.WriteString("\n")
 		output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(br.Plan.Start.Command)))
+	}
+
+	if opts.Metadata && br.Metadata != nil && len(br.Metadata) > 0 {
+		output.WriteString(sectionHeaderStyle.MarginTop(2).Render("Metadata"))
+		output.WriteString("\n")
+
+		metadataStyle := lipgloss.NewStyle().MarginLeft(2)
+		separator := lipgloss.NewStyle().Foreground(lipgloss.Color("245")).MarginRight(1).Render(":")
+		valueStyle := lipgloss.NewStyle().Bold(true)
+
+		for key, value := range br.Metadata {
+			output.WriteString(metadataStyle.Render(fmt.Sprintf("%s%s%s", key, separator, valueStyle.Render(value))))
+			output.WriteString("\n")
+		}
 	}
 
 	output.WriteString("\n\n")

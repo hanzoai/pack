@@ -2,6 +2,7 @@ package python
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/railwayapp/railpack-go/core/generate"
@@ -41,6 +42,8 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 	if err := p.start(ctx); err != nil {
 		return false, err
 	}
+
+	p.addMetadata(ctx)
 
 	return false, nil
 }
@@ -187,6 +190,27 @@ func (p *PythonProvider) packages(ctx *generate.GenerateContext) error {
 	}
 
 	return nil
+}
+
+func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {
+	hasPoetry := p.hasPoetry(ctx)
+	hasPdm := p.hasPdm(ctx)
+	hasUv := p.hasUv(ctx)
+
+	pkgManager := "pip"
+
+	if hasPoetry {
+		pkgManager = "poetry"
+	} else if hasPdm {
+		pkgManager = "pdm"
+	} else if hasUv {
+		pkgManager = "uv"
+	}
+
+	ctx.Metadata.Set("packageManager", pkgManager)
+	ctx.Metadata.Set("hasRequirements", strconv.FormatBool(p.hasRequirements(ctx)))
+	ctx.Metadata.Set("hasPyproject", strconv.FormatBool(p.hasPyproject(ctx)))
+	ctx.Metadata.Set("hasPipfile", strconv.FormatBool(p.hasPipfile(ctx)))
 }
 
 func (p *PythonProvider) usesDep(ctx *generate.GenerateContext, dep string) bool {
