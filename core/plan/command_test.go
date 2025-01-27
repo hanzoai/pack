@@ -29,8 +29,8 @@ func TestCommandMarshalUnmarshal(t *testing.T) {
 		},
 		{
 			name:            "exec command with cache key",
-			command:         ExecCommand{Cmd: "npm install", CacheKey: "v1"},
-			expectedJSON:    `{"cmd":"npm install","cacheKey":"v1"}`,
+			command:         ExecCommand{Cmd: "npm install", Caches: []string{"v1", "v2"}},
+			expectedJSON:    `{"cmd":"npm install","caches":["v1","v2"]}`,
 			unmarshalString: "",
 		},
 

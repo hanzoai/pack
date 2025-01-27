@@ -13,15 +13,15 @@ type Command interface {
 }
 
 type ExecOptions struct {
-	CacheKey   string
+	Caches     []string
 	CustomName string
 }
 
 // ExecCommand represents a command to be executed
 type ExecCommand struct {
-	Cmd        string `json:"cmd"`
-	CacheKey   string `json:"cacheKey,omitempty"`
-	CustomName string `json:"customName,omitempty"`
+	Cmd        string   `json:"cmd"`
+	Caches     []string `json:"caches,omitempty"`
+	CustomName string   `json:"customName,omitempty"`
 }
 
 // PathCommand represents a global path addition
@@ -65,7 +65,7 @@ func NewExecCommand(cmd string, options ...ExecOptions) Command {
 	exec := ExecCommand{Cmd: cmd}
 	if len(options) > 0 {
 		exec.CustomName = options[0].CustomName
-		exec.CacheKey = options[0].CacheKey
+		exec.Caches = options[0].Caches
 	}
 	return exec
 }

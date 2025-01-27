@@ -26,12 +26,19 @@ func (c *CacheContext) GetCache(name string) *plan.Cache {
 	return c.Caches[name]
 }
 
-func (c *CacheContext) GetAptCache() string {
+func (c *CacheContext) GetAptCaches() []string {
 	if _, ok := c.Caches[APT_CACHE_KEY]; !ok {
 		aptCache := plan.NewCache("/var/cache/apt")
 		aptCache.Type = plan.CacheTypeLocked
 		c.Caches[APT_CACHE_KEY] = aptCache
 	}
 
-	return APT_CACHE_KEY
+	aptListsKey := "apt-lists"
+	if _, ok := c.Caches[aptListsKey]; !ok {
+		aptListsCache := plan.NewCache("/var/lib/apt/lists")
+		aptListsCache.Type = plan.CacheTypeLocked
+		c.Caches[aptListsKey] = aptListsCache
+	}
+
+	return []string{APT_CACHE_KEY, aptListsKey}
 }

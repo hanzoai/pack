@@ -71,26 +71,26 @@ func (p PackageManager) InstallDeps(ctx *generate.GenerateContext, install *gene
 		npmCache := ctx.Caches.AddCache("npm-install", "/root/.npm")
 
 		if hasLockfile {
-			install.AddCommand(plan.NewExecCommand("npm ci", plan.ExecOptions{CacheKey: npmCache}))
+			install.AddCommand(plan.NewExecCommand("npm ci", plan.ExecOptions{Caches: []string{npmCache}}))
 		} else {
 			install.AddCommand(plan.NewExecCommand("npm install",
-				plan.ExecOptions{CacheKey: npmCache}))
+				plan.ExecOptions{Caches: []string{npmCache}}))
 		}
 	case PackageManagerPnpm:
 		install.AddCommand(plan.NewExecCommand("pnpm install --frozen-lockfile", plan.ExecOptions{
-			CacheKey: ctx.Caches.AddCache("pnpm-install", "/root/.local/share/pnpm/store/v3"),
+			Caches: []string{ctx.Caches.AddCache("pnpm-install", "/root/.local/share/pnpm/store/v3")},
 		}))
 	case PackageManagerBun:
 		install.AddCommand(plan.NewExecCommand("bun i --no-save", plan.ExecOptions{
-			CacheKey: ctx.Caches.AddCache("bun-install", "/root/.bun/install/cache"),
+			Caches: []string{ctx.Caches.AddCache("bun-install", "/root/.bun/install/cache")},
 		}))
 	case PackageManagerYarn1:
 		install.AddCommand(plan.NewExecCommand("yarn install --frozen-lockfile", plan.ExecOptions{
-			CacheKey: ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn"),
+			Caches: []string{ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn")},
 		}))
 	case PackageManagerYarn2:
 		install.AddCommand(plan.NewExecCommand("yarn install --check-cache", plan.ExecOptions{
-			CacheKey: ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn"),
+			Caches: []string{ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn")},
 		}))
 	}
 }

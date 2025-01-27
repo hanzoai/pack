@@ -318,20 +318,12 @@ func (g *BuildGraph) convertCommandToLLB(node *Node, cmd plan.Command, state llb
 			opts = append(opts, llb.WithCustomName(cmd.CustomName))
 		}
 
-		if cmd.CacheKey != "" {
-			if planCache, ok := g.Plan.Caches[cmd.CacheKey]; ok {
-				cache := g.CacheStore.GetCache(cmd.CacheKey, planCache)
-				cacheType := llb.CacheMountShared
-				if planCache.Type == plan.CacheTypeLocked {
-					cacheType = llb.CacheMountLocked
-				}
-
-				opts = append(opts,
-					llb.AddMount(planCache.Directory, *cache.cacheState, llb.AsPersistentCacheDir(cache.cacheKey, cacheType)),
-				)
-			} else {
-				return state, fmt.Errorf("cache with key %q not found", cmd.CacheKey)
+		if len(cmd.Caches) > 0 {
+			cacheOpts, err := g.getCacheMountOptions(cmd.Caches)
+			if err != nil {
+				return state, err
 			}
+			opts = append(opts, cacheOpts...)
 		}
 
 		s := state.Run(opts...).Root()
@@ -525,4 +517,25 @@ func (g *BuildGraph) PrintGraph() {
 		}
 	}
 	fmt.Println("\n=====================")
+}
+
+// getCacheMountOptions returns the llb.RunOption slice for the given cache keys
+func (g *BuildGraph) getCacheMountOptions(cacheKeys []string) ([]llb.RunOption, error) {
+	var opts []llb.RunOption
+	for _, cacheKey := range cacheKeys {
+		if planCache, ok := g.Plan.Caches[cacheKey]; ok {
+			cache := g.CacheStore.GetCache(cacheKey, planCache)
+			cacheType := llb.CacheMountShared
+			if planCache.Type == plan.CacheTypeLocked {
+				cacheType = llb.CacheMountLocked
+			}
+
+			opts = append(opts,
+				llb.AddMount(planCache.Directory, *cache.cacheState, llb.AsPersistentCacheDir(cache.cacheKey, cacheType)),
+			)
+		} else {
+			return nil, fmt.Errorf("cache with key %q not found", cacheKey)
+		}
+	}
+	return opts, nil
 }

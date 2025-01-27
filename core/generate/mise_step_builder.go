@@ -85,7 +85,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 			plan.NewExecCommand("sh -c 'curl -fsSL https://mise.run | sh'",
 				plan.ExecOptions{
 					CustomName: "install mise",
-					CacheKey:   miseCache,
+					Caches:     []string{miseCache},
 				}),
 		})
 
@@ -133,7 +133,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 			}),
 			plan.NewExecCommand("sh -c 'mise trust -a && mise install'", plan.ExecOptions{
 				CustomName: "install mise packages: " + strings.Join(pkgNames, ", "),
-				CacheKey:   miseCache,
+				Caches:     []string{miseCache},
 			}),
 		})
 	}

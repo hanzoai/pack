@@ -84,8 +84,8 @@ func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackag
 }
 
 func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {
-	return plan.NewExecCommand("sh -c 'apt-get update && apt-get install -y "+strings.Join(pkgs, " ")+" && rm -rf /var/lib/apt/lists/*'", plan.ExecOptions{
+	return plan.NewExecCommand("sh -c 'apt-get update && apt-get install -y "+strings.Join(pkgs, " ")+"'", plan.ExecOptions{
 		CustomName: "install apt packages: " + strings.Join(pkgs, " "),
-		CacheKey:   o.Caches.GetAptCache(),
+		Caches:     o.Caches.GetAptCaches(),
 	})
 }
