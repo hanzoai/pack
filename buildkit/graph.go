@@ -129,8 +129,6 @@ func (g *BuildGraph) mergeNodes(nodes []*Node) llb.State {
 		stateNames = append(stateNames, node.Step.Name)
 	}
 
-	fmt.Println("stateNames", stateNames)
-
 	states := []llb.State{}
 	for _, node := range nodes {
 		states = append(states, *node.State)
@@ -222,11 +220,6 @@ func (g *BuildGraph) processNode(node *Node) error {
 			parentStates[i] = *parent.State
 			mergeStepNames[i] = parent.Step.Name
 		}
-
-		mergeName := fmt.Sprintf("merging steps: %s", strings.Join(mergeStepNames, ", "))
-		fmt.Println("mergeName", mergeName)
-
-		// merged := llb.Merge(parentStates, llb.WithCustomName(mergeName))
 
 		merged := g.mergeNodes(node.Parents)
 

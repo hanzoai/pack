@@ -1,10 +1,12 @@
 package node
 
 type PackageJson struct {
-	Scripts        map[string]string `json:"scripts"`
-	PackageManager *string           `json:"packageManager"`
-	Engines        map[string]string `json:"engines"`
-	Main           *string           `json:"main"`
+	Scripts         map[string]string `json:"scripts"`
+	PackageManager  *string           `json:"packageManager"`
+	Dependencies    map[string]string `json:"dependencies"`
+	DevDependencies map[string]string `json:"devDependencies"`
+	Engines         map[string]string `json:"engines"`
+	Main            *string           `json:"main"`
 }
 
 func NewPackageJson() *PackageJson {

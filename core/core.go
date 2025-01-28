@@ -51,10 +51,19 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	ctx.Metadata.Set("providers", strings.Join(providerNames, ","))
 
 	// Run the providers to update the context with how to build the app
-	for _, provider := range providersToUse {
+	for i, provider := range providersToUse {
+		// If this is not the first provider, we need to enter a subcontext so that step names are unique
+		if i > 0 {
+			ctx.EnterSubContext(provider.Name())
+		}
+
 		err := provider.Plan(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to run provider: %w", err)
+		}
+
+		if i > 0 {
+			ctx.ExitSubContext()
 		}
 	}
 
@@ -113,14 +122,12 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 
 // GetConfig merges the options, environment, and file config into a single config
 func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*config.Config, error) {
-	fmt.Println("Getting config")
 	optionsConfig := GenerateConfigFromOptions(options)
 
 	envConfig := GenerateConfigFromEnvironment(app, env)
 
 	fileConfig, err := GenerateConfigFromFile(app, env)
 	if err != nil {
-		fmt.Println("No config file found")
 		return nil, err
 	}
 
@@ -131,31 +138,19 @@ func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOpt
 
 // GenerateConfigFromFile generates a config from the config file
 func GenerateConfigFromFile(app *app.App, env *app.Environment) (*config.Config, error) {
-	fmt.Println("Generating config from file")
 	configFileName := defaultConfigFileName
 	if envConfigFileName, _ := env.GetConfigVariable("CONFIG_FILE"); envConfigFileName != "" {
 		configFileName = envConfigFileName
 	}
 
-	fmt.Println("Config file name:", configFileName)
-
 	if !app.HasMatch(configFileName) {
-		fmt.Printf("No config file found: %s\n", configFileName)
-		log.Debugf("No config file found: %s", configFileName)
 		return config.EmptyConfig(), nil
 	}
 
 	config := config.EmptyConfig()
 	if err := app.ReadJSON(configFileName, config); err != nil {
-		fmt.Printf("Failed to read config file: %s\n", err.Error())
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
-
-	fmt.Printf("Loaded config file: %s\n", configFileName)
-
-	fmt.Printf("Config: %+v\n", config)
-
-	fmt.Printf("Providers: %+v\n", config.Providers)
 
 	return config, nil
 }

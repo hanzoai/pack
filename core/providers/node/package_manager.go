@@ -126,8 +126,8 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 	return allFiles
 }
 
-// InstallPackages installs specific versions of package managers by analyzing the users code
-func (p PackageManager) InstallPackages(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder) {
+// GetPackageManagerPackages installs specific versions of package managers by analyzing the users code
+func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder) {
 	// NPM
 	if p == PackageManagerNpm {
 		npm := packages.Default("npm", "latest")

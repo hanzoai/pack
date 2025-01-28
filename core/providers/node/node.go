@@ -33,14 +33,7 @@ func (p *NodeProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	packageJson, err := p.GetPackageJson(ctx.App)
 	if err != nil {
-		// Create a default packageJson
-		packageJson = &PackageJson{
-			Scripts: map[string]string{},
-		}
-	}
-
-	if packageJson == nil {
-		return nil
+		return err
 	}
 
 	packages, err := p.Packages(ctx, packageJson)
@@ -100,6 +93,12 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.Co
 }
 
 func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder, packageJson *PackageJson) (*generate.CommandStepBuilder, error) {
+	lenDeps := len(packageJson.Dependencies) + len(packageJson.DevDependencies)
+
+	if lenDeps == 0 {
+		return nil, nil
+	}
+
 	var corepackStepName string
 	if p.usesCorepack(packageJson) {
 		corepackStep := ctx.NewCommandStep("corepack")
@@ -150,7 +149,7 @@ func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *Pack
 		}
 	}
 
-	packageManager.InstallPackages(ctx, packages)
+	packageManager.GetPackageManagerPackages(ctx, packages)
 
 	return packages, nil
 }
@@ -176,17 +175,17 @@ func (p *NodeProvider) getPackageManager(app *app.App) PackageManager {
 }
 
 func (p *NodeProvider) GetPackageJson(app *app.App) (*PackageJson, error) {
+	packageJson := NewPackageJson()
 	if !app.HasMatch("package.json") {
-		return nil, nil
+		return packageJson, nil
 	}
 
-	var packageJson PackageJson
-	err := app.ReadJSON("package.json", &packageJson)
+	err := app.ReadJSON("package.json", packageJson)
 	if err != nil {
 		return nil, fmt.Errorf("error reading package.json: %w", err)
 	}
 
-	return &packageJson, nil
+	return packageJson, nil
 }
 
 func (p *NodeProvider) getScripts(packageJson *PackageJson, name string) string {

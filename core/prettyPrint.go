@@ -110,40 +110,31 @@ func FormatBuildResult(br *BuildResult, options ...PrintOptions) string {
 	}
 
 	// Steps section
-	if br.Plan != nil && len(br.Plan.Steps) > 0 {
+	stepsToPrint := getStepsToPrint(br)
+	if len(stepsToPrint) > 0 {
 		output.WriteString(sectionHeaderStyle.Render("Steps"))
 		output.WriteString("\n")
 
 		stepCount := 0
-		for _, step := range br.Plan.Steps {
-			if !strings.HasPrefix(step.Name, "packages") && step.Commands != nil { // Skip the packages step
-				hasExecCommands := false
-				var execCommands []string
+		for _, step := range stepsToPrint {
+			commands := getCommandsToPrint(step.Commands)
 
-				for _, cmd := range step.Commands {
-					if execCmd, ok := cmd.(plan.ExecCommand); ok {
-						hasExecCommands = true
-						execCommands = append(execCommands, execCmd.Cmd)
-					}
+			if len(commands) > 0 {
+				customStepHeaderStyle := stepHeaderStyle
+				if stepCount > 0 {
+					customStepHeaderStyle = customStepHeaderStyle.MarginTop(1)
 				}
 
-				if hasExecCommands {
-					customStepHeaderStyle := stepHeaderStyle
-					if stepCount > 0 {
-						customStepHeaderStyle = customStepHeaderStyle.MarginTop(1)
-					}
+				output.WriteString(customStepHeaderStyle.Render(fmt.Sprintf("▸ %s", step.Name)))
+				output.WriteString("\n")
 
-					output.WriteString(customStepHeaderStyle.Render(fmt.Sprintf("▸ %s", step.Name)))
+				for _, cmd := range commands {
+					output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(cmd.Cmd)))
 					output.WriteString("\n")
-
-					for _, cmd := range execCommands {
-						output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(cmd)))
-						output.WriteString("\n")
-					}
 				}
-
-				stepCount++
 			}
+
+			stepCount++
 		}
 	}
 
@@ -169,6 +160,32 @@ func FormatBuildResult(br *BuildResult, options ...PrintOptions) string {
 
 	output.WriteString("\n\n")
 	return output.String()
+}
+
+func getStepsToPrint(br *BuildResult) []*plan.Step {
+	execSteps := []*plan.Step{}
+
+	for _, step := range br.Plan.Steps {
+		if !strings.HasPrefix(step.Name, "packages") && step.Commands != nil { // Skip the packages step
+			commands := getCommandsToPrint(step.Commands)
+
+			if len(commands) > 0 {
+				execSteps = append(execSteps, &step)
+			}
+		}
+	}
+
+	return execSteps
+}
+
+func getCommandsToPrint(commands []plan.Command) []plan.ExecCommand {
+	execCommands := []plan.ExecCommand{}
+	for _, cmd := range commands {
+		if execCmd, ok := cmd.(plan.ExecCommand); ok {
+			execCommands = append(execCommands, execCmd)
+		}
+	}
+	return execCommands
 }
 
 func formatSource(pkg *resolver.ResolvedPackage) string {

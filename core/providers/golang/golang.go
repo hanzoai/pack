@@ -38,24 +38,26 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 		return err
 	}
 
-	_, err = p.Build(ctx, packages, install)
+	build, err := p.Build(ctx, packages, install)
 	if err != nil {
 		return err
 	}
 
-	ctx.Start.Command = fmt.Sprintf("./%s", GO_BINARY_NAME)
+	if build != nil {
+		ctx.Start.Command = fmt.Sprintf("./%s", GO_BINARY_NAME)
 
-	if !p.hasCGOEnabled(ctx) {
-		ctx.Start.Paths = []string{GO_BINARY_NAME}
+		if !p.hasCGOEnabled(ctx) {
+			ctx.Start.Paths = []string{GO_BINARY_NAME}
 
-		ctx.Start.BaseImage = START_IMAGE
-		if startImage, _ := ctx.Env.GetConfigVariable("START_IMAGE"); startImage != "" {
-			ctx.Start.BaseImage = startImage
+			ctx.Start.BaseImage = START_IMAGE
+			if startImage, _ := ctx.Env.GetConfigVariable("START_IMAGE"); startImage != "" {
+				ctx.Start.BaseImage = startImage
+			}
 		}
-	}
 
-	if p.isGin(ctx) {
-		ctx.Start.Env["GIN_MODE"] = "release"
+		if p.isGin(ctx) {
+			ctx.Start.Env["GIN_MODE"] = "release"
+		}
 	}
 
 	p.addMetadata(ctx)

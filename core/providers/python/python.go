@@ -93,11 +93,11 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 		plan.NewVariableCommand("PIP_NO_CACHE_DIR", "1"),
 		plan.NewVariableCommand("PIP_DISABLE_PIP_VERSION_CHECK", "1"),
 		plan.NewVariableCommand("PIP_DEFAULT_TIMEOUT", "100"),
-		plan.NewExecCommand("pip install --upgrade setuptools"),
 	})
 
 	if hasRequirements {
 		install.AddCommands([]plan.Command{
+			plan.NewExecCommand("pip install --upgrade setuptools"),
 			plan.NewCopyCommand("requirements.txt"),
 			plan.NewExecCommand("pip install -r requirements.txt"),
 		})
@@ -151,7 +151,7 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 		}
 	}
 
-	aptStep := ctx.NewAptStepBuilder("python")
+	aptStep := ctx.NewAptStepBuilder("distutils")
 	aptStep.Packages = []string{"python3-distutils", "gcc", "pkg-config"}
 	install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
 
