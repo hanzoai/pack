@@ -164,63 +164,37 @@ func extractTarGz(archivePath, binaryPath string) error {
 	binaryPathInArchive := "mise/bin/mise"
 	found := false
 
-	// Create a temporary file in the same directory as the target
-	tempFile, err := os.CreateTemp(filepath.Dir(binaryPath), "mise-temp-*")
+	writeAndMove, cleanup, err := createAtomicWriter(binaryPath)
 	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
+		return err
 	}
-	tempPath := tempFile.Name()
+	defer cleanup()
 
-	// Clean up the temp file if we fail
-	success := false
-	defer func() {
-		tempFile.Close()
-		if !success {
-			os.Remove(tempPath)
-		}
-	}()
-
-	for {
-		header, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		if header.Name == binaryPathInArchive {
-			if _, err := io.Copy(tempFile, tr); err != nil {
+	return writeAndMove(func(tempFile *os.File) error {
+		for {
+			header, err := tr.Next()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
 				return err
 			}
-			found = true
-			break
+
+			if header.Name == binaryPathInArchive {
+				if _, err := io.Copy(tempFile, tr); err != nil {
+					return err
+				}
+				found = true
+				break
+			}
 		}
-	}
 
-	if !found {
-		return fmt.Errorf("binary not found in archive at %s", binaryPathInArchive)
-	}
-
-	// Close the file to ensure all data is written
-	if err := tempFile.Close(); err != nil {
-		return fmt.Errorf("failed to close temp file: %w", err)
-	}
-
-	// Set executable permissions on the temp file
-	if runtime.GOOS != "windows" {
-		if err := os.Chmod(tempPath, 0755); err != nil {
-			return fmt.Errorf("failed to set executable permissions: %w", err)
+		if !found {
+			return fmt.Errorf("binary not found in archive at %s", binaryPathInArchive)
 		}
-	}
 
-	// Atomically move the temp file to the target location
-	if err := os.Rename(tempPath, binaryPath); err != nil {
-		return fmt.Errorf("failed to move temp file to target: %w", err)
-	}
-
-	success = true
-	return nil
+		return nil
+	})
 }
 
 func extractZip(archivePath, binaryPath string) error {
@@ -230,21 +204,11 @@ func extractZip(archivePath, binaryPath string) error {
 	}
 	defer r.Close()
 
-	// Create a temporary file in the same directory as the target
-	tempFile, err := os.CreateTemp(filepath.Dir(binaryPath), "mise-temp-*")
+	writeAndMove, cleanup, err := createAtomicWriter(binaryPath)
 	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
+		return err
 	}
-	tempPath := tempFile.Name()
-
-	// Clean up the temp file if we fail
-	success := false
-	defer func() {
-		tempFile.Close()
-		if !success {
-			os.Remove(tempPath)
-		}
-	}()
+	defer cleanup()
 
 	binaryName := getBinaryName()
 	for _, f := range r.File {
@@ -254,31 +218,13 @@ func extractZip(archivePath, binaryPath string) error {
 				return err
 			}
 
-			if _, err := io.Copy(tempFile, rc); err != nil {
+			err = writeAndMove(func(tempFile *os.File) error {
+				_, err := io.Copy(tempFile, rc)
 				rc.Close()
 				return err
-			}
-			rc.Close()
+			})
 
-			// Close the file to ensure all data is written
-			if err := tempFile.Close(); err != nil {
-				return fmt.Errorf("failed to close temp file: %w", err)
-			}
-
-			// Set executable permissions on the temp file (Windows doesn't need this)
-			if runtime.GOOS != "windows" {
-				if err := os.Chmod(tempPath, 0755); err != nil {
-					return fmt.Errorf("failed to set executable permissions: %w", err)
-				}
-			}
-
-			// Atomically move the temp file to the target location
-			if err := os.Rename(tempPath, binaryPath); err != nil {
-				return fmt.Errorf("failed to move temp file to target: %w", err)
-			}
-
-			success = true
-			return nil
+			return err
 		}
 	}
 
@@ -299,4 +245,46 @@ func validateInstallation(cacheDir string) error {
 	}
 
 	return nil
+}
+
+// createAtomicWriter creates a temporary file and returns a function to atomically write content to the final destination
+func createAtomicWriter(targetPath string) (writeAndMove func(write func(tempFile *os.File) error) error, cleanup func(), err error) {
+	tempFile, err := os.CreateTemp(filepath.Dir(targetPath), "mise-temp-*")
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create temp file: %w", err)
+	}
+	tempPath := tempFile.Name()
+
+	success := false
+	cleanup = func() {
+		tempFile.Close()
+		if !success {
+			os.Remove(tempPath)
+		}
+	}
+
+	writeAndMove = func(write func(tempFile *os.File) error) error {
+		if err := write(tempFile); err != nil {
+			return err
+		}
+
+		if err := tempFile.Close(); err != nil {
+			return fmt.Errorf("failed to close temp file: %w", err)
+		}
+
+		if runtime.GOOS != "windows" {
+			if err := os.Chmod(tempPath, 0755); err != nil {
+				return fmt.Errorf("failed to set executable permissions: %w", err)
+			}
+		}
+
+		if err := os.Rename(tempPath, targetPath); err != nil {
+			return fmt.Errorf("failed to move temp file to target: %w", err)
+		}
+
+		success = true
+		return nil
+	}
+
+	return writeAndMove, cleanup, nil
 }
