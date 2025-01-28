@@ -59,7 +59,7 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 		return nil, fmt.Errorf("failed to run procfile provider: %w", err)
 	}
 
-	if err := ApplyConfig(config, ctx); err != nil {
+	if err := ctx.ApplyConfig(config); err != nil {
 		return nil, fmt.Errorf("failed to apply config: %w", err)
 	}
 
@@ -104,64 +104,6 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 
 func runProvider(provider providers.Provider, ctx *generate.GenerateContext) (bool, error) {
 	return provider.Plan(ctx)
-}
-
-func ApplyConfig(config *config.Config, ctx *generate.GenerateContext) error {
-	// Mise package config
-	miseStep := ctx.GetMiseStepBuilder()
-	for pkg, version := range config.Packages {
-		pkgRef := miseStep.Default(pkg, version)
-		miseStep.Version(pkgRef, version, "custom config")
-	}
-
-	// Apt package config
-	if len(config.AptPackages) > 0 {
-		aptStep := ctx.NewAptStepBuilder("config")
-		aptStep.Packages = config.AptPackages
-		miseStep.DependsOn = append(miseStep.DependsOn, aptStep.DisplayName)
-	}
-
-	// Step config
-	for name, configStep := range config.Steps {
-		if existingStep := ctx.GetStepByName(name); existingStep != nil {
-			if commandStep, ok := (*existingStep).(*generate.CommandStepBuilder); ok {
-				commandStep.Commands = configStep.Commands
-			} else {
-				log.Warnf("Step `%s` exists, but it is not a command step. Skipping...", name)
-			}
-		} else {
-			ctx.Steps = append(ctx.Steps, ctx.NewCommandStep(name))
-		}
-	}
-
-	// Cache config
-	for name, cache := range config.Caches {
-		ctx.Caches.SetCache(name, cache)
-	}
-
-	// Start config
-	if config.Start.BaseImage != "" {
-		ctx.Start.BaseImage = config.Start.BaseImage
-	}
-
-	if config.Start.Command != "" {
-		ctx.Start.Command = config.Start.Command
-	}
-
-	if len(config.Start.Paths) > 0 {
-		ctx.Start.Paths = append(ctx.Start.Paths, config.Start.Paths...)
-	}
-
-	if len(config.Start.Env) > 0 {
-		if ctx.Start.Env == nil {
-			ctx.Start.Env = make(map[string]string)
-		}
-		for k, v := range config.Start.Env {
-			ctx.Start.Env[k] = v
-		}
-	}
-
-	return nil
 }
 
 func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*config.Config, error) {

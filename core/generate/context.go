@@ -3,7 +3,9 @@ package generate
 import (
 	"strings"
 
+	"github.com/charmbracelet/log"
 	a "github.com/railwayapp/railpack/core/app"
+	"github.com/railwayapp/railpack/core/config"
 	"github.com/railwayapp/railpack/core/mise"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/resolver"
@@ -91,6 +93,70 @@ func (c *GenerateContext) GetStepByName(name string) *StepBuilder {
 
 func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackage, error) {
 	return c.resolver.ResolvePackages()
+}
+
+func (c *GenerateContext) ApplyConfig(config *config.Config) error {
+	// Mise package config
+	miseStep := c.GetMiseStepBuilder()
+	for pkg, version := range config.Packages {
+		pkgRef := miseStep.Default(pkg, version)
+		miseStep.Version(pkgRef, version, "custom config")
+	}
+
+	// Apt package config
+	if len(config.AptPackages) > 0 {
+		aptStep := c.NewAptStepBuilder("config")
+		aptStep.Packages = config.AptPackages
+
+		// The apt step should run first
+		miseStep.DependsOn = append(miseStep.DependsOn, aptStep.DisplayName)
+	}
+
+	// Step config
+	for name, configStep := range config.Steps {
+		// We need to use the key as the step name and not `configStep.Name`
+
+		if existingStep := c.GetStepByName(name); existingStep != nil {
+			if commandStep, ok := (*existingStep).(*CommandStepBuilder); ok {
+				// Just overwrite the commands commands
+				// TODO: Add support for merging commands
+				commandStep.Commands = configStep.Commands
+			} else {
+				log.Warnf("Step `%s` exists, but it is not a command step. Skipping...", name)
+			}
+		} else {
+			c.Steps = append(c.Steps, c.NewCommandStep(name))
+		}
+	}
+
+	// Cache config
+	for name, cache := range config.Caches {
+		c.Caches.SetCache(name, cache)
+	}
+
+	// Start config
+	if config.Start.BaseImage != "" {
+		c.Start.BaseImage = config.Start.BaseImage
+	}
+
+	if config.Start.Command != "" {
+		c.Start.Command = config.Start.Command
+	}
+
+	if len(config.Start.Paths) > 0 {
+		c.Start.Paths = append(c.Start.Paths, config.Start.Paths...)
+	}
+
+	if len(config.Start.Env) > 0 {
+		if c.Start.Env == nil {
+			c.Start.Env = make(map[string]string)
+		}
+		for k, v := range config.Start.Env {
+			c.Start.Env[k] = v
+		}
+	}
+
+	return nil
 }
 
 func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {

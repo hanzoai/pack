@@ -89,6 +89,7 @@ func (s *Step) UnmarshalJSON(data []byte) error {
 }
 
 func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
+	// Remove name from the schema
 	var required []string
 	for _, prop := range schema.Required {
 		if prop != "name" {
@@ -96,6 +97,7 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		}
 	}
 	schema.Required = required
+	schema.Properties.Delete("name")
 
 	// Add proper schemas for the commands
 	var commandsDescription string
