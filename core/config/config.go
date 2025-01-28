@@ -27,6 +27,9 @@ type Config struct {
 
 	// Map of cache name to cache definitions. The cache key can be referenced in an exec command.
 	Caches map[string]*plan.Cache `json:"caches,omitempty" jsonschema:"description=Map of cache name to cache definitions. The cache key can be referenced in an exec command"`
+
+	// Secrets that should be made available to commands that have useSecrets set to true
+	Secrets []string `json:"secrets,omitempty" jsonschema:"description=Secrets that should be made available to commands that have useSecrets set to true"`
 }
 
 func EmptyConfig() *Config {
@@ -82,6 +85,7 @@ func Merge(configs ...*Config) *Config {
 
 		// Arrays (extend)
 		result.AptPackages = append(result.AptPackages, config.AptPackages...)
+		result.Secrets = append(result.Secrets, config.Secrets...)
 
 		// Merge providers
 		result.Providers = utils.MergeStringSlicePointers(result.Providers, config.Providers)

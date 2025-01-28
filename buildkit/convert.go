@@ -12,6 +12,7 @@ import (
 
 type ConvertPlanOptions struct {
 	BuildPlatform BuildPlatform
+	SecretStore   *BuildKitSecretStore
 	CacheKey      string
 }
 
@@ -25,13 +26,18 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 	state := getBaseState(platform)
 
 	// Add all variables as environment variables
-	for name, value := range plan.Variables {
-		state = state.AddEnv(name, value)
-	}
+	// for name, value := range plan.Variables {
+	// 	state = state.AddEnv(name, value)
+	// }
 
 	cacheStore := NewBuildKitCacheStore(opts.CacheKey)
 
-	graph, err := NewBuildGraph(plan, &state, cacheStore, &platform)
+	secretStore := opts.SecretStore
+	if secretStore == nil {
+		secretStore = NewBuildKitSecretStore()
+	}
+
+	graph, err := NewBuildGraph(plan, &state, cacheStore, secretStore, &platform)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -124,9 +130,9 @@ func getImageEnv(graphOutput *BuildGraphOutput, plan *p.BuildPlan) []string {
 		imageEnv = append(imageEnv, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	for k, v := range plan.Start.Env {
-		imageEnv = append(imageEnv, fmt.Sprintf("%s=%s", k, v))
-	}
+	// for k, v := range plan.Start.Env {
+	// 	imageEnv = append(imageEnv, fmt.Sprintf("%s=%s", k, v))
+	// }
 
 	return imageEnv
 }

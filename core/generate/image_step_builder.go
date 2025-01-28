@@ -6,11 +6,10 @@ import (
 )
 
 type ImageStepBuilder struct {
-	DisplayName string
-	Resolver    *resolver.Resolver
-	Packages    []*resolver.PackageRef
-	Outputs     []string
-
+	DisplayName      string
+	Resolver         *resolver.Resolver
+	Packages         []*resolver.PackageRef
+	Outputs          *[]string
 	ResolveStepImage func(options *BuildStepOptions) string
 }
 

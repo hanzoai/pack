@@ -93,7 +93,6 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 		Caches:           ctx.Caches,
 	}
 
-	buildPlan.Variables = ctx.Variables
 	for _, stepBuilder := range ctx.Steps {
 		step, err := stepBuilder.Build(buildStepOptions)
 
@@ -106,10 +105,23 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 
 	buildPlan.Caches = ctx.Caches.Caches
 
+	secretNames := []string{}
+
+	// Get all secrets from the environment
+	for k := range env.Variables {
+		secretNames = append(secretNames, k)
+	}
+
+	// Get all secrets from the config
+	for _, secret := range config.Secrets {
+		secretNames = append(secretNames, secret)
+	}
+
+	buildPlan.Secrets = utils.RemoveDuplicates(secretNames)
+
 	buildPlan.Start.BaseImage = ctx.Start.BaseImage
 	buildPlan.Start.Command = ctx.Start.Command
 	buildPlan.Start.Paths = utils.RemoveDuplicates(ctx.Start.Paths)
-	buildPlan.Start.Env = ctx.Start.Env
 
 	buildResult := &BuildResult{
 		Plan:             buildPlan,

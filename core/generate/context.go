@@ -28,8 +28,8 @@ type GenerateContext struct {
 	Steps []StepBuilder
 	Start StartContext
 
-	Caches    *CacheContext
-	Variables map[string]string
+	Caches  *CacheContext
+	Secrets []string
 
 	SubContexts []string
 
@@ -46,14 +46,14 @@ func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error
 	}
 
 	return &GenerateContext{
-		App:       app,
-		Env:       env,
-		Variables: map[string]string{},
-		Steps:     make([]StepBuilder, 0),
-		Start:     *NewStartContext(),
-		Caches:    NewCacheContext(),
-		Metadata:  NewMetadata(),
-		resolver:  resolver,
+		App:      app,
+		Env:      env,
+		Steps:    make([]StepBuilder, 0),
+		Start:    *NewStartContext(),
+		Caches:   NewCacheContext(),
+		Secrets:  []string{},
+		Metadata: NewMetadata(),
+		resolver: resolver,
 	}, nil
 }
 
@@ -135,17 +135,24 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 		if len(configStep.Commands) > 0 {
 			commandStepBuilder.Commands = configStep.Commands
 		}
-		if len(configStep.Outputs) > 0 {
+		if configStep.Outputs != nil {
 			commandStepBuilder.Outputs = configStep.Outputs
 		}
 		for k, v := range configStep.Assets {
 			commandStepBuilder.Assets[k] = v
 		}
+
+		commandStepBuilder.UseSecrets = configStep.UseSecrets
 	}
 
 	// Cache config
 	for name, cache := range config.Caches {
 		c.Caches.SetCache(name, cache)
+	}
+
+	// Secret config
+	for _, secret := range config.Secrets {
+		c.Secrets = append(c.Secrets, secret)
 	}
 
 	// Start config
@@ -159,15 +166,6 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 
 	if len(config.Start.Paths) > 0 {
 		c.Start.Paths = append(c.Start.Paths, config.Start.Paths...)
-	}
-
-	if len(config.Start.Env) > 0 {
-		if c.Start.Env == nil {
-			c.Start.Env = make(map[string]string)
-		}
-		for k, v := range config.Start.Env {
-			c.Start.Env[k] = v
-		}
 	}
 
 	return nil

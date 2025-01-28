@@ -16,8 +16,11 @@ type Step struct {
 	// The commands to run in this step
 	Commands []Command `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
 
+	// Whether the commands executed in this step should have access to secrets
+	UseSecrets *bool `json:"useSecrets,omitempty" jsonschema:"description=Whether the commands executed in this step should have access to secrets"`
+
 	// Paths that this step outputs. Only these paths will be available to the next step
-	Outputs []string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
+	Outputs *[]string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
 
 	// The assets available to this step. The key is the name of the asset that is referenced in a file command
 	Assets map[string]string `json:"assets,omitempty" jsonschema:"description=The assets available to this step. The key is the name of the asset that is referenced in a file command"`

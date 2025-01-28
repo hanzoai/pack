@@ -13,11 +13,12 @@ import (
 )
 
 type BuildGraph struct {
-	Nodes      map[string]*Node
-	BaseState  *llb.State
-	CacheStore *BuildKitCacheStore
-	Plan       *plan.BuildPlan
-	Platform   *specs.Platform
+	Nodes       map[string]*Node
+	BaseState   *llb.State
+	CacheStore  *BuildKitCacheStore
+	SecretStore *BuildKitSecretStore
+	Plan        *plan.BuildPlan
+	Platform    *specs.Platform
 }
 
 type BuildGraphOutput struct {
@@ -26,13 +27,14 @@ type BuildGraphOutput struct {
 	EnvVars  map[string]string
 }
 
-func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *BuildKitCacheStore, platform *specs.Platform) (*BuildGraph, error) {
+func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *BuildKitCacheStore, secretStore *BuildKitSecretStore, platform *specs.Platform) (*BuildGraph, error) {
 	graph := &BuildGraph{
-		Nodes:      make(map[string]*Node),
-		BaseState:  baseState,
-		CacheStore: cacheStore,
-		Plan:       plan,
-		Platform:   platform,
+		Nodes:       make(map[string]*Node),
+		BaseState:   baseState,
+		CacheStore:  cacheStore,
+		SecretStore: secretStore,
+		Plan:        plan,
+		Platform:    platform,
 	}
 
 	// Create a node for each step
@@ -276,10 +278,10 @@ func (g *BuildGraph) convertStepToLLB(node *Node, baseState *llb.State) (*llb.St
 		}
 	}
 
-	if len(step.Outputs) > 0 {
+	if step.Outputs != nil {
 		result := llb.Scratch()
 
-		for _, output := range step.Outputs {
+		for _, output := range *step.Outputs {
 			result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
 				CreateDestPath:      true,
 				AllowWildcard:       true,
@@ -309,6 +311,12 @@ func (g *BuildGraph) convertCommandToLLB(node *Node, cmd plan.Command, state llb
 		opts := []llb.RunOption{llb.Shlex(cmd.Cmd)}
 		if cmd.CustomName != "" {
 			opts = append(opts, llb.WithCustomName(cmd.CustomName))
+		}
+
+		if node.Step.UseSecrets == nil || *node.Step.UseSecrets { // default to using secrets
+			for _, secret := range g.Plan.Secrets {
+				opts = append(opts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
+			}
 		}
 
 		if len(cmd.Caches) > 0 {

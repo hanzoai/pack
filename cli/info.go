@@ -37,7 +37,7 @@ var InfoCommand = &cli.Command{
 		},
 	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
-		buildResult, _, err := GenerateBuildResultForCommand(cmd)
+		buildResult, _, _, err := GenerateBuildResultForCommand(cmd)
 		if err != nil {
 			return cli.Exit(err, 1)
 		}
