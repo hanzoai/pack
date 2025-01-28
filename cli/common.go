@@ -24,6 +24,7 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 	log.Debugf("Building %s", app.Source)
 
 	envsArgs := cmd.StringSlice("env")
+
 	env, err := a.FromEnvs(envsArgs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating env: %w", err)

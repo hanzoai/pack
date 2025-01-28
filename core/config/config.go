@@ -1,22 +1,24 @@
 package config
 
-import "github.com/railwayapp/railpack-go/core/plan"
+import (
+	"github.com/railwayapp/railpack-go/core/plan"
+)
 
 type Config struct {
-	BaseImage   string                `json:"baseImage,omitempty"`
-	Caches      map[string]plan.Cache `json:"caches,omitempty"`
-	Packages    map[string]string     `json:"packages,omitempty"`
-	AptPackages []string              `json:"aptPackages,omitempty"`
-	Steps       []plan.Step           `json:"steps,omitempty"`
-	Start       plan.Start            `json:"start,omitempty"`
+	BaseImage   string                 `json:"baseImage,omitempty"`
+	Caches      map[string]*plan.Cache `json:"caches,omitempty"`
+	Packages    map[string]string      `json:"packages,omitempty"`
+	AptPackages []string               `json:"aptPackages,omitempty"`
+	Steps       map[string]*plan.Step  `json:"steps,omitempty"`
+	Start       plan.Start             `json:"start,omitempty"`
 }
 
 func EmptyConfig() *Config {
 	return &Config{
-		Caches:      make(map[string]plan.Cache),
+		Caches:      make(map[string]*plan.Cache),
 		Packages:    make(map[string]string),
 		AptPackages: make([]string, 0),
-		Steps:       make([]plan.Step, 0),
+		Steps:       make(map[string]*plan.Step),
 	}
 }
 
@@ -25,34 +27,22 @@ func (c *Config) SetBuildCommand(cmd string) {
 	buildStep.Commands = []plan.Command{plan.NewExecCommand(cmd)}
 }
 
-func (c *Config) SetInstallCommand(cmd string) {
-	installStep := c.GetOrCreateStep("install")
-	installStep.Commands = []plan.Command{plan.NewExecCommand(cmd)}
-}
-
 func (c *Config) GetOrCreateStep(name string) *plan.Step {
-	for _, step := range c.Steps {
-		if step.Name == name {
-			return &step
-		}
-	}
-
 	step := plan.NewStep(name)
-	c.Steps = append(c.Steps, *step)
+	if existingStep, exists := c.Steps[name]; exists {
+		step = existingStep
+	}
+	c.Steps[name] = step
+
 	return step
 }
 
 // Merge combines two configs where:
 // - For strings (BaseImage), the last value wins
-// - For maps (Caches, Packages), entries are merged with last value winning
-// - For arrays (AptPackages, Steps), arrays are extended
+// - For maps (Caches, Packages, Steps), entries are merged with last value winning
+// - For arrays (AptPackages), arrays are extended
 func (c *Config) Merge(other *Config) *Config {
-	result := &Config{
-		Caches:      make(map[string]plan.Cache),
-		Packages:    make(map[string]string),
-		AptPackages: make([]string, 0),
-		Steps:       make([]plan.Step, 0),
-	}
+	result := EmptyConfig()
 
 	// Copy maps from first config
 	for k, v := range c.Caches {
@@ -61,10 +51,12 @@ func (c *Config) Merge(other *Config) *Config {
 	for k, v := range c.Packages {
 		result.Packages[k] = v
 	}
+	for k, v := range c.Steps {
+		result.Steps[k] = v
+	}
 
 	// Copy arrays from first config
 	result.AptPackages = append(result.AptPackages, c.AptPackages...)
-	result.Steps = append(result.Steps, c.Steps...)
 
 	// Merge in second config
 	if other.BaseImage != "" {
@@ -87,10 +79,12 @@ func (c *Config) Merge(other *Config) *Config {
 	for k, v := range other.Packages {
 		result.Packages[k] = v
 	}
+	for k, v := range other.Steps {
+		result.Steps[k] = v
+	}
 
 	// Extend arrays from second config
 	result.AptPackages = append(result.AptPackages, other.AptPackages...)
-	result.Steps = append(result.Steps, other.Steps...)
 
 	return result
 }

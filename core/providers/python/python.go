@@ -151,7 +151,7 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 		}
 	}
 
-	aptStep := ctx.NewAptStepBuilder("packages:apt")
+	aptStep := ctx.NewAptStepBuilder("python")
 	aptStep.Packages = []string{"python3-distutils", "gcc", "pkg-config"}
 	install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
 
@@ -169,8 +169,8 @@ func (p *PythonProvider) packages(ctx *generate.GenerateContext) error {
 
 	python := packages.Default("python", DEFAULT_PYTHON_VERSION)
 
-	if envVersion := ctx.Env.GetConfigVariable("PYTHON_VERSION"); envVersion != "" {
-		packages.Version(python, envVersion, "RAILPACK_PYTHON_VERSION")
+	if envVersion, varName := ctx.Env.GetConfigVariable("PYTHON_VERSION"); envVersion != "" {
+		packages.Version(python, envVersion, varName)
 	}
 
 	if versionFile, err := ctx.App.ReadFile(".python-version"); err == nil {

@@ -79,6 +79,15 @@ func (c *GenerateContext) GetStepName(name string) string {
 	return name
 }
 
+func (c *GenerateContext) GetStepByName(name string) *CommandStepBuilder {
+	for _, step := range c.Steps {
+		if cmdStep, ok := step.(*CommandStepBuilder); ok && cmdStep.DisplayName == name {
+			return cmdStep
+		}
+	}
+	return nil
+}
+
 func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackage, error) {
 	return c.resolver.ResolvePackages()
 }

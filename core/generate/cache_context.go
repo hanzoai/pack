@@ -22,6 +22,10 @@ func (c *CacheContext) AddCache(name string, directory string) string {
 	return name
 }
 
+func (c *CacheContext) SetCache(name string, cache *plan.Cache) {
+	c.Caches[name] = cache
+}
+
 func (c *CacheContext) GetCache(name string) *plan.Cache {
 	return c.Caches[name]
 }
