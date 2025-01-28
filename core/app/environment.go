@@ -63,17 +63,19 @@ func (e *Environment) ConfigVariable(name string) string {
 }
 
 // GetConfigVariable returns the value of a RAILPACK_ prefixed variable with newlines removed
-func (e *Environment) GetConfigVariable(name string) string {
+// Returns both the value and the name of the config variable
+func (e *Environment) GetConfigVariable(name string) (string, string) {
 	configVar := e.ConfigVariable(name)
+
 	if val, exists := e.Variables[configVar]; exists {
-		return strings.ReplaceAll(val, "\n", "")
+		return strings.TrimSpace(val), configVar
 	}
-	return ""
+	return "", ""
 }
 
 // IsConfigVariableTruthy checks if a RAILPACK_ prefixed variable is set to "1" or "true"
 func (e *Environment) IsConfigVariableTruthy(name string) bool {
-	if val := e.GetConfigVariable(name); val != "" {
+	if val, _ := e.GetConfigVariable(name); val != "" {
 		return val == "1" || val == "true"
 	}
 	return false

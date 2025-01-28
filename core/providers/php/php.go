@@ -36,7 +36,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 	}
 
 	// Install nginx
-	nginxPackages := ctx.NewAptStepBuilder("packages:nginx")
+	nginxPackages := ctx.NewAptStepBuilder("nginx")
 	nginxPackages.Packages = []string{"nginx", "git", "zip", "unzip"}
 	nginxPackages.DependsOn = []string{imageStep.DisplayName}
 
@@ -45,7 +45,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 		install := ctx.NewCommandStep("install")
 		install.AddCommands([]plan.Command{
 			// Copy composer from the composer image
-			plan.CopyCommand{Image: "composer:latest", Src: "/usr/bin/composer", Dst: "/usr/bin/composer"},
+			plan.CopyCommand{Image: "composer:latest", Src: "/usr/bin/composer", Dest: "/usr/bin/composer"},
 			plan.NewCopyCommand("."),
 			plan.NewExecCommand("composer install --ignore-platform-reqs"),
 		})

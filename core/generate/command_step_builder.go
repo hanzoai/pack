@@ -39,6 +39,10 @@ func (b *CommandStepBuilder) AddCommands(commands []plan.Command) {
 	b.Commands = append(b.Commands, commands...)
 }
 
+func (b *CommandStepBuilder) Name() string {
+	return b.DisplayName
+}
+
 func (b *CommandStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
 

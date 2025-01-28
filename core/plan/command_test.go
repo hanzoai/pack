@@ -54,7 +54,7 @@ func TestCommandMarshalUnmarshal(t *testing.T) {
 		{
 			name:            "copy command",
 			command:         NewCopyCommand("src.txt", "dst.txt"),
-			expectedJSON:    `{"src":"src.txt","dst":"dst.txt"}`,
+			expectedJSON:    `{"src":"src.txt","dest":"dst.txt"}`,
 			unmarshalString: "COPY:src.txt dst.txt",
 		},
 

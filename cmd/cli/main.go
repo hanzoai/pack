@@ -43,6 +43,7 @@ func main() {
 			cli.InfoCommand,
 			cli.BuildCommand,
 			cli.FrontendCommand,
+			cli.SchemaCommand,
 		},
 	}
 

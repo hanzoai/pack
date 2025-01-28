@@ -46,7 +46,7 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 	return step
 }
 
-func (b *MiseStepBuilder) AddAptPackage(name string) {
+func (b *MiseStepBuilder) AddSupportingAptPackage(name string) {
 	b.SupportingAptPackages = append(b.SupportingAptPackages, name)
 }
 
@@ -64,6 +64,10 @@ func (b *MiseStepBuilder) Default(name string, defaultVersion string) resolver.P
 
 func (b *MiseStepBuilder) Version(name resolver.PackageRef, version string, source string) {
 	b.Resolver.Version(name, version, source)
+}
+
+func (b *MiseStepBuilder) Name() string {
+	return b.DisplayName
 }
 
 func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {

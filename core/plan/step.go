@@ -1,19 +1,31 @@
 package plan
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/invopop/jsonschema"
+)
 
 type Step struct {
-	Name string `json:"name"`
+	// The name of the step
+	Name string `json:"name,omitempty" jsonschema:"description=The name of the step"`
 
-	DependsOn []string          `json:"dependsOn,omitempty"`
-	Commands  []Command         `json:"commands,omitempty"`
-	Outputs   []string          `json:"outputs,omitempty"`
-	Assets    map[string]string `json:"assets,omitempty"`
+	// The steps that this step depends on. The step will only run after all the steps in DependsOn have run
+	DependsOn []string `json:"dependsOn,omitempty" jsonschema:"description=The steps that this step depends on. The step will only run after all the steps in DependsOn have run"`
+
+	// The commands to run in this step
+	Commands []Command `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
+
+	// Paths that this step outputs. Only these paths will be available to the next step
+	Outputs []string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
+
+	// The assets available to this step. The key is the name of the asset that is referenced in a file command
+	Assets map[string]string `json:"assets,omitempty" jsonschema:"description=The assets available to this step. The key is the name of the asset that is referenced in a file command"`
 
 	// The base image that will be used for this step
 	// If empty (default), the base image will be the one from the previous step
 	// Only set this if you don't want to reuse any part of the file system from the previous step
-	StartingImage string `json:"startingImage,omitempty"`
+	StartingImage string `json:"startingImage,omitempty" jsonschema:"description=The base image that will be used for this step. If empty (default), the base image will be the one from the previous step. Only set this if you don't want to reuse any part of the file system from the previous step"`
 }
 
 func NewStep(name string) *Step {
@@ -74,4 +86,57 @@ func (s *Step) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
+	var required []string
+	for _, prop := range schema.Required {
+		if prop != "name" {
+			required = append(required, "name")
+		}
+	}
+	schema.Required = required
+
+	// Add proper schemas for the commands
+	var commandsDescription string
+	if currCommandsSchema, ok := schema.Properties.Get("commands"); ok {
+		commandsDescription = currCommandsSchema.Description
+	}
+
+	commandSchema := &jsonschema.Schema{
+		Type:        "array",
+		Description: commandsDescription,
+		Items:       CommandsSchema(),
+	}
+
+	schema.Properties.Set("commands", commandSchema)
+}
+
+func CommandsSchema() *jsonschema.Schema {
+	execSchema := generateSchemaWithComments(ExecCommand{})
+	pathSchema := generateSchemaWithComments(PathCommand{})
+	variableSchema := generateSchemaWithComments(VariableCommand{})
+	copySchema := generateSchemaWithComments(CopyCommand{})
+	fileSchema := generateSchemaWithComments(FileCommand{})
+
+	availableCommands := []*jsonschema.Schema{execSchema, pathSchema, variableSchema, copySchema, fileSchema}
+
+	// Add string schema type as an additional valid command type
+	stringSchema := &jsonschema.Schema{
+		Type:        "string",
+		Description: "Strings will be parsed and interpreted as a command to run",
+	}
+	availableCommands = append([]*jsonschema.Schema{stringSchema}, availableCommands...)
+
+	return &jsonschema.Schema{
+		OneOf: availableCommands,
+	}
+}
+
+func generateSchemaWithComments(v any) *jsonschema.Schema {
+	r := jsonschema.Reflector{
+		Anonymous:      true,
+		DoNotReference: true,
+	}
+	return r.Reflect(v)
 }

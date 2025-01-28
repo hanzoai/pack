@@ -15,6 +15,7 @@ type BuildStepOptions struct {
 }
 
 type StepBuilder interface {
+	Name() string
 	Build(options *BuildStepOptions) (*plan.Step, error)
 }
 
@@ -77,6 +78,15 @@ func (c *GenerateContext) GetStepName(name string) string {
 		return name + ":" + subContextNames
 	}
 	return name
+}
+
+func (c *GenerateContext) GetStepByName(name string) *StepBuilder {
+	for _, step := range c.Steps {
+		if step.Name() == name {
+			return &step
+		}
+	}
+	return nil
 }
 
 func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackage, error) {

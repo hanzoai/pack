@@ -1,12 +1,10 @@
 package generate
 
 import (
+	"fmt"
+
 	"github.com/railwayapp/railpack-go/core/plan"
 	"github.com/railwayapp/railpack-go/core/utils"
-)
-
-const (
-	AptStepName = "apt"
 )
 
 type AptStepBuilder struct {
@@ -17,7 +15,7 @@ type AptStepBuilder struct {
 
 func (c *GenerateContext) NewAptStepBuilder(name string) *AptStepBuilder {
 	step := &AptStepBuilder{
-		DisplayName: c.GetStepName(name),
+		DisplayName: c.GetStepName(fmt.Sprintf("packages:apt:%s", name)),
 		DependsOn:   []string{},
 		Packages:    []string{},
 	}
@@ -29,6 +27,10 @@ func (c *GenerateContext) NewAptStepBuilder(name string) *AptStepBuilder {
 
 func (b *AptStepBuilder) AddAptPackage(pkg string) {
 	b.Packages = append(b.Packages, pkg)
+}
+
+func (b *AptStepBuilder) Name() string {
+	return b.DisplayName
 }
 
 func (b *AptStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {

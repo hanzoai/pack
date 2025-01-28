@@ -24,12 +24,18 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 	log.Debugf("Building %s", app.Source)
 
 	envsArgs := cmd.StringSlice("env")
+
 	env, err := a.FromEnvs(envsArgs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating env: %w", err)
 	}
 
-	buildResult, err := core.GenerateBuildPlan(app, env, &core.GenerateBuildPlanOptions{})
+	generateOptions := &core.GenerateBuildPlanOptions{
+		BuildCommand: cmd.String("build-cmd"),
+		StartCommand: cmd.String("start-cmd"),
+	}
+
+	buildResult, err := core.GenerateBuildPlan(app, env, generateOptions)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error generating build plan: %w", err)
 	}

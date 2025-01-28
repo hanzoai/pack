@@ -129,9 +129,8 @@ func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *Pack
 	// Node
 	node := packages.Default("node", DEFAULT_NODE_VERSION)
 
-	envVersion := ctx.Env.GetConfigVariable("NODE_VERSION")
-	if envVersion != "" {
-		packages.Version(node, envVersion, "RAILPACK_NODE_VERSION")
+	if envVersion, varName := ctx.Env.GetConfigVariable("NODE_VERSION"); envVersion != "" {
+		packages.Version(node, envVersion, varName)
 	}
 
 	if packageJson.Engines != nil && packageJson.Engines["node"] != "" {
@@ -141,9 +140,8 @@ func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *Pack
 	if packageManager == PackageManagerBun {
 		bun := packages.Default("bun", DEFAULT_BUN_VERSION)
 
-		envVersion := ctx.Env.GetConfigVariable("BUN_VERSION")
-		if envVersion != "" {
-			packages.Version(bun, envVersion, "RAILPACK_BUN_VERSION")
+		if envVersion, varName := ctx.Env.GetConfigVariable("BUN_VERSION"); envVersion != "" {
+			packages.Version(bun, envVersion, varName)
 		}
 	}
 

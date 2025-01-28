@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	PRINT_PLAN = true
+	PRINT_PLAN = false
 )
 
 var BuildCommand = &cli.Command{
@@ -28,6 +28,14 @@ var BuildCommand = &cli.Command{
 		&cli.StringSliceFlag{
 			Name:  "env",
 			Usage: "environment variables to set",
+		},
+		&cli.StringFlag{
+			Name:  "build-cmd",
+			Usage: "build command to use",
+		},
+		&cli.StringFlag{
+			Name:  "start-cmd",
+			Usage: "start command to use",
 		},
 		&cli.BoolFlag{
 			Name:  "llb",

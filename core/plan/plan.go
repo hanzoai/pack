@@ -8,10 +8,17 @@ type BuildPlan struct {
 }
 
 type Start struct {
-	BaseImage string            `json:"baseImage,omitempty"`
-	Command   string            `json:"cmd,omitempty"`
-	Paths     []string          `json:"paths,omitempty"`
-	Env       map[string]string `json:"env,omitempty"`
+	// The image to use for the container runtime
+	BaseImage string `json:"baseImage,omitempty"`
+
+	// The command to run in the container
+	Command string `json:"cmd,omitempty"`
+
+	// $PATHs to be prefixed to the container's base $PATH
+	Paths []string `json:"paths,omitempty"`
+
+	// Environment variables to be made available to the container
+	Env map[string]string `json:"env,omitempty"`
 }
 
 func NewBuildPlan() *BuildPlan {

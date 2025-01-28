@@ -1,0 +1,10 @@
+{
+  "$schema": "../../test/schema.json",
+  "packages": {
+    "python": "latest"
+  },
+  "aptPackages": ["neofetch"],
+  "start": {
+    "cmd": "neofetch"
+  }
+}

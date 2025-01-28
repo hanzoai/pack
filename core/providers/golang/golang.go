@@ -50,7 +50,7 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 		ctx.Start.Paths = []string{GO_BINARY_NAME}
 
 		ctx.Start.BaseImage = START_IMAGE
-		if startImage := ctx.Env.GetConfigVariable("START_IMAGE"); startImage != "" {
+		if startImage, _ := ctx.Env.GetConfigVariable("START_IMAGE"); startImage != "" {
 			ctx.Start.BaseImage = startImage
 		}
 	}
@@ -67,7 +67,7 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 func (p *GoProvider) Build(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder, install *generate.CommandStepBuilder) (*generate.CommandStepBuilder, error) {
 	var buildCmd string
 
-	if binName := ctx.Env.GetConfigVariable("GO_BIN"); binName != "" {
+	if binName, _ := ctx.Env.GetConfigVariable("GO_BIN"); binName != "" {
 		// If there is a RAILPACK_GO_BIN variable, use that
 		buildCmd = fmt.Sprintf("go build -o %s ./cmd/%s", GO_BINARY_NAME, binName)
 	} else if p.isGoMod(ctx) && p.hasRootGoFiles(ctx) {
@@ -121,7 +121,7 @@ func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.M
 
 	// If CGO is enabled, we need to install the gcc packages
 	if p.hasCGOEnabled(ctx) {
-		aptStep := ctx.NewAptStepBuilder("apt")
+		aptStep := ctx.NewAptStepBuilder("cgo")
 		aptStep.Packages = []string{"gcc", "g++", "libc6-dev", "libgcc-9-dev", "libstdc++-9-dev"}
 		install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
 	} else {
@@ -152,8 +152,8 @@ func (p *GoProvider) Packages(ctx *generate.GenerateContext) (*generate.MiseStep
 		}
 	}
 
-	if envVersion := ctx.Env.GetConfigVariable("GO_VERSION"); envVersion != "" {
-		packages.Version(goPkg, envVersion, "RAILPACK_GO_VERSION")
+	if envVersion, varName := ctx.Env.GetConfigVariable("GO_VERSION"); envVersion != "" {
+		packages.Version(goPkg, envVersion, varName)
 	}
 
 	return packages, nil
