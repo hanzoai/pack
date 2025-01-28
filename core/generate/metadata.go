@@ -14,6 +14,12 @@ func (m *Metadata) Set(key string, value string) {
 	m.Properties[key] = value
 }
 
+func (m *Metadata) SetBool(key string, value bool) {
+	if value {
+		m.Properties[key] = "true"
+	}
+}
+
 func (m *Metadata) Get(key string) string {
 	return m.Properties[key]
 }

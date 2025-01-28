@@ -2,7 +2,6 @@ package python
 
 import (
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/railwayapp/railpack/core/generate"
@@ -12,6 +11,7 @@ import (
 const (
 	DEFAULT_PYTHON_VERSION = "3.13"
 	UV_CACHE_DIR           = "/opt/uv-cache"
+	PIP_CACHE_DIR          = "/opt/pip-cache"
 )
 
 type PythonProvider struct{}
@@ -64,14 +64,6 @@ func (p *PythonProvider) start(ctx *generate.GenerateContext) error {
 	return nil
 }
 
-// Mapping of python dependencies to required apt packages
-var pythonDepRequirements = map[string][]string{
-	"cairo":     {"libcairo2-dev"},
-	"pdf2image": {"poppler-utils"},
-	"pydub":     {"ffmpeg"},
-	"pymovie":   {"ffmpeg", "qt5-qmake", "qtbase5-dev", "qtbase5-dev-tools", "qttools5-dev-tools", "libqt5core5a", "python3-pyqt5"},
-}
-
 func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 	install := ctx.NewCommandStep("install")
 	install.AddCommands([]plan.Command{
@@ -90,16 +82,17 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 		plan.NewVariableCommand("PYTHONUNBUFFERED", "1"),
 		plan.NewVariableCommand("PYTHONHASHSEED", "random"),
 		plan.NewVariableCommand("PYTHONDONTWRITEBYTECODE", "1"),
-		plan.NewVariableCommand("PIP_NO_CACHE_DIR", "1"),
 		plan.NewVariableCommand("PIP_DISABLE_PIP_VERSION_CHECK", "1"),
 		plan.NewVariableCommand("PIP_DEFAULT_TIMEOUT", "100"),
 	})
 
 	if hasRequirements {
 		install.AddCommands([]plan.Command{
-			plan.NewExecCommand("pip install --upgrade setuptools"),
+			plan.NewVariableCommand("PIP_CACHE_DIR", PIP_CACHE_DIR),
 			plan.NewCopyCommand("requirements.txt"),
-			plan.NewExecCommand("pip install -r requirements.txt"),
+			plan.NewExecCommand("pip install -r requirements.txt", plan.ExecOptions{
+				Caches: []string{ctx.Caches.AddCache("pip", PIP_CACHE_DIR)},
+			}),
 		})
 	} else if hasPyproject && hasPoetry {
 		install.AddCommands([]plan.Command{
@@ -151,8 +144,8 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 		}
 	}
 
-	aptStep := ctx.NewAptStepBuilder("distutils")
-	aptStep.Packages = []string{"python3-distutils", "gcc", "pkg-config"}
+	aptStep := ctx.NewAptStepBuilder("python-system-deps")
+	aptStep.Packages = []string{"pkg-config"}
 	install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
 
 	for dep, requiredPkgs := range pythonDepRequirements {
@@ -208,9 +201,9 @@ func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {
 	}
 
 	ctx.Metadata.Set("packageManager", pkgManager)
-	ctx.Metadata.Set("hasRequirements", strconv.FormatBool(p.hasRequirements(ctx)))
-	ctx.Metadata.Set("hasPyproject", strconv.FormatBool(p.hasPyproject(ctx)))
-	ctx.Metadata.Set("hasPipfile", strconv.FormatBool(p.hasPipfile(ctx)))
+	ctx.Metadata.SetBool("requirements", p.hasRequirements(ctx))
+	ctx.Metadata.SetBool("pyproject", p.hasPyproject(ctx))
+	ctx.Metadata.SetBool("pipfile", p.hasPipfile(ctx))
 }
 
 func (p *PythonProvider) usesDep(ctx *generate.GenerateContext, dep string) bool {
@@ -262,4 +255,11 @@ func (p *PythonProvider) hasPdm(ctx *generate.GenerateContext) bool {
 
 func (p *PythonProvider) hasUv(ctx *generate.GenerateContext) bool {
 	return ctx.App.HasMatch("uv.lock")
+}
+
+// Mapping of python dependencies to required apt packages
+var pythonDepRequirements = map[string][]string{
+	"pdf2image": {"poppler-utils", "gcc"},
+	"pydub":     {"ffmpeg", "gcc"},
+	"pymovie":   {"ffmpeg", "qt5-qmake", "qtbase5-dev", "qtbase5-dev-tools", "qttools5-dev-tools", "libqt5core5a", "python3-pyqt5", "gcc"},
 }

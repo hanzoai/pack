@@ -22,12 +22,7 @@ func (p *NodeProvider) Name() string {
 }
 
 func (p *NodeProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
-	packageJson, err := p.GetPackageJson(ctx.App)
-	if err != nil {
-		return false, err
-	}
-
-	return packageJson != nil, nil
+	return ctx.App.HasMatch("package.json"), nil
 }
 
 func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
