@@ -7,6 +7,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestDetect(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		want bool
+	}{
+		{
+			name: "npm",
+			path: "../../../examples/node-npm-latest",
+			want: true,
+		},
+		{
+			name: "bun",
+			path: "../../../examples/node-bun",
+			want: true,
+		},
+		{
+			name: "pnpm",
+			path: "../../../examples/node-corepack",
+			want: true,
+		},
+		{
+			name: "golang",
+			path: "../../../examples/go-mod",
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := testingUtils.CreateGenerateContext(t, tt.path)
+			provider := NodeProvider{}
+			got, err := provider.Detect(ctx)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestPackageManager(t *testing.T) {
 	tests := []struct {
 		name           string
