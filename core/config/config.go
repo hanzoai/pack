@@ -44,54 +44,45 @@ func (c *Config) GetOrCreateStep(name string) *plan.Step {
 	return step
 }
 
-// Merge combines two configs where:
+// Merge combines multiple configs where:
 // - For strings (BaseImage), the last value wins
 // - For maps (Caches, Packages, Steps), entries are merged with last value winning
 // - For arrays (AptPackages), arrays are extended
-func (c *Config) Merge(other *Config) *Config {
+func Merge(configs ...*Config) *Config {
+	if len(configs) == 0 {
+		return EmptyConfig()
+	}
+
 	result := EmptyConfig()
 
-	// Copy maps from first config
-	for k, v := range c.Caches {
-		result.Caches[k] = v
-	}
-	for k, v := range c.Packages {
-		result.Packages[k] = v
-	}
-	for k, v := range c.Steps {
-		result.Steps[k] = v
-	}
+	for _, config := range configs {
+		if config == nil {
+			continue
+		}
 
-	// Copy arrays from first config
-	result.AptPackages = append(result.AptPackages, c.AptPackages...)
+		// Strings (use last non-empty value)
+		if config.BaseImage != "" {
+			result.BaseImage = config.BaseImage
+		}
 
-	// Merge in second config
-	if other.BaseImage != "" {
-		result.BaseImage = other.BaseImage
-	} else {
-		result.BaseImage = c.BaseImage
-	}
+		if config.Start.Command != "" {
+			result.Start = config.Start
+		}
 
-	// Handle Start field (last non-empty value wins)
-	if other.Start.Command != "" {
-		result.Start = other.Start
-	} else {
-		result.Start = c.Start
-	}
+		// Maps (overwrite existing values)
+		for k, v := range config.Caches {
+			result.Caches[k] = v
+		}
+		for k, v := range config.Packages {
+			result.Packages[k] = v
+		}
+		for k, v := range config.Steps {
+			result.Steps[k] = v
+		}
 
-	// Merge maps from second config (overwriting existing values)
-	for k, v := range other.Caches {
-		result.Caches[k] = v
+		// Arrays (extend)
+		result.AptPackages = append(result.AptPackages, config.AptPackages...)
 	}
-	for k, v := range other.Packages {
-		result.Packages[k] = v
-	}
-	for k, v := range other.Steps {
-		result.Steps[k] = v
-	}
-
-	// Extend arrays from second config
-	result.AptPackages = append(result.AptPackages, other.AptPackages...)
 
 	return result
 }

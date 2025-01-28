@@ -4,6 +4,11 @@
     "python": "latest"
   },
   "aptPackages": ["neofetch"],
+  "steps": {
+    "build": {
+      "commands": ["neofetch"]
+    }
+  },
   "start": {
     "cmd": "neofetch"
   }

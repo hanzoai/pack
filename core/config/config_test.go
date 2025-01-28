@@ -65,7 +65,7 @@ func TestMergeConfig(t *testing.T) {
 		},
 	}
 
-	result := config1.Merge(config2)
+	result := Merge(config1, config2)
 
 	require.Equal(t, "ubuntu:22.04", result.BaseImage)
 	require.Equal(t, "latest", result.Packages["python"])
@@ -79,7 +79,7 @@ func TestMergeConfig(t *testing.T) {
 	require.Equal(t, "config 2 b", result.Steps["build"].Commands[1].(plan.ExecCommand).Cmd)
 
 	config2.Start = plan.Start{}
-	result = config1.Merge(config2)
+	result = Merge(config1, config2)
 	require.Equal(t, "python app.py", result.Start.Command)
 }
 
