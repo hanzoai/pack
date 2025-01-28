@@ -30,9 +30,8 @@ type Step struct {
 
 func NewStep(name string) *Step {
 	return &Step{
-		Name:      name,
-		DependsOn: make([]string, 0),
-		Commands:  make([]Command, 0),
+		Name:   name,
+		Assets: make(map[string]string),
 	}
 }
 

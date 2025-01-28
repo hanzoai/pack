@@ -114,18 +114,32 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 
 	// Step config
 	for name, configStep := range config.Steps {
-		// We need to use the key as the step name and not `configStep.Name`
+		var commandStepBuilder *CommandStepBuilder
 
+		// We need to use the key as the step name and not `configStep.Name`
 		if existingStep := c.GetStepByName(name); existingStep != nil {
-			if commandStep, ok := (*existingStep).(*CommandStepBuilder); ok {
-				// Just overwrite the commands commands
-				// TODO: Add support for merging commands
-				commandStep.Commands = configStep.Commands
+			if csb, ok := (*existingStep).(*CommandStepBuilder); ok {
+				commandStepBuilder = csb
 			} else {
 				log.Warnf("Step `%s` exists, but it is not a command step. Skipping...", name)
+				continue
 			}
 		} else {
-			c.Steps = append(c.Steps, c.NewCommandStep(name))
+			commandStepBuilder = c.NewCommandStep(name)
+		}
+
+		// Overwrite the step with values from the config if they exist
+		if len(configStep.DependsOn) > 0 {
+			commandStepBuilder.DependsOn = configStep.DependsOn
+		}
+		if len(configStep.Commands) > 0 {
+			commandStepBuilder.Commands = configStep.Commands
+		}
+		if len(configStep.Outputs) > 0 {
+			commandStepBuilder.Outputs = configStep.Outputs
+		}
+		for k, v := range configStep.Assets {
+			commandStepBuilder.Assets[k] = v
 		}
 	}
 
