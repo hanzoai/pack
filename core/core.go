@@ -16,7 +16,10 @@ import (
 	"github.com/railwayapp/railpack-go/core/utils"
 )
 
-type GenerateBuildPlanOptions struct{}
+type GenerateBuildPlanOptions struct {
+	BuildCommand string
+	StartCommand string
+}
 
 type BuildResult struct {
 	Plan             *plan.BuildPlan                      `json:"plan"`
@@ -30,10 +33,7 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 		return nil, err
 	}
 
-	config, err := GenerateConfig(app, env)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate config: %w", err)
-	}
+	config := GetConfig(app, env, options)
 
 	configJson, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
@@ -163,16 +163,32 @@ func ApplyConfig(config *config.Config, ctx *generate.GenerateContext) error {
 	return nil
 }
 
-func GenerateConfig(app *app.App, env *app.Environment) (*config.Config, error) {
+func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) *config.Config {
+	optionsConfig := GenerateConfigFromOptions(options)
+	envConfig := GenerateConfigFromEnvironment(app, env)
+
+	mergedConfig := optionsConfig.Merge(envConfig)
+
+	return mergedConfig
+}
+
+func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.Config {
 	config := config.EmptyConfig()
+
+	if env == nil {
+		return config
+	}
 
 	if installCmdVar, _ := env.GetConfigVariable("INSTALL_CMD"); installCmdVar != "" {
 		installStep := config.GetOrCreateStep("install")
 		installStep.Commands = []plan.Command{plan.NewExecCommand(installCmdVar)}
+		installStep.DependsOn = append(installStep.DependsOn, "packages")
 	}
 
 	if buildCmdVar, _ := env.GetConfigVariable("BUILD_CMD"); buildCmdVar != "" {
-		config.SetBuildCommand(buildCmdVar)
+		buildStep := config.GetOrCreateStep("build")
+		buildStep.Commands = []plan.Command{plan.NewExecCommand(buildCmdVar)}
+		buildStep.DependsOn = append(buildStep.DependsOn, "install")
 	}
 
 	if startCmdVar, _ := env.GetConfigVariable("START_CMD"); startCmdVar != "" {
@@ -190,5 +206,25 @@ func GenerateConfig(app *app.App, env *app.Environment) (*config.Config, error) 
 		config.AptPackages = strings.Split(envAptPackages, " ")
 	}
 
-	return config, nil
+	return config
+}
+
+func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config {
+	config := config.EmptyConfig()
+
+	if options == nil {
+		return config
+	}
+
+	if options.BuildCommand != "" {
+		buildStep := config.GetOrCreateStep("build")
+		buildStep.Commands = []plan.Command{plan.NewExecCommand(options.BuildCommand)}
+		buildStep.DependsOn = append(buildStep.DependsOn, "install")
+	}
+
+	if options.StartCommand != "" {
+		config.Start.Command = options.StartCommand
+	}
+
+	return config
 }

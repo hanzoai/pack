@@ -22,11 +22,6 @@ func EmptyConfig() *Config {
 	}
 }
 
-func (c *Config) SetBuildCommand(cmd string) {
-	buildStep := c.GetOrCreateStep("build")
-	buildStep.Commands = []plan.Command{plan.NewExecCommand(cmd)}
-}
-
 func (c *Config) GetOrCreateStep(name string) *plan.Step {
 	step := plan.NewStep(name)
 	if existingStep, exists := c.Steps[name]; exists {

@@ -29,6 +29,14 @@ var BuildCommand = &cli.Command{
 			Name:  "env",
 			Usage: "environment variables to set",
 		},
+		&cli.StringFlag{
+			Name:  "build-cmd",
+			Usage: "build command to use",
+		},
+		&cli.StringFlag{
+			Name:  "start-cmd",
+			Usage: "start command to use",
+		},
 		&cli.BoolFlag{
 			Name:  "llb",
 			Usage: "output the LLB plan to stdout instead of building the image",

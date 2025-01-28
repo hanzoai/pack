@@ -30,7 +30,12 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 		return nil, nil, fmt.Errorf("error creating env: %w", err)
 	}
 
-	buildResult, err := core.GenerateBuildPlan(app, env, &core.GenerateBuildPlanOptions{})
+	generateOptions := &core.GenerateBuildPlanOptions{
+		BuildCommand: cmd.String("build-cmd"),
+		StartCommand: cmd.String("start-cmd"),
+	}
+
+	buildResult, err := core.GenerateBuildPlan(app, env, generateOptions)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error generating build plan: %w", err)
 	}

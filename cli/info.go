@@ -23,6 +23,14 @@ var InfoCommand = &cli.Command{
 			Usage: "environment variables to set. format: KEY=VALUE",
 		},
 		&cli.StringFlag{
+			Name:  "build-cmd",
+			Usage: "build command to use",
+		},
+		&cli.StringFlag{
+			Name:  "start-cmd",
+			Usage: "start command to use",
+		},
+		&cli.StringFlag{
 			Name:  "format",
 			Usage: "output format. one of: pretty, json",
 			Value: "pretty",
