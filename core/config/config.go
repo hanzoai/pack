@@ -44,10 +44,7 @@ func (c *Config) GetOrCreateStep(name string) *plan.Step {
 	return step
 }
 
-// Merge combines multiple configs where:
-// - For strings (BaseImage), the last value wins
-// - For maps (Caches, Packages, Steps), entries are merged with last value winning
-// - For arrays (AptPackages), arrays are extended
+// Merge combines multiple configs by merging their values with later configs taking precedence
 func Merge(configs ...*Config) *Config {
 	if len(configs) == 0 {
 		return EmptyConfig()
