@@ -3,8 +3,8 @@ package testing
 import (
 	"testing"
 
-	"github.com/railwayapp/railpack-go/core/app"
-	"github.com/railwayapp/railpack-go/core/generate"
+	"github.com/railwayapp/railpack/core/app"
+	"github.com/railwayapp/railpack/core/generate"
 )
 
 // CreateGenerateContext creates a new GenerateContext for testing purposes

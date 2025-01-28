@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/invopop/jsonschema"
-	"github.com/railwayapp/railpack-go/core/plan"
+	"github.com/railwayapp/railpack/core/plan"
 )
 
 type Config struct {

@@ -1,6 +1,6 @@
 package generate
 
-import "github.com/railwayapp/railpack-go/core/plan"
+import "github.com/railwayapp/railpack/core/plan"
 
 const (
 	APT_CACHE_KEY  = "apt"

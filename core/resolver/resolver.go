@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
-	"github.com/railwayapp/railpack-go/core/mise"
+	"github.com/railwayapp/railpack/core/mise"
 )
 
 const (

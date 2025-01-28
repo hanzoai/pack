@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/railwayapp/railpack-go/core/plan"
+	"github.com/railwayapp/railpack/core/plan"
 	"github.com/stretchr/testify/require"
 )
 

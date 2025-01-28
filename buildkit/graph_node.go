@@ -2,7 +2,7 @@ package buildkit
 
 import (
 	"github.com/moby/buildkit/client/llb"
-	"github.com/railwayapp/railpack-go/core/plan"
+	"github.com/railwayapp/railpack/core/plan"
 )
 
 type Node struct {

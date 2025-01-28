@@ -1,6 +1,6 @@
 # Railpack Go
 
-[![CI](https://github.com/railwayapp/railpack-go/actions/workflows/ci.yml/badge.svg)](https://github.com/railwayapp/railpack-go/actions/workflows/ci.yml)
+[![CI](https://github.com/railwayapp/railpack/actions/workflows/ci.yml/badge.svg)](https://github.com/railwayapp/railpack/actions/workflows/ci.yml)
 
 _Huge work in progress_
 
@@ -47,7 +47,7 @@ A custom frontend allows us to build the build plan and serialize into a
 
 One downside of this approach is that the frontend needs to be hosted in a
 public image registry. Currently we are using ghcr.io
-[here](https://github.com/railwayapp/railpack-go/pkgs/container/railpack-go).
+[here](https://github.com/railwayapp/railpack/pkgs/container/railpack).
 
 Build a plan for you app first:
 
@@ -63,7 +63,7 @@ buildctl build \
   --local context=examples/node-bun \
   --local dockerfile=test \
   --frontend=gateway.v0 \
-  --opt source=ghcr.io/railwayapp/railpack-go:railpack-frontend \
+  --opt source=ghcr.io/railwayapp/railpack:railpack-frontend \
   --output type=docker,name=test | docker load
 ```
 

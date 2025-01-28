@@ -1,4 +1,4 @@
-module github.com/railwayapp/railpack-go
+module github.com/railwayapp/railpack
 
 go 1.23.3
 
@@ -7,6 +7,7 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.8.0
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/charmbracelet/log v0.4.0
+	github.com/invopop/jsonschema v0.13.0
 	github.com/moby/buildkit v0.18.2
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/pkg/errors v0.9.1
@@ -50,7 +51,6 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/in-toto/in-toto-golang v0.5.0 // indirect
-	github.com/invopop/jsonschema v0.13.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect

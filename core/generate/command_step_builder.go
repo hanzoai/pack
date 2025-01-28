@@ -1,8 +1,8 @@
 package generate
 
 import (
-	"github.com/railwayapp/railpack-go/core/plan"
-	"github.com/railwayapp/railpack-go/core/utils"
+	"github.com/railwayapp/railpack/core/plan"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
 type CommandStepBuilder struct {

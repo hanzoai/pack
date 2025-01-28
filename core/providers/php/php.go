@@ -6,9 +6,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/railwayapp/railpack-go/core/generate"
-	"github.com/railwayapp/railpack-go/core/plan"
-	"github.com/railwayapp/railpack-go/core/providers/node"
+	"github.com/railwayapp/railpack/core/generate"
+	"github.com/railwayapp/railpack/core/plan"
+	"github.com/railwayapp/railpack/core/providers/node"
 	"github.com/stretchr/objx"
 )
 

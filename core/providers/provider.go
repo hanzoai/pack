@@ -1,11 +1,11 @@
 package providers
 
 import (
-	"github.com/railwayapp/railpack-go/core/generate"
-	"github.com/railwayapp/railpack-go/core/providers/golang"
-	"github.com/railwayapp/railpack-go/core/providers/node"
-	"github.com/railwayapp/railpack-go/core/providers/php"
-	"github.com/railwayapp/railpack-go/core/providers/python"
+	"github.com/railwayapp/railpack/core/generate"
+	"github.com/railwayapp/railpack/core/providers/golang"
+	"github.com/railwayapp/railpack/core/providers/node"
+	"github.com/railwayapp/railpack/core/providers/php"
+	"github.com/railwayapp/railpack/core/providers/python"
 )
 
 type Provider interface {

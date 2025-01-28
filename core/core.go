@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
-	"github.com/railwayapp/railpack-go/core/app"
-	"github.com/railwayapp/railpack-go/core/config"
-	"github.com/railwayapp/railpack-go/core/generate"
-	"github.com/railwayapp/railpack-go/core/plan"
-	"github.com/railwayapp/railpack-go/core/providers"
-	"github.com/railwayapp/railpack-go/core/providers/procfile"
-	"github.com/railwayapp/railpack-go/core/resolver"
-	"github.com/railwayapp/railpack-go/core/utils"
+	"github.com/railwayapp/railpack/core/app"
+	"github.com/railwayapp/railpack/core/config"
+	"github.com/railwayapp/railpack/core/generate"
+	"github.com/railwayapp/railpack/core/plan"
+	"github.com/railwayapp/railpack/core/providers"
+	"github.com/railwayapp/railpack/core/providers/procfile"
+	"github.com/railwayapp/railpack/core/resolver"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
 const (

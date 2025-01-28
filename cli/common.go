@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/log"
-	"github.com/railwayapp/railpack-go/core"
-	a "github.com/railwayapp/railpack-go/core/app"
+	"github.com/railwayapp/railpack/core"
+	a "github.com/railwayapp/railpack/core/app"
 	"github.com/urfave/cli/v3"
 )
 

@@ -3,9 +3,9 @@ package node
 import (
 	"fmt"
 
-	"github.com/railwayapp/railpack-go/core/app"
-	"github.com/railwayapp/railpack-go/core/generate"
-	"github.com/railwayapp/railpack-go/core/plan"
+	"github.com/railwayapp/railpack/core/app"
+	"github.com/railwayapp/railpack/core/generate"
+	"github.com/railwayapp/railpack/core/plan"
 )
 
 type PackageJson struct {

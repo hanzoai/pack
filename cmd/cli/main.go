@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/log"
-	"github.com/railwayapp/railpack-go/cli"
+	"github.com/railwayapp/railpack/cli"
 	urfave "github.com/urfave/cli/v3"
 )
 

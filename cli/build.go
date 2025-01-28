@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/charmbracelet/log"
-	"github.com/railwayapp/railpack-go/buildkit"
-	"github.com/railwayapp/railpack-go/core"
+	"github.com/railwayapp/railpack/buildkit"
+	"github.com/railwayapp/railpack/core"
 	"github.com/urfave/cli/v3"
 )
 

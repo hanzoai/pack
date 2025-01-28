@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	a "github.com/railwayapp/railpack-go/core/app"
-	"github.com/railwayapp/railpack-go/core/mise"
-	"github.com/railwayapp/railpack-go/core/plan"
-	"github.com/railwayapp/railpack-go/core/resolver"
+	a "github.com/railwayapp/railpack/core/app"
+	"github.com/railwayapp/railpack/core/mise"
+	"github.com/railwayapp/railpack/core/plan"
+	"github.com/railwayapp/railpack/core/resolver"
 )
 
 const (

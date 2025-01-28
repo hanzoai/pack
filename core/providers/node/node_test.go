@@ -3,7 +3,7 @@ package node
 import (
 	"testing"
 
-	testingUtils "github.com/railwayapp/railpack-go/core/testing"
+	testingUtils "github.com/railwayapp/railpack/core/testing"
 	"github.com/stretchr/testify/require"
 )
 
