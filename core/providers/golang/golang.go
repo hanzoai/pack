@@ -23,25 +23,24 @@ func (p *GoProvider) Name() string {
 	return "golang"
 }
 
-func (p *GoProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
-	isGo := p.isGoMod(ctx) || ctx.App.HasMatch("main.go")
-	if !isGo {
-		return false, nil
-	}
+func (p *GoProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
+	return p.isGoMod(ctx) || ctx.App.HasMatch("main.go"), nil
+}
 
+func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 	packages, err := p.Packages(ctx)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	install, err := p.Install(ctx, packages)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	_, err = p.Build(ctx, packages, install)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	ctx.Start.Command = fmt.Sprintf("./%s", GO_BINARY_NAME)
@@ -61,7 +60,7 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 
 	p.addMetadata(ctx)
 
-	return true, nil
+	return nil
 }
 
 func (p *GoProvider) Build(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder, install *generate.CommandStepBuilder) (*generate.CommandStepBuilder, error) {

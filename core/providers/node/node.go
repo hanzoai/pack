@@ -8,13 +8,6 @@ import (
 	"github.com/railwayapp/railpack/core/plan"
 )
 
-type PackageJson struct {
-	Scripts        map[string]string `json:"scripts"`
-	PackageManager *string           `json:"packageManager"`
-	Engines        map[string]string `json:"engines"`
-	Main           *string           `json:"main"`
-}
-
 type PackageManager string
 
 const (
@@ -28,35 +21,47 @@ func (p *NodeProvider) Name() string {
 	return "node"
 }
 
-func (p *NodeProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
+func (p *NodeProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 	packageJson, err := p.GetPackageJson(ctx.App)
 	if err != nil {
 		return false, err
 	}
 
+	return packageJson != nil, nil
+}
+
+func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
+	packageJson, err := p.GetPackageJson(ctx.App)
+	if err != nil {
+		// Create a default packageJson
+		packageJson = &PackageJson{
+			Scripts: map[string]string{},
+		}
+	}
+
 	if packageJson == nil {
-		return false, nil
+		return nil
 	}
 
 	packages, err := p.Packages(ctx, packageJson)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	install, err := p.Install(ctx, packages, packageJson)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if _, err := p.Build(ctx, install, packageJson); err != nil {
-		return false, err
+		return err
 	}
 
 	if err := p.start(ctx, packageJson); err != nil {
-		return false, err
+		return err
 	}
 
-	return true, nil
+	return nil
 }
 
 func (p *NodeProvider) start(ctx *generate.GenerateContext, packageJson *PackageJson) error {

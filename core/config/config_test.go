@@ -46,6 +46,7 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	config2 := &Config{
+		Providers: &[]string{"node"},
 		BaseImage: "ubuntu:22.04",
 		Packages: map[string]string{
 			"node": "23",
@@ -67,6 +68,7 @@ func TestMergeConfig(t *testing.T) {
 
 	result := Merge(config1, config2)
 
+	require.Equal(t, &[]string{"node"}, result.Providers)
 	require.Equal(t, "ubuntu:22.04", result.BaseImage)
 	require.Equal(t, "latest", result.Packages["python"])
 	require.Equal(t, "23", result.Packages["node"])

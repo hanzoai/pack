@@ -1,5 +1,6 @@
 {
   "$schema": "../../test/schema.json",
+  "providers": ["python"],
   "packages": {
     "python": "latest"
   },

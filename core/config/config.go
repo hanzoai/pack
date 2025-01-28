@@ -3,11 +3,15 @@ package config
 import (
 	"github.com/invopop/jsonschema"
 	"github.com/railwayapp/railpack/core/plan"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
 type Config struct {
 	// The base image to use for the build
 	BaseImage string `json:"baseImage,omitempty" jsonschema:"description=The base image to use for the build"`
+
+	// List of providers to use
+	Providers *[]string `json:"providers,omitempty" jsonschema:"description=List of providers to use"`
 
 	// Map of step names to step definitions
 	Steps map[string]*plan.Step `json:"steps,omitempty" jsonschema:"description=Map of step names to step definitions"`
@@ -27,10 +31,9 @@ type Config struct {
 
 func EmptyConfig() *Config {
 	return &Config{
-		Steps:       make(map[string]*plan.Step),
-		Packages:    make(map[string]string),
-		AptPackages: make([]string, 0),
-		Caches:      make(map[string]*plan.Cache),
+		Steps:    make(map[string]*plan.Step),
+		Packages: make(map[string]string),
+		Caches:   make(map[string]*plan.Cache),
 	}
 }
 
@@ -79,6 +82,9 @@ func Merge(configs ...*Config) *Config {
 
 		// Arrays (extend)
 		result.AptPackages = append(result.AptPackages, config.AptPackages...)
+
+		// Merge providers
+		result.Providers = utils.MergeStringSlicePointers(result.Providers, config.Providers)
 	}
 
 	return result

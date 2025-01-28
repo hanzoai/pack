@@ -20,32 +20,32 @@ func (p *PythonProvider) Name() string {
 	return "python"
 }
 
-func (p *PythonProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
+func (p *PythonProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 	hasPython := ctx.App.HasMatch("main.py") ||
 		p.hasRequirements(ctx) ||
 		p.hasPyproject(ctx) ||
 		p.hasPoetry(ctx) ||
 		p.hasPdm(ctx)
 
-	if !hasPython {
-		return false, nil
-	}
+	return hasPython, nil
+}
 
+func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 	if err := p.packages(ctx); err != nil {
-		return false, err
+		return err
 	}
 
 	if err := p.install(ctx); err != nil {
-		return false, err
+		return err
 	}
 
 	if err := p.start(ctx); err != nil {
-		return false, err
+		return err
 	}
 
 	p.addMetadata(ctx)
 
-	return false, nil
+	return nil
 }
 
 func (p *PythonProvider) start(ctx *generate.GenerateContext) error {

@@ -36,37 +36,46 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 		return nil, err
 	}
 
+	// Get the full user config based on file config, env config, and options
 	config, err := GetConfig(app, env, options)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, provider := range providers.GetLanguageProviders() {
-		matched, err := runProvider(provider, ctx)
+	// Figure out what providers to use
+	providersToUse := getProviders(ctx, config)
+	providerNames := make([]string, len(providersToUse))
+	for i, provider := range providersToUse {
+		providerNames[i] = provider.Name()
+	}
+	ctx.Metadata.Set("providers", strings.Join(providerNames, ","))
+
+	// Run the providers to update the context with how to build the app
+	for _, provider := range providersToUse {
+		err := provider.Plan(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to run provider: %w", err)
 		}
-
-		if matched {
-			log.Debugf("Provider `%s` matched", provider.Name())
-			ctx.Metadata.Set("provider", provider.Name())
-			break
-		}
 	}
 
+	// Run the procfile provider to support apps that have a Procfile with a start command
 	procfileProvider := &procfile.ProcfileProvider{}
 	if _, err := procfileProvider.Plan(ctx); err != nil {
 		return nil, fmt.Errorf("failed to run procfile provider: %w", err)
 	}
 
+	// Update the context with the config
 	if err := ctx.ApplyConfig(config); err != nil {
 		return nil, fmt.Errorf("failed to apply config: %w", err)
 	}
 
+	// Resolve all package versions into a fully qualified and valid version
 	resolvedPackages, err := ctx.ResolvePackages()
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve packages: %w", err)
 	}
+
+	// Generate the plan based on the context and resolved packages
 
 	buildPlan := plan.NewBuildPlan()
 
@@ -102,17 +111,16 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	return buildResult, nil
 }
 
-func runProvider(provider providers.Provider, ctx *generate.GenerateContext) (bool, error) {
-	return provider.Plan(ctx)
-}
-
+// GetConfig merges the options, environment, and file config into a single config
 func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*config.Config, error) {
+	fmt.Println("Getting config")
 	optionsConfig := GenerateConfigFromOptions(options)
 
 	envConfig := GenerateConfigFromEnvironment(app, env)
 
 	fileConfig, err := GenerateConfigFromFile(app, env)
 	if err != nil {
+		fmt.Println("No config file found")
 		return nil, err
 	}
 
@@ -121,20 +129,38 @@ func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOpt
 	return mergedConfig, nil
 }
 
+// GenerateConfigFromFile generates a config from the config file
 func GenerateConfigFromFile(app *app.App, env *app.Environment) (*config.Config, error) {
+	fmt.Println("Generating config from file")
 	configFileName := defaultConfigFileName
 	if envConfigFileName, _ := env.GetConfigVariable("CONFIG_FILE"); envConfigFileName != "" {
 		configFileName = envConfigFileName
 	}
 
+	fmt.Println("Config file name:", configFileName)
+
+	if !app.HasMatch(configFileName) {
+		fmt.Printf("No config file found: %s\n", configFileName)
+		log.Debugf("No config file found: %s", configFileName)
+		return config.EmptyConfig(), nil
+	}
+
 	config := config.EmptyConfig()
 	if err := app.ReadJSON(configFileName, config); err != nil {
+		fmt.Printf("Failed to read config file: %s\n", err.Error())
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
+
+	fmt.Printf("Loaded config file: %s\n", configFileName)
+
+	fmt.Printf("Config: %+v\n", config)
+
+	fmt.Printf("Providers: %+v\n", config.Providers)
 
 	return config, nil
 }
 
+// GenerateConfigFromEnvironment generates a config from the environment
 func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.Config {
 	config := config.EmptyConfig()
 
@@ -172,6 +198,7 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 	return config
 }
 
+// GenerateConfigFromOptions generates a config from the CLI options
 func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config {
 	config := config.EmptyConfig()
 
@@ -190,4 +217,42 @@ func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config
 	}
 
 	return config
+}
+
+func getProviders(ctx *generate.GenerateContext, config *config.Config) []providers.Provider {
+	var providersToUse []providers.Provider
+
+	allProviders := providers.GetLanguageProviders()
+
+	// If there are no providers manually specified in the config,
+	// use the first provider that is detected
+	if config.Providers == nil {
+		for _, provider := range allProviders {
+			matched, err := provider.Detect(ctx)
+			if err != nil {
+				log.Warnf("Failed to detect provider `%s`: %s", provider.Name(), err.Error())
+				continue
+			}
+
+			if matched {
+				providersToUse = append(providersToUse, provider)
+				break
+			}
+		}
+
+		return providersToUse
+	}
+
+	// Otherwise, use the providers specified in the config
+	for _, providerName := range *config.Providers {
+		provider := providers.GetProvider(providerName)
+		if provider == nil {
+			log.Warnf("Provider `%s` not found", providerName)
+			continue
+		}
+
+		providersToUse = append(providersToUse, provider)
+	}
+
+	return providersToUse
 }

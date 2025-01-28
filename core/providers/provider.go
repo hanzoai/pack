@@ -10,7 +10,8 @@ import (
 
 type Provider interface {
 	Name() string
-	Plan(ctx *generate.GenerateContext) (bool, error)
+	Detect(ctx *generate.GenerateContext) (bool, error)
+	Plan(ctx *generate.GenerateContext) error
 }
 
 func GetLanguageProviders() []Provider {
@@ -20,4 +21,14 @@ func GetLanguageProviders() []Provider {
 		&python.PythonProvider{},
 		&golang.GoProvider{},
 	}
+}
+
+func GetProvider(name string) Provider {
+	for _, provider := range GetLanguageProviders() {
+		if provider.Name() == name {
+			return provider
+		}
+	}
+
+	return nil
 }

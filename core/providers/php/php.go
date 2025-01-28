@@ -22,17 +22,15 @@ func (p *PhpProvider) Name() string {
 	return "php"
 }
 
-func (p *PhpProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
-	hasPhp := ctx.App.HasMatch("index.php") ||
-		ctx.App.HasMatch("composer.json")
+func (p *PhpProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
+	return ctx.App.HasMatch("index.php") ||
+		ctx.App.HasMatch("composer.json"), nil
+}
 
-	if !hasPhp {
-		return false, nil
-	}
-
+func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	imageStep, err := p.phpImagePackage(ctx)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Install nginx
@@ -60,18 +58,18 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 
 		nodePackages, err := nodeProvider.Packages(ctx, packageJson)
 		if err != nil {
-			return false, err
+			return err
 		}
 		nodePackages.DependsOn = []string{imageStep.DisplayName}
 
 		nodeInstall, err := nodeProvider.Install(ctx, nodePackages, packageJson)
 		if err != nil {
-			return false, err
+			return err
 		}
 
 		_, err = nodeProvider.Build(ctx, nodeInstall, packageJson)
 		if err != nil {
-			return false, err
+			return err
 		}
 
 		ctx.ExitSubContext()
@@ -100,7 +98,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 	nginxSetup.Assets["start-nginx.sh"] = startNginxScriptAsset
 	configFiles, err := p.getConfigFiles(ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed to get config files: %w", err)
+		return fmt.Errorf("failed to get config files: %w", err)
 	}
 
 	nginxSetup.Assets["nginx.conf"] = configFiles.NginxConf
@@ -110,7 +108,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 	ctx.Start.Command = "bash /start-nginx.sh"
 	ctx.Start.Paths = []string{"."}
 
-	return true, nil
+	return nil
 }
 
 func (p *PhpProvider) usesLaravel(ctx *generate.GenerateContext) bool {
