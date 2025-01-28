@@ -1,7 +1,6 @@
 package core
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -14,6 +13,10 @@ import (
 	"github.com/railwayapp/railpack-go/core/providers/procfile"
 	"github.com/railwayapp/railpack-go/core/resolver"
 	"github.com/railwayapp/railpack-go/core/utils"
+)
+
+const (
+	defaultConfigFileName = "railpack.json"
 )
 
 type GenerateBuildPlanOptions struct {
@@ -33,13 +36,9 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 		return nil, err
 	}
 
-	config := GetConfig(app, env, options)
-
-	configJson, err := json.MarshalIndent(config, "", "  ")
+	config, err := GetConfig(app, env, options)
 	if err != nil {
-		log.Debugf("Failed to serialize config: %v", err)
-	} else {
-		log.Debugf("Generated config:\n%s", string(configJson))
+		return nil, err
 	}
 
 	for _, provider := range providers.GetLanguageProviders() {
@@ -108,13 +107,11 @@ func runProvider(provider providers.Provider, ctx *generate.GenerateContext) (bo
 }
 
 func ApplyConfig(config *config.Config, ctx *generate.GenerateContext) error {
-	log.Debugf("Applying config: %+v", config)
-
 	// Mise package config
 	miseStep := ctx.GetMiseStepBuilder()
 	for pkg, version := range config.Packages {
 		pkgRef := miseStep.Default(pkg, version)
-		miseStep.Version(pkgRef, version, "config file")
+		miseStep.Version(pkgRef, version, "custom config")
 	}
 
 	// Apt package config
@@ -125,11 +122,15 @@ func ApplyConfig(config *config.Config, ctx *generate.GenerateContext) error {
 	}
 
 	// Step config
-	for _, configStep := range config.Steps {
-		if existingStep := ctx.GetStepByName(configStep.Name); existingStep != nil {
-			existingStep.Commands = configStep.Commands
+	for name, configStep := range config.Steps {
+		if existingStep := ctx.GetStepByName(name); existingStep != nil {
+			if commandStep, ok := (*existingStep).(*generate.CommandStepBuilder); ok {
+				commandStep.Commands = configStep.Commands
+			} else {
+				log.Warnf("Step `%s` exists, but it is not a command step. Skipping...", name)
+			}
 		} else {
-			ctx.Steps = append(ctx.Steps, ctx.NewCommandStep(configStep.Name))
+			ctx.Steps = append(ctx.Steps, ctx.NewCommandStep(name))
 		}
 	}
 
@@ -163,13 +164,33 @@ func ApplyConfig(config *config.Config, ctx *generate.GenerateContext) error {
 	return nil
 }
 
-func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) *config.Config {
+func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*config.Config, error) {
 	optionsConfig := GenerateConfigFromOptions(options)
+
 	envConfig := GenerateConfigFromEnvironment(app, env)
 
-	mergedConfig := optionsConfig.Merge(envConfig)
+	fileConfig, err := GenerateConfigFromFile(app, env)
+	if err != nil {
+		return nil, err
+	}
 
-	return mergedConfig
+	mergedConfig := optionsConfig.Merge(envConfig).Merge(fileConfig)
+
+	return mergedConfig, nil
+}
+
+func GenerateConfigFromFile(app *app.App, env *app.Environment) (*config.Config, error) {
+	configFileName := defaultConfigFileName
+	if envConfigFileName, _ := env.GetConfigVariable("CONFIG_FILE"); envConfigFileName != "" {
+		configFileName = envConfigFileName
+	}
+
+	config := config.EmptyConfig()
+	if err := app.ReadJSON(configFileName, config); err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	return config, nil
 }
 
 func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.Config {

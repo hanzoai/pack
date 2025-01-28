@@ -42,6 +42,10 @@ func (b *ImageStepBuilder) Version(name resolver.PackageRef, version string, sou
 	b.Resolver.Version(name, version, source)
 }
 
+func (b *ImageStepBuilder) Name() string {
+	return b.DisplayName
+}
+
 func (b *ImageStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
 

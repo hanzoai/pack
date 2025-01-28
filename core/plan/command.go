@@ -160,7 +160,7 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 
 	// If no prefix, treat as exec command
 	if !strings.Contains(str, ":") {
-		return NewExecCommand(str), nil
+		return NewExecCommand(strings.Trim(str, "\"")), nil
 	}
 
 	parts := strings.SplitN(str, ":", 2)
@@ -205,5 +205,5 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 	}
 
 	// fallback to exec command type
-	return NewExecCommand(str, ExecOptions{CustomName: customName}), nil
+	return NewExecCommand(strings.Trim(str, "\""), ExecOptions{CustomName: customName}), nil
 }

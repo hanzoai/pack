@@ -29,6 +29,10 @@ func (b *AptStepBuilder) AddAptPackage(pkg string) {
 	b.Packages = append(b.Packages, pkg)
 }
 
+func (b *AptStepBuilder) Name() string {
+	return b.DisplayName
+}
+
 func (b *AptStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
 	step.DependsOn = utils.RemoveDuplicates(b.DependsOn)

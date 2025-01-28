@@ -15,6 +15,7 @@ type BuildStepOptions struct {
 }
 
 type StepBuilder interface {
+	Name() string
 	Build(options *BuildStepOptions) (*plan.Step, error)
 }
 
@@ -79,10 +80,10 @@ func (c *GenerateContext) GetStepName(name string) string {
 	return name
 }
 
-func (c *GenerateContext) GetStepByName(name string) *CommandStepBuilder {
+func (c *GenerateContext) GetStepByName(name string) *StepBuilder {
 	for _, step := range c.Steps {
-		if cmdStep, ok := step.(*CommandStepBuilder); ok && cmdStep.DisplayName == name {
-			return cmdStep
+		if step.Name() == name {
+			return &step
 		}
 	}
 	return nil

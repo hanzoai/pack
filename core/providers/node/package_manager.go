@@ -165,8 +165,8 @@ func (p PackageManager) InstallPackages(ctx *generate.GenerateContext, packages 
 	// Yarn
 	if p == PackageManagerYarn1 {
 		packages.Default("yarn", "1")
-		packages.AddAptPackage("tar")
-		packages.AddAptPackage("gpg")
+		packages.AddSupportingAptPackage("tar")
+		packages.AddSupportingAptPackage("gpg")
 	} else if p == PackageManagerYarn2 {
 		packages.Default("yarn", "2")
 	}
