@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-// Command represents a command that can be executed
 type Command interface {
 	CommandType() string
 }
@@ -17,42 +16,42 @@ type ExecOptions struct {
 	CustomName string
 }
 
-// ExecCommand represents a command to be executed
+// ExecCommand represents a shell command to be executed during the build
 type ExecCommand struct {
-	Cmd        string   `json:"cmd"`
-	Caches     []string `json:"caches,omitempty"`
-	CustomName string   `json:"customName,omitempty"`
+	Cmd        string   `json:"cmd" jsonschema:"description=The shell command to execute (e.g. 'go build' or 'npm install')"`
+	Caches     []string `json:"caches,omitempty" jsonschema:"description=Optional list of cache key references that will be available during this command execution. The cache must be defined in the top level 'caches' config"`
+	CustomName string   `json:"customName,omitempty" jsonschema:"description=Optional custom name to display for this command in build output"`
 }
 
-// PathCommand represents a global path addition
+// PathCommand represents adding a directory to the global PATH environment variable
 type PathCommand struct {
-	Path string `json:"path"`
+	Path string `json:"path" jsonschema:"description=Directory path to add to the global PATH environment variable. This path will be available to all subsequent commands in the build"`
 }
 
-// VariableCommand represents a shell variable setting
+// VariableCommand represents setting an environment variable for the build
 type VariableCommand struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+	Name  string `json:"name" jsonschema:"description=Name of the environment variable to set (e.g. 'NODE_ENV')"`
+	Value string `json:"value" jsonschema:"description=Value to set for the environment variable (e.g. 'production')"`
 }
 
-// CopyCommand represents a file copy operation
+// CopyCommand represents copying files or directories during the build
 type CopyCommand struct {
-	Image string `json:"image,omitempty"`
-	Src   string `json:"src"`
-	Dst   string `json:"dst"`
+	Image string `json:"image,omitempty" jsonschema:"description=Optional source image to copy from. This can be any public image URL"`
+	Src   string `json:"src" jsonschema:"description=Source path to copy from. Can be a file or directory"`
+	Dest  string `json:"dest" jsonschema:"description=Destination path to copy to. Will be created if it doesn't exist"`
 }
 
 type FileOptions struct {
-	Mode       os.FileMode `json:"mode,omitempty"`
-	CustomName string      `json:"customName,omitempty"`
+	Mode       os.FileMode
+	CustomName string
 }
 
-// FileCommand represents a file creation operation
+// FileCommand represents creating or modifying a file during the build
 type FileCommand struct {
-	Path       string      `json:"path"`
-	Name       string      `json:"name"`
-	Mode       os.FileMode `json:"mode,omitempty"`
-	CustomName string      `json:"customName,omitempty"`
+	Path       string      `json:"path" jsonschema:"description=Directory path where the file should be created"`
+	Name       string      `json:"name" jsonschema:"description=Name of the file to create"`
+	Mode       os.FileMode `json:"mode,omitempty" jsonschema:"description=Optional Unix file permissions mode (e.g. 0644 for regular file)"`
+	CustomName string      `json:"customName,omitempty" jsonschema:"description=Optional custom name to display for this file operation"`
 }
 
 func (e ExecCommand) CommandType() string     { return "exec" }
@@ -86,7 +85,7 @@ func NewCopyCommand(src string, dst ...string) Command {
 		dstPath = dst[0]
 	}
 
-	copyCmd := CopyCommand{Src: src, Dst: dstPath}
+	copyCmd := CopyCommand{Src: src, Dest: dstPath}
 	return copyCmd
 }
 

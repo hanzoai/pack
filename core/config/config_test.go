@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/railwayapp/railpack-go/core/plan"
@@ -80,4 +81,13 @@ func TestMergeConfig(t *testing.T) {
 	config2.Start = plan.Start{}
 	result = config1.Merge(config2)
 	require.Equal(t, "python app.py", result.Start.Command)
+}
+
+func TestGetJsonSchema(t *testing.T) {
+	schema := GetJsonSchema()
+	require.NotEmpty(t, schema)
+
+	schemaJson, err := json.MarshalIndent(schema, "", "  ")
+	require.NoError(t, err)
+	require.NotEmpty(t, schemaJson)
 }

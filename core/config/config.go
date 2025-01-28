@@ -1,24 +1,36 @@
 package config
 
 import (
+	"github.com/invopop/jsonschema"
 	"github.com/railwayapp/railpack-go/core/plan"
 )
 
 type Config struct {
-	BaseImage   string                 `json:"baseImage,omitempty"`
-	Caches      map[string]*plan.Cache `json:"caches,omitempty"`
-	Packages    map[string]string      `json:"packages,omitempty"`
-	AptPackages []string               `json:"aptPackages,omitempty"`
-	Steps       map[string]*plan.Step  `json:"steps,omitempty"`
-	Start       plan.Start             `json:"start,omitempty"`
+	// The base image to use for the build
+	BaseImage string `json:"baseImage,omitempty" jsonschema:"description=The base image to use for the build"`
+
+	// Map of step names to step definitions
+	Steps map[string]*plan.Step `json:"steps,omitempty" jsonschema:"description=Map of step names to step definitions"`
+
+	// Start configuration
+	Start plan.Start `json:"start,omitempty" jsonschema:"description=Start configuration"`
+
+	// Map of package name to package version
+	Packages map[string]string `json:"packages,omitempty" jsonschema:"description=Map of package name to package version"`
+
+	// List of apt packages to install
+	AptPackages []string `json:"aptPackages,omitempty" jsonschema:"description=List of apt packages to install"`
+
+	// Map of cache name to cache definitions. The cache key can be referenced in an exec command.
+	Caches map[string]*plan.Cache `json:"caches,omitempty" jsonschema:"description=Map of cache name to cache definitions. The cache key can be referenced in an exec command"`
 }
 
 func EmptyConfig() *Config {
 	return &Config{
-		Caches:      make(map[string]*plan.Cache),
+		Steps:       make(map[string]*plan.Step),
 		Packages:    make(map[string]string),
 		AptPackages: make([]string, 0),
-		Steps:       make(map[string]*plan.Step),
+		Caches:      make(map[string]*plan.Cache),
 	}
 }
 
@@ -82,4 +94,21 @@ func (c *Config) Merge(other *Config) *Config {
 	result.AptPackages = append(result.AptPackages, other.AptPackages...)
 
 	return result
+}
+
+func (Config) JSONSchemaExtend(schema *jsonschema.Schema) {
+	schema.Properties.Set("$schema", &jsonschema.Schema{
+		Type:        "string",
+		Description: "The schema for this config",
+	})
+}
+
+func GetJsonSchema() *jsonschema.Schema {
+	r := jsonschema.Reflector{
+		DoNotReference: true,
+		Anonymous:      true,
+	}
+
+	schema := r.Reflect(&Config{})
+	return schema
 }

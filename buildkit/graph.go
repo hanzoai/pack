@@ -350,7 +350,7 @@ func (g *BuildGraph) convertCommandToLLB(node *Node, cmd plan.Command, state llb
 			src = llb.Image(cmd.Image, llb.Platform(*g.Platform))
 		}
 
-		s := state.File(llb.Copy(src, cmd.Src, cmd.Dst, &llb.CopyInfo{
+		s := state.File(llb.Copy(src, cmd.Src, cmd.Dest, &llb.CopyInfo{
 			CreateDestPath:      true,
 			FollowSymlinks:      true,
 			CopyDirContentsOnly: false,
