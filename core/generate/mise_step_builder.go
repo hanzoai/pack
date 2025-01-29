@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	a "github.com/railwayapp/railpack/core/app"
@@ -132,6 +133,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		for k := range packagesToInstall {
 			pkgNames = append(pkgNames, k)
 		}
+		sort.Strings(pkgNames)
 
 		step.AddCommands([]plan.Command{
 			plan.NewFileCommand("/etc/mise/config.toml", "mise.toml", plan.FileOptions{

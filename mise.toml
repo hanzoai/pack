@@ -7,6 +7,9 @@ run = "rm -rf bin"
 [tasks.test]
 run = "go test ./..."
 
+[tasks.test-update-snapshots]
+run = "UPDATE_SNAPS=true go test ./..."
+
 [tasks.check]
 run = """
 go vet ./...

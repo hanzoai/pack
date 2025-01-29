@@ -1,9 +1,6 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"github.com/invopop/jsonschema"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/utils"
@@ -86,14 +83,4 @@ func GetJsonSchema() *jsonschema.Schema {
 
 	schema := r.Reflect(&Config{})
 	return schema
-}
-
-func serializeConfig(config *Config) string {
-	// json serialize the config
-	json, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		fmt.Printf("Error serializing config: %v\n", err)
-	}
-
-	return string(json)
 }

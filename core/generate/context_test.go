@@ -90,17 +90,9 @@ func TestGenerateContext(t *testing.T) {
 	}
 
 	// Build and verify each step
-	var steps []map[string]interface{}
 	for _, builder := range ctx.Steps {
-		step, err := builder.Build(buildOpts)
+		_, err := builder.Build(buildOpts)
 		require.NoError(t, err)
-
-		stepJSON, err := json.Marshal(step)
-		require.NoError(t, err)
-
-		var stepMap map[string]interface{}
-		require.NoError(t, json.Unmarshal(stepJSON, &stepMap))
-		steps = append(steps, stepMap)
 	}
 
 	buildPlan, _, err := ctx.Generate()

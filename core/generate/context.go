@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -200,9 +201,7 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	}
 
 	// Secret config
-	for _, secret := range config.Secrets {
-		c.Secrets = append(c.Secrets, secret)
-	}
+	c.Secrets = append(c.Secrets, config.Secrets...)
 
 	// Start config
 	if config.Start.BaseImage != "" {
@@ -221,6 +220,9 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 }
 
 func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {
+	pkgs = utils.RemoveDuplicates(pkgs)
+	sort.Strings(pkgs)
+
 	return plan.NewExecCommand("sh -c 'apt-get update && apt-get install -y "+strings.Join(pkgs, " ")+"'", plan.ExecOptions{
 		CustomName: "install apt packages: " + strings.Join(pkgs, " "),
 		Caches:     o.Caches.GetAptCaches(),

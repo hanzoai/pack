@@ -52,8 +52,8 @@
       "apt",
       "apt-lists"
      ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y curl ca-certificates'",
-     "customName": "install apt packages: curl ca-certificates"
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl'",
+     "customName": "install apt packages: ca-certificates curl"
     },
     {
      "caches": [
