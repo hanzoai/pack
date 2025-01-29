@@ -126,16 +126,19 @@ func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *Pack
 	packages := ctx.GetMiseStepBuilder()
 
 	// Node
-	node := packages.Default("node", DEFAULT_NODE_VERSION)
+	if packageManager.requiresNode(packageJson) {
+		node := packages.Default("node", DEFAULT_NODE_VERSION)
 
-	if envVersion, varName := ctx.Env.GetConfigVariable("NODE_VERSION"); envVersion != "" {
-		packages.Version(node, envVersion, varName)
+		if envVersion, varName := ctx.Env.GetConfigVariable("NODE_VERSION"); envVersion != "" {
+			packages.Version(node, envVersion, varName)
+		}
+
+		if packageJson.Engines != nil && packageJson.Engines["node"] != "" {
+			packages.Version(node, packageJson.Engines["node"], "package.json > engines > node")
+		}
 	}
 
-	if packageJson.Engines != nil && packageJson.Engines["node"] != "" {
-		packages.Version(node, packageJson.Engines["node"], "package.json > engines > node")
-	}
-
+	// Bun
 	if packageManager == PackageManagerBun {
 		bun := packages.Default("bun", DEFAULT_BUN_VERSION)
 

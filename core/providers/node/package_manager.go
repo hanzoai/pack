@@ -171,3 +171,19 @@ func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext,
 		packages.Default("yarn", "2")
 	}
 }
+
+func (p PackageManager) requiresNode(packageJson *PackageJson) bool {
+	if p != PackageManagerBun || packageJson == nil {
+		return true
+	}
+
+	scripts := packageJson.Scripts
+
+	for _, script := range scripts {
+		if strings.Contains(script, "node") {
+			return true
+		}
+	}
+
+	return false
+}
