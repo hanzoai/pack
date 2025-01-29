@@ -54,7 +54,7 @@ func CreateTestContext(t *testing.T, path string) *GenerateContext {
 }
 
 func TestGenerateContext(t *testing.T) {
-	ctx := CreateTestContext(t, "../../examples/node-npm-latest")
+	ctx := CreateTestContext(t, "../../examples/node-npm")
 	provider := &TestProvider{}
 	require.NoError(t, provider.Plan(ctx))
 
