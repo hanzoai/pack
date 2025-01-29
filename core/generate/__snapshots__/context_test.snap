@@ -85,7 +85,8 @@
     "/usr/local/bin/mise",
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
-   ]
+   ],
+   "useSecrets": false
   },
   {
    "commands": [
@@ -98,7 +99,8 @@
      "customName": "install apt packages: git neofetch"
     }
    ],
-   "name": "packages:apt:test"
+   "name": "packages:apt:test",
+   "useSecrets": false
   },
   {
    "commands": [
@@ -139,7 +141,8 @@
      "customName": "install apt packages: curl"
     }
    ],
-   "name": "packages:apt:config"
+   "name": "packages:apt:config",
+   "useSecrets": false
   }
  ]
 }

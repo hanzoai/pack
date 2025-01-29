@@ -98,6 +98,7 @@ func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackag
 	return c.resolver.ResolvePackages()
 }
 
+// Generate a build plan from the context
 func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.ResolvedPackage, error) {
 	// Resolve all package versions into a fully qualified and valid version
 	resolvedPackages, err := c.ResolvePackages()
@@ -125,16 +126,6 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 	}
 
 	buildPlan.Caches = c.Caches.Caches
-
-	// Get all secrets from the environment
-	// for k := range env.Variables {
-	// 	secretNames = append(secretNames, k)
-	// }
-
-	// Get all secrets from the config
-	// for _, secret := range config.Secrets {
-	// 	secretNames = append(secretNames, secret)
-	// }
 
 	buildPlan.Secrets = utils.RemoveDuplicates(c.Secrets)
 

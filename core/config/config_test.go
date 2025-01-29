@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -71,12 +70,7 @@ func TestMergeConfigSmall(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(config2JSON), &config2))
 	require.NoError(t, json.Unmarshal([]byte(expectedJSON), &expected))
 
-	// fmt.Printf("CONFIG 1 COMMANDS: %+v\n", config1.Steps["install"].Commands)
-	// fmt.Printf("CONFIG 2 COMMANDS: %+v\n", config2.Steps["install"].Commands)
-
 	result := Merge(&config1, &config2)
-
-	fmt.Printf("RESULT COMMANDS: %+v\n", result.Steps["install"].Commands)
 
 	if diff := cmp.Diff(expected, *result); diff != "" {
 		t.Errorf("configs mismatch (-want +got):\n%s", diff)
@@ -236,12 +230,7 @@ func TestMergeConfig(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(config2JSON), &config2))
 	require.NoError(t, json.Unmarshal([]byte(expectedJSON), &expected))
 
-	fmt.Printf("CONFIG 1 COMMANDS: %+v\n", config1.Steps["install"].Commands)
-	fmt.Printf("CONFIG 2 COMMANDS: %+v\n", config2.Steps["install"].Commands)
-
 	result := Merge(&config1, &config2)
-
-	fmt.Printf("RESULT COMMANDS: %+v\n", result.Steps["install"].Commands)
 
 	if diff := cmp.Diff(expected, *result); diff != "" {
 		t.Errorf("configs mismatch (-want +got):\n%s", diff)

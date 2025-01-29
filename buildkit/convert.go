@@ -25,11 +25,6 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 
 	state := getBaseState(platform)
 
-	// Add all variables as environment variables
-	// for name, value := range plan.Variables {
-	// 	state = state.AddEnv(name, value)
-	// }
-
 	cacheStore := NewBuildKitCacheStore(opts.CacheKey)
 
 	graph, err := NewBuildGraph(plan, &state, cacheStore, opts.SecretsHash, &platform)
@@ -124,10 +119,6 @@ func getImageEnv(graphOutput *BuildGraphOutput, plan *p.BuildPlan) []string {
 	for k, v := range graphOutput.EnvVars {
 		imageEnv = append(imageEnv, fmt.Sprintf("%s=%s", k, v))
 	}
-
-	// for k, v := range plan.Start.Env {
-	// 	imageEnv = append(imageEnv, fmt.Sprintf("%s=%s", k, v))
-	// }
 
 	return imageEnv
 }
