@@ -70,20 +70,22 @@ func mergeStruct(dst, src interface{}) {
 
 		case reflect.Ptr:
 			if !srcField.IsNil() {
-				// If it's a pointer to a struct, we need to merge the structs
-				if srcField.Elem().Kind() == reflect.Struct {
+				// Handle different types of pointers
+				switch srcField.Elem().Kind() {
+				case reflect.Struct:
+					// For pointers to structs, merge recursively
 					if dstField.IsNil() {
-						// If destination is nil, create a new struct
 						dstField.Set(reflect.New(srcField.Elem().Type()))
 					}
-
-					// Recursively merge the struct contents
 					mergeStruct(dstField.Interface(), srcField.Interface())
-				} else {
-					// For non-struct pointers (like *[]Command), only set if source points to non-nil value
+				case reflect.Slice:
+					// For pointers to slices, only set if source points to non-nil value
 					if dstField.IsNil() || !srcField.Elem().IsNil() {
 						dstField.Set(srcField)
 					}
+				default:
+					// For primitive type pointers (*bool, *string, etc.), just set the value
+					dstField.Set(srcField)
 				}
 			}
 
