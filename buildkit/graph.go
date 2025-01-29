@@ -16,7 +16,7 @@ type BuildGraph struct {
 	Nodes       map[string]*Node
 	BaseState   *llb.State
 	CacheStore  *BuildKitCacheStore
-	SecretStore *BuildKitSecretStore
+	SecretsHash string
 	Plan        *plan.BuildPlan
 	Platform    *specs.Platform
 }
@@ -27,12 +27,12 @@ type BuildGraphOutput struct {
 	EnvVars  map[string]string
 }
 
-func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *BuildKitCacheStore, secretStore *BuildKitSecretStore, platform *specs.Platform) (*BuildGraph, error) {
+func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
 	graph := &BuildGraph{
 		Nodes:       make(map[string]*Node),
 		BaseState:   baseState,
 		CacheStore:  cacheStore,
-		SecretStore: secretStore,
+		SecretsHash: secretsHash,
 		Plan:        plan,
 		Platform:    platform,
 	}
@@ -319,6 +319,13 @@ func (g *BuildGraph) convertCommandToLLB(node *Node, cmd plan.Command, state llb
 			for _, secret := range g.Plan.Secrets {
 				opts = append(opts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
 			}
+
+			// If there is a secrets hash, add a mount to invalidate the cache if the secrets hash changes
+			if g.SecretsHash != "" {
+				fmt.Println("Adding secret cache mount", g.SecretsHash)
+				opts = append(opts, llb.AddMount("/cache-invalidate",
+					llb.Scratch().File(llb.Mkfile("secrets-hash", 0644, []byte(g.SecretsHash)))))
+			}
 		}
 
 		if len(cmd.Caches) > 0 {
@@ -536,6 +543,8 @@ func (g *BuildGraph) getCacheMountOptions(cacheKeys []string) ([]llb.RunOption, 
 			opts = append(opts,
 				llb.AddMount(planCache.Directory, *cache.cacheState, llb.AsPersistentCacheDir(cache.cacheKey, cacheType)),
 			)
+
+			return opts, nil
 		} else {
 			return nil, fmt.Errorf("cache with key %q not found", cacheKey)
 		}

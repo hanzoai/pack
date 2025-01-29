@@ -24,6 +24,10 @@ const (
 
 	// The default filename for the serialized Railpack plan
 	defaultRailpackPlan = "railpack-plan.json"
+
+	secretsHash = "secrets-hash"
+
+	cacheKey = "cache-key"
 )
 
 func StartFrontend() {
@@ -37,7 +41,11 @@ func StartFrontend() {
 }
 
 func Build(ctx context.Context, c client.Client) (*client.Result, error) {
-	buildPlatform, err := validatePlatform(c.BuildOpts().Opts)
+	opts := c.BuildOpts().Opts
+	cacheKey := opts[cacheKey]
+	secretsHash := opts[secretsHash]
+
+	buildPlatform, err := validatePlatform(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +55,15 @@ func Build(ctx context.Context, c client.Client) (*client.Result, error) {
 		return nil, err
 	}
 
+	_, err = json.MarshalIndent(plan, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling plan: %w", err)
+	}
+
 	llbState, image, err := ConvertPlanToLLB(plan, ConvertPlanOptions{
 		BuildPlatform: buildPlatform,
+		SecretsHash:   secretsHash,
+		CacheKey:      cacheKey,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error converting plan to LLB: %w", err)

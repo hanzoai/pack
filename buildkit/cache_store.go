@@ -28,7 +28,7 @@ func NewBuildKitCacheStore(uniqueID string) *BuildKitCacheStore {
 
 func (c *BuildKitCacheStore) GetCache(key string, planCache *plan.Cache) BuildKitCache {
 	cacheKey := key
-	if cacheKey == "" {
+	if c.uniqueID != "" {
 		cacheKey = fmt.Sprintf("%s-%s", c.uniqueID, key)
 	}
 

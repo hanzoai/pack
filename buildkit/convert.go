@@ -12,7 +12,7 @@ import (
 
 type ConvertPlanOptions struct {
 	BuildPlatform BuildPlatform
-	SecretStore   *BuildKitSecretStore
+	SecretsHash   string
 	CacheKey      string
 }
 
@@ -32,12 +32,7 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 
 	cacheStore := NewBuildKitCacheStore(opts.CacheKey)
 
-	secretStore := opts.SecretStore
-	if secretStore == nil {
-		secretStore = NewBuildKitSecretStore()
-	}
-
-	graph, err := NewBuildGraph(plan, &state, cacheStore, secretStore, &platform)
+	graph, err := NewBuildGraph(plan, &state, cacheStore, opts.SecretsHash, &platform)
 	if err != nil {
 		return nil, nil, err
 	}

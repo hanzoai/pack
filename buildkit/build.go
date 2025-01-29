@@ -28,8 +28,8 @@ type BuildWithBuildkitClientOptions struct {
 	DumpLLB      bool
 	OutputDir    string
 	ProgressMode string
-
-	SecretStore *BuildKitSecretStore
+	SecretsHash  string
+	Secrets      map[string]string
 }
 
 func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWithBuildkitClientOptions) error {
@@ -62,14 +62,9 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 
 	buildPlatform := determineBuildPlatformFromHost()
 
-	secretStore := opts.SecretStore
-	if secretStore == nil {
-		secretStore = NewBuildKitSecretStore()
-	}
-
 	llbState, image, err := ConvertPlanToLLB(plan, ConvertPlanOptions{
 		BuildPlatform: buildPlatform,
-		SecretStore:   secretStore,
+		SecretsHash:   opts.SecretsHash,
 	})
 	if err != nil {
 		return fmt.Errorf("error converting plan to LLB: %w", err)
@@ -152,9 +147,11 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 
 	log.Debugf("Building image for %s with BuildKit %s", buildPlatform.String(), info.BuildkitVersion.Version)
 
-	secrets := secretsprovider.FromMap(secretStore.GetAllSecrets())
-
-	log.Debugf("Secrets: %v", secretStore.GetAllSecrets())
+	secretsMap := make(map[string][]byte)
+	for k, v := range opts.Secrets {
+		secretsMap[k] = []byte(v)
+	}
+	secrets := secretsprovider.FromMap(secretsMap)
 
 	solveOpts := client.SolveOpt{
 		LocalMounts: map[string]fsutil.FS{

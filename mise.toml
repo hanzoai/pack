@@ -27,6 +27,9 @@ echo 'FROM alpine:latest
 RUN echo "Hello"' | docker buildx build -f - .
 """
 
+[tasks.run-with-frontend]
+run = "bun scripts/run-with-frontend.ts"
+
 [tasks.build-and-push-frontend]
 run = """
 docker build -t railpack-frontend:latest \
