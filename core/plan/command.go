@@ -70,11 +70,7 @@ func NewExecCommand(cmd string, options ...ExecOptions) Command {
 }
 
 func NewExecShellCommand(cmd string, options ...ExecOptions) Command {
-	exec := ExecCommand{Cmd: "sh -c '" + cmd + "'"}
-	if len(options) > 0 {
-		exec.CustomName = options[0].CustomName
-		exec.Caches = options[0].Caches
-	}
+	exec := NewExecCommand("sh -c '"+cmd+"'", options...)
 	return exec
 }
 
