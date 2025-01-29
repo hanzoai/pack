@@ -13,11 +13,12 @@ import (
 )
 
 type BuildGraph struct {
-	Nodes      map[string]*Node
-	BaseState  *llb.State
-	CacheStore *BuildKitCacheStore
-	Plan       *plan.BuildPlan
-	Platform   *specs.Platform
+	Nodes       map[string]*Node
+	BaseState   *llb.State
+	CacheStore  *BuildKitCacheStore
+	SecretsHash string
+	Plan        *plan.BuildPlan
+	Platform    *specs.Platform
 }
 
 type BuildGraphOutput struct {
@@ -26,13 +27,14 @@ type BuildGraphOutput struct {
 	EnvVars  map[string]string
 }
 
-func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *BuildKitCacheStore, platform *specs.Platform) (*BuildGraph, error) {
+func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
 	graph := &BuildGraph{
-		Nodes:      make(map[string]*Node),
-		BaseState:  baseState,
-		CacheStore: cacheStore,
-		Plan:       plan,
-		Platform:   platform,
+		Nodes:       make(map[string]*Node),
+		BaseState:   baseState,
+		CacheStore:  cacheStore,
+		SecretsHash: secretsHash,
+		Plan:        plan,
+		Platform:    platform,
 	}
 
 	// Create a node for each step
@@ -268,18 +270,20 @@ func (g *BuildGraph) convertStepToLLB(node *Node, baseState *llb.State) (*llb.St
 	}
 
 	// Process the step commands
-	for _, cmd := range step.Commands {
-		var err error
-		state, err = g.convertCommandToLLB(node, cmd, state, step)
-		if err != nil {
-			return nil, err
+	if step.Commands != nil {
+		for _, cmd := range *step.Commands {
+			var err error
+			state, err = g.convertCommandToLLB(node, cmd, state, step)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
-	if len(step.Outputs) > 0 {
+	if step.Outputs != nil {
 		result := llb.Scratch()
 
-		for _, output := range step.Outputs {
+		for _, output := range *step.Outputs {
 			result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
 				CreateDestPath:      true,
 				AllowWildcard:       true,
@@ -309,6 +313,18 @@ func (g *BuildGraph) convertCommandToLLB(node *Node, cmd plan.Command, state llb
 		opts := []llb.RunOption{llb.Shlex(cmd.Cmd)}
 		if cmd.CustomName != "" {
 			opts = append(opts, llb.WithCustomName(cmd.CustomName))
+		}
+
+		if node.Step.UseSecrets == nil || *node.Step.UseSecrets { // default to using secrets
+			for _, secret := range g.Plan.Secrets {
+				opts = append(opts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
+			}
+
+			// If there is a secrets hash, add a mount to invalidate the cache if the secrets hash changes
+			if g.SecretsHash != "" {
+				opts = append(opts, llb.AddMount("/cache-invalidate",
+					llb.Scratch().File(llb.Mkfile("secrets-hash", 0644, []byte(g.SecretsHash)))))
+			}
 		}
 
 		if len(cmd.Caches) > 0 {
@@ -526,6 +542,8 @@ func (g *BuildGraph) getCacheMountOptions(cacheKeys []string) ([]llb.RunOption, 
 			opts = append(opts,
 				llb.AddMount(planCache.Directory, *cache.cacheState, llb.AsPersistentCacheDir(cache.cacheKey, cacheType)),
 			)
+
+			return opts, nil
 		} else {
 			return nil, fmt.Errorf("cache with key %q not found", cacheKey)
 		}

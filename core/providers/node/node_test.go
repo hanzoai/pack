@@ -15,7 +15,7 @@ func TestDetect(t *testing.T) {
 	}{
 		{
 			name: "npm",
-			path: "../../../examples/node-npm-latest",
+			path: "../../../examples/node-npm",
 			want: true,
 		},
 		{
@@ -54,7 +54,7 @@ func TestPackageManager(t *testing.T) {
 	}{
 		{
 			name:           "npm project",
-			path:           "../../../examples/node-npm-latest",
+			path:           "../../../examples/node-npm",
 			packageManager: PackageManagerNpm,
 		},
 		{

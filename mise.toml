@@ -7,6 +7,9 @@ run = "rm -rf bin"
 [tasks.test]
 run = "go test ./..."
 
+[tasks.test-update-snapshots]
+run = "UPDATE_SNAPS=true go test ./..."
+
 [tasks.check]
 run = """
 go vet ./...
@@ -23,6 +26,9 @@ run = """
 echo 'FROM alpine:latest
 RUN echo "Hello"' | docker buildx build -f - .
 """
+
+[tasks.run-with-frontend]
+run = "bun scripts/run-with-frontend.ts"
 
 [tasks.build-and-push-frontend]
 run = """

@@ -12,7 +12,6 @@ import (
 	"github.com/railwayapp/railpack/core/providers"
 	"github.com/railwayapp/railpack/core/providers/procfile"
 	"github.com/railwayapp/railpack/core/resolver"
-	"github.com/railwayapp/railpack/core/utils"
 )
 
 const (
@@ -78,38 +77,10 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 		return nil, fmt.Errorf("failed to apply config: %w", err)
 	}
 
-	// Resolve all package versions into a fully qualified and valid version
-	resolvedPackages, err := ctx.ResolvePackages()
+	buildPlan, resolvedPackages, err := ctx.Generate()
 	if err != nil {
-		return nil, fmt.Errorf("failed to resolve packages: %w", err)
+		return nil, fmt.Errorf("failed to generate build plan: %w", err)
 	}
-
-	// Generate the plan based on the context and resolved packages
-
-	buildPlan := plan.NewBuildPlan()
-
-	buildStepOptions := &generate.BuildStepOptions{
-		ResolvedPackages: resolvedPackages,
-		Caches:           ctx.Caches,
-	}
-
-	buildPlan.Variables = ctx.Variables
-	for _, stepBuilder := range ctx.Steps {
-		step, err := stepBuilder.Build(buildStepOptions)
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to build step: %w", err)
-		}
-
-		buildPlan.AddStep(*step)
-	}
-
-	buildPlan.Caches = ctx.Caches.Caches
-
-	buildPlan.Start.BaseImage = ctx.Start.BaseImage
-	buildPlan.Start.Command = ctx.Start.Command
-	buildPlan.Start.Paths = utils.RemoveDuplicates(ctx.Start.Paths)
-	buildPlan.Start.Env = ctx.Start.Env
 
 	buildResult := &BuildResult{
 		Plan:             buildPlan,
@@ -165,13 +136,13 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 
 	if installCmdVar, _ := env.GetConfigVariable("INSTALL_CMD"); installCmdVar != "" {
 		installStep := config.GetOrCreateStep("install")
-		installStep.Commands = []plan.Command{plan.NewExecCommand(installCmdVar)}
+		installStep.Commands = &[]plan.Command{plan.NewExecCommand(installCmdVar)}
 		installStep.DependsOn = append(installStep.DependsOn, "packages")
 	}
 
 	if buildCmdVar, _ := env.GetConfigVariable("BUILD_CMD"); buildCmdVar != "" {
 		buildStep := config.GetOrCreateStep("build")
-		buildStep.Commands = []plan.Command{plan.NewExecCommand(buildCmdVar)}
+		buildStep.Commands = &[]plan.Command{plan.NewExecCommand(buildCmdVar)}
 		buildStep.DependsOn = append(buildStep.DependsOn, "install")
 	}
 
@@ -190,6 +161,10 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 		config.AptPackages = strings.Split(envAptPackages, " ")
 	}
 
+	for name := range env.Variables {
+		config.Secrets = append(config.Secrets, name)
+	}
+
 	return config
 }
 
@@ -203,7 +178,7 @@ func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config
 
 	if options.BuildCommand != "" {
 		buildStep := config.GetOrCreateStep("build")
-		buildStep.Commands = []plan.Command{plan.NewExecCommand(options.BuildCommand)}
+		buildStep.Commands = &[]plan.Command{plan.NewExecCommand(options.BuildCommand)}
 		buildStep.DependsOn = append(buildStep.DependsOn, "install")
 	}
 

@@ -1,5 +1,5 @@
 {
-  "name": "node-npm-latest",
+  "name": "node-npm",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {

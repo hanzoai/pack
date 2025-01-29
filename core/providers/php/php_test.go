@@ -25,7 +25,7 @@ func TestDetect(t *testing.T) {
 		},
 		{
 			name: "no php",
-			path: "../../../examples/node-npm-latest",
+			path: "../../../examples/node-npm",
 			want: false,
 		},
 	}

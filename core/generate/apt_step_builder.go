@@ -38,8 +38,10 @@ func (b *AptStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step.DependsOn = utils.RemoveDuplicates(b.DependsOn)
 
 	step.AddCommands([]plan.Command{
-		options.NewAptInstallCommand(utils.RemoveDuplicates(b.Packages)),
+		options.NewAptInstallCommand(b.Packages),
 	})
+
+	step.UseSecrets = &[]bool{false}[0]
 
 	return step, nil
 }

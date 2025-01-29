@@ -9,16 +9,16 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App, error) {
+func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App, *a.Environment, error) {
 	directory := cmd.Args().First()
 
 	if directory == "" {
-		return nil, nil, cli.Exit("directory argument is required", 1)
+		return nil, nil, nil, cli.Exit("directory argument is required", 1)
 	}
 
 	app, err := a.NewApp(directory)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error creating app: %w", err)
+		return nil, nil, nil, fmt.Errorf("error creating app: %w", err)
 	}
 
 	log.Debugf("Building %s", app.Source)
@@ -27,7 +27,7 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 
 	env, err := a.FromEnvs(envsArgs)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error creating env: %w", err)
+		return nil, nil, nil, fmt.Errorf("error creating env: %w", err)
 	}
 
 	generateOptions := &core.GenerateBuildPlanOptions{
@@ -37,8 +37,8 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 
 	buildResult, err := core.GenerateBuildPlan(app, env, generateOptions)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error generating build plan: %w", err)
+		return nil, nil, nil, fmt.Errorf("error generating build plan: %w", err)
 	}
 
-	return buildResult, app, nil
+	return buildResult, app, env, nil
 }

@@ -14,6 +14,8 @@ import (
 	_ "github.com/moby/buildkit/client/connhelper/dockercontainer"
 	_ "github.com/moby/buildkit/client/connhelper/nerdctlcontainer"
 	"github.com/moby/buildkit/client/llb"
+	"github.com/moby/buildkit/session"
+	"github.com/moby/buildkit/session/secrets/secretsprovider"
 	"github.com/moby/buildkit/util/appcontext"
 	_ "github.com/moby/buildkit/util/grpcutil/encoding/proto"
 	"github.com/moby/buildkit/util/progress/progressui"
@@ -26,6 +28,8 @@ type BuildWithBuildkitClientOptions struct {
 	DumpLLB      bool
 	OutputDir    string
 	ProgressMode string
+	SecretsHash  string
+	Secrets      map[string]string
 }
 
 func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWithBuildkitClientOptions) error {
@@ -60,6 +64,7 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 
 	llbState, image, err := ConvertPlanToLLB(plan, ConvertPlanOptions{
 		BuildPlatform: buildPlatform,
+		SecretsHash:   opts.SecretsHash,
 	})
 	if err != nil {
 		return fmt.Errorf("error converting plan to LLB: %w", err)
@@ -142,10 +147,17 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 
 	log.Debugf("Building image for %s with BuildKit %s", buildPlatform.String(), info.BuildkitVersion.Version)
 
+	secretsMap := make(map[string][]byte)
+	for k, v := range opts.Secrets {
+		secretsMap[k] = []byte(v)
+	}
+	secrets := secretsprovider.FromMap(secretsMap)
+
 	solveOpts := client.SolveOpt{
 		LocalMounts: map[string]fsutil.FS{
 			"context": appFS,
 		},
+		Session: []session.Attachable{secrets},
 		Exports: []client.ExportEntry{
 			{
 				Type: client.ExporterDocker,

@@ -14,10 +14,13 @@ type Step struct {
 	DependsOn []string `json:"dependsOn,omitempty" jsonschema:"description=The steps that this step depends on. The step will only run after all the steps in DependsOn have run"`
 
 	// The commands to run in this step
-	Commands []Command `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
+	Commands *[]Command `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
+
+	// Whether the commands executed in this step should have access to secrets
+	UseSecrets *bool `json:"useSecrets,omitempty" jsonschema:"description=Whether the commands executed in this step should have access to secrets"`
 
 	// Paths that this step outputs. Only these paths will be available to the next step
-	Outputs []string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
+	Outputs *[]string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
 
 	// The assets available to this step. The key is the name of the asset that is referenced in a file command
 	Assets map[string]string `json:"assets,omitempty" jsonschema:"description=The assets available to this step. The key is the name of the asset that is referenced in a file command"`
@@ -40,32 +43,16 @@ func (s *Step) DependOn(name string) {
 }
 
 func (s *Step) AddCommands(commands []Command) {
-	s.Commands = append(s.Commands, commands...)
-}
-
-func MergeSteps(steps ...*Step) *Step {
-	if len(steps) == 0 {
-		return nil
+	if s.Commands == nil {
+		s.Commands = &[]Command{}
 	}
-
-	result := &Step{
-		Name:      steps[0].Name,
-		DependsOn: make([]string, 0),
-		Commands:  make([]Command, 0),
-	}
-
-	for _, step := range steps {
-		result.DependsOn = append(result.DependsOn, step.DependsOn...)
-		result.Commands = append(result.Commands, step.Commands...)
-	}
-
-	return result
+	*s.Commands = append(*s.Commands, commands...)
 }
 
 func (s *Step) UnmarshalJSON(data []byte) error {
 	type Alias Step
 	aux := &struct {
-		Commands []json.RawMessage `json:"commands"`
+		Commands *[]json.RawMessage `json:"commands"`
 		*Alias
 	}{
 		Alias: (*Alias)(s),
@@ -75,13 +62,15 @@ func (s *Step) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	s.Commands = make([]Command, len(aux.Commands))
-	for i, rawCmd := range aux.Commands {
-		cmd, err := UnmarshalCommand(rawCmd)
-		if err != nil {
-			return err
+	if aux.Commands != nil {
+		s.Commands = &[]Command{}
+		for _, rawCmd := range *aux.Commands {
+			cmd, err := UnmarshalCommand(rawCmd)
+			if err != nil {
+				return err
+			}
+			*s.Commands = append(*s.Commands, cmd)
 		}
-		s.Commands[i] = cmd
 	}
 
 	return nil

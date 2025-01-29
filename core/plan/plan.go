@@ -1,10 +1,10 @@
 package plan
 
 type BuildPlan struct {
-	Variables map[string]string `json:"variables,omitempty"`
-	Steps     []Step            `json:"steps,omitempty"`
-	Start     Start             `json:"start,omitempty"`
-	Caches    map[string]*Cache `json:"caches,omitempty"`
+	Steps   []Step            `json:"steps,omitempty"`
+	Start   Start             `json:"start,omitempty"`
+	Caches  map[string]*Cache `json:"caches,omitempty"`
+	Secrets []string          `json:"secrets,omitempty"`
 }
 
 type Start struct {
@@ -16,16 +16,14 @@ type Start struct {
 
 	// $PATHs to be prefixed to the container's base $PATH
 	Paths []string `json:"paths,omitempty"`
-
-	// Environment variables to be made available to the container
-	Env map[string]string `json:"env,omitempty"`
 }
 
 func NewBuildPlan() *BuildPlan {
 	return &BuildPlan{
-		Variables: map[string]string{},
-		Steps:     []Step{},
-		Start:     Start{},
+		Steps:   []Step{},
+		Start:   Start{},
+		Caches:  make(map[string]*Cache),
+		Secrets: []string{},
 	}
 }
 

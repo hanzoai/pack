@@ -2,57 +2,82 @@ package plan
 
 import (
 	"encoding/json"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 )
 
-func (p *BuildPlan) Equal(other *BuildPlan) bool {
-	if !reflect.DeepEqual(p.Variables, other.Variables) {
-		return false
-	}
-
-	if !reflect.DeepEqual(p.Steps, other.Steps) {
-		return false
-	}
-
-	return true
-}
-
 func TestSerialization(t *testing.T) {
-	plan := NewBuildPlan()
-	plan.Variables["MISE_DATA_DIR"] = "/mise"
-
-	plan.AddStep(Step{
-		Name: "install",
-		Commands: []Command{
-			NewExecCommand("apt-get update"),
-			NewExecCommand("apt-get install -y curl"),
+	jsonPlan := `{
+		"steps": [
+			{
+				"name": "install",
+				"commands": [
+					{"cmd": "apt-get update"},
+					{"cmd": "apt-get install -y curl"}
+				],
+				"startingImage": "ubuntu:22.04"
+			},
+			{
+				"name": "deps",
+				"dependsOn": ["install"],
+				"commands": [
+					{"path": "/root/.npm", "name": ".npmrc"},
+					{"cmd": "npm ci"},
+					{"cmd": "npm run build"}
+				],
+				"useSecrets": true,
+				"outputs": [
+					"dist",
+					"node_modules/.cache"
+				],
+				"assets": {
+					"npmrc": "registry=https://registry.npmjs.org/\n//registry.npmjs.org/:_authToken=${NPM_TOKEN}\nalways-auth=true"
+				}
+			},
+			{
+				"name": "build",
+				"dependsOn": ["deps"],
+				"commands": [
+					{"src": ".", "dest": "."},
+					{"cmd": "npm run test"},
+					{"path": "/usr/local/bin"},
+					{"name": "NODE_ENV", "value": "production"}
+				],
+				"useSecrets": false
+			}
+		],
+		"start": {
+			"baseImage": "node:18-slim",
+			"cmd": "npm start",
+			"paths": ["/usr/local/bin", "/app/node_modules/.bin"]
 		},
-	})
-
-	plan.AddStep(Step{
-		Name:      "build",
-		DependsOn: []string{"install"},
-		Commands: []Command{
-			NewCopyCommand(".", "."),
-			NewExecCommand("bun i --no-save"),
-			NewPathCommand("/mise/shims"),
-			NewVariableCommand("MISE_DATA_DIR", "/mise"),
+		"caches": {
+			"npm": {
+				"directory": "/root/.npm",
+				"type": "shared"
+			},
+			"build-cache": {
+				"directory": "node_modules/.cache",
+				"type": "locked"
+			}
 		},
-	})
+		"secrets": ["NPM_TOKEN", "GITHUB_TOKEN"]
+	}`
 
-	serialized, err := json.MarshalIndent(plan, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
+	var plan1 BuildPlan
+	err := json.Unmarshal([]byte(jsonPlan), &plan1)
+	require.NoError(t, err)
 
-	plan2 := BuildPlan{}
+	serialized, err := json.MarshalIndent(&plan1, "", "  ")
+	require.NoError(t, err)
+
+	var plan2 BuildPlan
 	err = json.Unmarshal(serialized, &plan2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	if !plan.Equal(&plan2) {
-		t.Fatal("plans are not equal")
+	if diff := cmp.Diff(plan1, plan2); diff != "" {
+		t.Errorf("plans mismatch (-want +got):\n%s", diff)
 	}
 }

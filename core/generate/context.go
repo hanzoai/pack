@@ -1,6 +1,8 @@
 package generate
 
 import (
+	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -9,6 +11,7 @@ import (
 	"github.com/railwayapp/railpack/core/mise"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/resolver"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
 type BuildStepOptions struct {
@@ -28,8 +31,8 @@ type GenerateContext struct {
 	Steps []StepBuilder
 	Start StartContext
 
-	Caches    *CacheContext
-	Variables map[string]string
+	Caches  *CacheContext
+	Secrets []string
 
 	SubContexts []string
 
@@ -46,14 +49,14 @@ func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error
 	}
 
 	return &GenerateContext{
-		App:       app,
-		Env:       env,
-		Variables: map[string]string{},
-		Steps:     make([]StepBuilder, 0),
-		Start:     *NewStartContext(),
-		Caches:    NewCacheContext(),
-		Metadata:  NewMetadata(),
-		resolver:  resolver,
+		App:      app,
+		Env:      env,
+		Steps:    make([]StepBuilder, 0),
+		Start:    *NewStartContext(),
+		Caches:   NewCacheContext(),
+		Secrets:  []string{},
+		Metadata: NewMetadata(),
+		resolver: resolver,
 	}, nil
 }
 
@@ -95,6 +98,44 @@ func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackag
 	return c.resolver.ResolvePackages()
 }
 
+// Generate a build plan from the context
+func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.ResolvedPackage, error) {
+	// Resolve all package versions into a fully qualified and valid version
+	resolvedPackages, err := c.ResolvePackages()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to resolve packages: %w", err)
+	}
+
+	// Generate the plan based on the context and resolved packages
+
+	buildPlan := plan.NewBuildPlan()
+
+	buildStepOptions := &BuildStepOptions{
+		ResolvedPackages: resolvedPackages,
+		Caches:           c.Caches,
+	}
+
+	for _, stepBuilder := range c.Steps {
+		step, err := stepBuilder.Build(buildStepOptions)
+
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to build step: %w", err)
+		}
+
+		buildPlan.AddStep(*step)
+	}
+
+	buildPlan.Caches = c.Caches.Caches
+
+	buildPlan.Secrets = utils.RemoveDuplicates(c.Secrets)
+
+	buildPlan.Start.BaseImage = c.Start.BaseImage
+	buildPlan.Start.Command = c.Start.Command
+	buildPlan.Start.Paths = utils.RemoveDuplicates(c.Start.Paths)
+
+	return buildPlan, resolvedPackages, nil
+}
+
 func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	// Mise package config
 	miseStep := c.GetMiseStepBuilder()
@@ -132,21 +173,26 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 		if len(configStep.DependsOn) > 0 {
 			commandStepBuilder.DependsOn = configStep.DependsOn
 		}
-		if len(configStep.Commands) > 0 {
-			commandStepBuilder.Commands = configStep.Commands
+		if configStep.Commands != nil {
+			commandStepBuilder.AddCommands(*configStep.Commands)
 		}
-		if len(configStep.Outputs) > 0 {
+		if configStep.Outputs != nil {
 			commandStepBuilder.Outputs = configStep.Outputs
 		}
 		for k, v := range configStep.Assets {
 			commandStepBuilder.Assets[k] = v
 		}
+
+		commandStepBuilder.UseSecrets = configStep.UseSecrets
 	}
 
 	// Cache config
 	for name, cache := range config.Caches {
 		c.Caches.SetCache(name, cache)
 	}
+
+	// Secret config
+	c.Secrets = append(c.Secrets, config.Secrets...)
 
 	// Start config
 	if config.Start.BaseImage != "" {
@@ -161,19 +207,13 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 		c.Start.Paths = append(c.Start.Paths, config.Start.Paths...)
 	}
 
-	if len(config.Start.Env) > 0 {
-		if c.Start.Env == nil {
-			c.Start.Env = make(map[string]string)
-		}
-		for k, v := range config.Start.Env {
-			c.Start.Env[k] = v
-		}
-	}
-
 	return nil
 }
 
 func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {
+	pkgs = utils.RemoveDuplicates(pkgs)
+	sort.Strings(pkgs)
+
 	return plan.NewExecCommand("sh -c 'apt-get update && apt-get install -y "+strings.Join(pkgs, " ")+"'", plan.ExecOptions{
 		CustomName: "install apt packages: " + strings.Join(pkgs, " "),
 		Caches:     o.Caches.GetAptCaches(),

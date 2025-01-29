@@ -1,0 +1,149 @@
+
+[TestGenerateContext - 1]
+{
+ "caches": {
+  "apt": {
+   "directory": "/var/cache/apt",
+   "type": "locked"
+  },
+  "apt-lists": {
+   "directory": "/var/lib/apt/lists",
+   "type": "locked"
+  },
+  "mise": {
+   "directory": "/mise/cache",
+   "type": "shared"
+  }
+ },
+ "secrets": [
+  "RAILWAY_SECRET_1",
+  "RAILWAY_SECRET_2"
+ ],
+ "start": {
+  "cmd": "npm run start"
+ },
+ "steps": [
+  {
+   "assets": {
+    "mise.toml": "[tools]\n  [tools.node]\n    version = \"20.18.2\"\n  [tools.python]\n    version = \"3.11.11\"\n"
+   },
+   "commands": [
+    {
+     "name": "MISE_DATA_DIR",
+     "value": "/mise"
+    },
+    {
+     "name": "MISE_CONFIG_DIR",
+     "value": "/mise"
+    },
+    {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
+     "name": "MISE_CACHE_DIR",
+     "value": "/mise/cache"
+    },
+    {
+     "path": "/mise/shims"
+    },
+    {
+     "caches": [
+      "apt",
+      "apt-lists"
+     ],
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl'",
+     "customName": "install apt packages: ca-certificates curl"
+    },
+    {
+     "caches": [
+      "mise"
+     ],
+     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
+     "customName": "install mise"
+    },
+    {
+     "customName": "create mise config",
+     "name": "mise.toml",
+     "path": "/etc/mise/config.toml"
+    },
+    {
+     "caches": [
+      "mise"
+     ],
+     "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
+     "customName": "install mise packages: node, python"
+    }
+   ],
+   "dependsOn": [
+    "packages:apt:config"
+   ],
+   "name": "packages:mise",
+   "outputs": [
+    "/mise/shims",
+    "/mise/installs",
+    "/usr/local/bin/mise",
+    "/etc/mise/config.toml",
+    "/root/.local/state/mise"
+   ],
+   "useSecrets": false
+  },
+  {
+   "commands": [
+    {
+     "caches": [
+      "apt",
+      "apt-lists"
+     ],
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y git neofetch'",
+     "customName": "install apt packages: git neofetch"
+    }
+   ],
+   "name": "packages:apt:test",
+   "useSecrets": false
+  },
+  {
+   "commands": [
+    {
+     "cmd": "npm install"
+    }
+   ],
+   "dependsOn": [
+    "packages:apt:test"
+   ],
+   "name": "install",
+   "outputs": [
+    "node_modules"
+   ]
+  },
+  {
+   "commands": [
+    {
+     "cmd": "npm run build"
+    },
+    {
+     "cmd": "echo building"
+    }
+   ],
+   "dependsOn": [
+    "install"
+   ],
+   "name": "build"
+  },
+  {
+   "commands": [
+    {
+     "caches": [
+      "apt",
+      "apt-lists"
+     ],
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y curl'",
+     "customName": "install apt packages: curl"
+    }
+   ],
+   "name": "packages:apt:config",
+   "useSecrets": false
+  }
+ ]
+}
+---
