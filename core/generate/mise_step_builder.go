@@ -148,6 +148,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 
 	step.Assets = b.Assets
 	step.Outputs = b.Outputs
+	step.UseSecrets = &[]bool{false}[0]
 
 	return step, nil
 }

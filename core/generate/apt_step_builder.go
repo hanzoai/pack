@@ -41,5 +41,7 @@ func (b *AptStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		options.NewAptInstallCommand(b.Packages),
 	})
 
+	step.UseSecrets = &[]bool{false}[0]
+
 	return step, nil
 }

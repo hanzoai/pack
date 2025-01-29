@@ -10,6 +10,7 @@ REQUIRED_SECRETS=(
   "MY_SECRET"
   "MY_OTHER_SECRET"
   "HELLO_WORLD"
+  "NOT_SECRET"
 )
 
 missing_secrets=()
