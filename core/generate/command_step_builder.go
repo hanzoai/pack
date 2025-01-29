@@ -45,6 +45,22 @@ func (b *CommandStepBuilder) AddCommands(commands []plan.Command) {
 	*b.Commands = append(*b.Commands, commands...)
 }
 
+func (b *CommandStepBuilder) AddEnvVars(envVars map[string]string) {
+	commands := []plan.Command{}
+	for k, v := range envVars {
+		commands = append(commands, plan.NewVariableCommand(k, v))
+	}
+	b.AddCommands(commands)
+}
+
+func (b *CommandStepBuilder) AddPaths(paths []string) {
+	commands := []plan.Command{}
+	for _, path := range paths {
+		commands = append(commands, plan.NewPathCommand(path))
+	}
+	b.AddCommands(commands)
+}
+
 func (b *CommandStepBuilder) Name() string {
 	return b.DisplayName
 }

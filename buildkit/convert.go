@@ -38,7 +38,7 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 	}
 
 	state = *graphOutput.State
-	imageEnv := getImageEnv(graphOutput)
+	imageEnv := getImageEnv(graphOutput, plan)
 
 	state = getStartState(state, plan, platform)
 
@@ -104,8 +104,11 @@ func getStartState(buildState llb.State, plan *p.BuildPlan, platform specs.Platf
 	return startState
 }
 
-func getImageEnv(graphOutput *BuildGraphOutput) []string {
-	pathString := strings.Join(graphOutput.PathList, ":")
+func getImageEnv(graphOutput *BuildGraphOutput, plan *p.BuildPlan) []string {
+	paths := graphOutput.GraphEnv.PathList
+	paths = append(paths, plan.Start.Paths...)
+
+	pathString := strings.Join(paths, ":")
 
 	var pathEnv string
 	if pathString == "" {
@@ -114,13 +117,23 @@ func getImageEnv(graphOutput *BuildGraphOutput) []string {
 		pathEnv = "PATH=" + pathString + ":" + system.DefaultPathEnvUnix
 	}
 
-	imageEnv := []string{pathEnv}
+	envMap := make(map[string]string)
+	envMap["PATH"] = pathEnv
 
-	for k, v := range graphOutput.EnvVars {
-		imageEnv = append(imageEnv, fmt.Sprintf("%s=%s", k, v))
+	for k, v := range graphOutput.GraphEnv.EnvVars {
+		envMap[k] = v
 	}
 
-	return imageEnv
+	for k, v := range plan.Start.Variables {
+		envMap[k] = v
+	}
+
+	envVars := make([]string, 0, len(envMap))
+	for k, v := range envMap {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return envVars
 }
 
 func getBaseState(plan *p.BuildPlan, platform specs.Platform) llb.State {

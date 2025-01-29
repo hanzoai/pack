@@ -49,7 +49,7 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 }
 
 func (p *PythonProvider) start(ctx *generate.GenerateContext) error {
-	ctx.Start.Paths = append(ctx.Start.Paths, ".")
+	ctx.Start.AddOutputs([]string{"."})
 
 	var startCommand string
 
@@ -65,10 +65,6 @@ func (p *PythonProvider) start(ctx *generate.GenerateContext) error {
 }
 
 func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
-	install := ctx.NewCommandStep("install")
-	install.AddCommands([]plan.Command{
-		plan.NewPathCommand("/root/.local/bin"),
-	})
 
 	hasRequirements := p.hasRequirements(ctx)
 	hasPyproject := p.hasPyproject(ctx)
@@ -77,18 +73,15 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 	hasPdm := p.hasPdm(ctx)
 	hasUv := p.hasUv(ctx)
 
-	install.AddCommands([]plan.Command{
-		plan.NewVariableCommand("PYTHONFAULTHANDLER", "1"),
-		plan.NewVariableCommand("PYTHONUNBUFFERED", "1"),
-		plan.NewVariableCommand("PYTHONHASHSEED", "random"),
-		plan.NewVariableCommand("PYTHONDONTWRITEBYTECODE", "1"),
-		plan.NewVariableCommand("PIP_DISABLE_PIP_VERSION_CHECK", "1"),
-		plan.NewVariableCommand("PIP_DEFAULT_TIMEOUT", "100"),
-	})
+	setup := ctx.NewCommandStep("setup")
+	setup.AddEnvVars(p.GetPythonEnvVars(ctx))
+	setup.AddPaths([]string{"/root/.local/bin"})
+
+	install := ctx.NewCommandStep("install")
+	install.DependsOn = append(install.DependsOn, setup.DisplayName)
 
 	if hasRequirements {
 		install.AddCommands([]plan.Command{
-			plan.NewVariableCommand("PIP_CACHE_DIR", PIP_CACHE_DIR),
 			plan.NewCopyCommand("requirements.txt"),
 			plan.NewExecCommand("pip install -r requirements.txt", plan.ExecOptions{
 				Caches: []string{ctx.Caches.AddCache("pip", PIP_CACHE_DIR)},
@@ -183,6 +176,18 @@ func (p *PythonProvider) packages(ctx *generate.GenerateContext) error {
 	}
 
 	return nil
+}
+
+func (p *PythonProvider) GetPythonEnvVars(ctx *generate.GenerateContext) map[string]string {
+	return map[string]string{
+		"PYTHONFAULTHANDLER":            "1",
+		"PYTHONUNBUFFERED":              "1",
+		"PYTHONHASHSEED":                "random",
+		"PYTHONDONTWRITEBYTECODE":       "1",
+		"PIP_DISABLE_PIP_VERSION_CHECK": "1",
+		"PIP_DEFAULT_TIMEOUT":           "100",
+		"PIP_CACHE_DIR":                 PIP_CACHE_DIR,
+	}
 }
 
 func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {

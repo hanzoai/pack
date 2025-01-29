@@ -106,7 +106,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	nginxSetup.Assets["php-fpm.conf"] = configFiles.PhpFpmConf
 
 	ctx.Start.Command = "bash /start-nginx.sh"
-	ctx.Start.Paths = []string{"."}
+	ctx.Start.AddOutputs([]string{"."})
 
 	return nil
 }

@@ -13,27 +13,17 @@ type Node struct {
 	Processed  bool
 	InProgress bool
 
-	InputPathList []string
-	InputEnvVars  map[string]string
-
-	OutputPathList []string
-	OutputEnvVars  map[string]string
+	InputEnv  GraphEnvironment
+	OutputEnv GraphEnvironment
 }
 
 func (node *Node) getPathList() []string {
 	pathList := make([]string, 0)
-	pathList = append(pathList, node.InputPathList...)
-	pathList = append(pathList, node.OutputPathList...)
+	pathList = append(pathList, node.InputEnv.PathList...)
+	pathList = append(pathList, node.OutputEnv.PathList...)
 	return pathList
 }
 
 func (node *Node) appendPath(path string) {
-	// Check if path already exists in input or output paths
-	for _, existingPath := range node.OutputPathList {
-		if existingPath == path {
-			return
-		}
-	}
-
-	node.OutputPathList = append(node.OutputPathList, path)
+	node.OutputEnv.AddPath(path)
 }

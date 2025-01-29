@@ -63,7 +63,8 @@ func (p *NodeProvider) start(ctx *generate.GenerateContext, packageJson *Package
 		ctx.Start.Command = packageManager.RunScriptCommand(files[0])
 	}
 
-	ctx.Start.Paths = append(ctx.Start.Paths, ".")
+	ctx.Start.AddOutputs([]string{"."})
+	ctx.Start.AddEnvVars(p.GetNodeEnvVars(ctx))
 
 	return nil
 }
@@ -90,8 +91,13 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.Co
 func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder, packageJson *PackageJson) (*generate.CommandStepBuilder, error) {
 	lenDeps := len(packageJson.Dependencies) + len(packageJson.DevDependencies)
 
+	setup, err := p.Setup(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	if lenDeps == 0 {
-		return nil, nil
+		return setup, nil
 	}
 
 	var corepackStepName string
@@ -109,14 +115,23 @@ func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate
 	pkgManager := p.getPackageManager(ctx.App)
 
 	install := ctx.NewCommandStep("install")
-	install.DependsOn = []string{packages.DisplayName}
+	install.DependsOn = append(install.DependsOn, []string{packages.DisplayName, setup.DisplayName}...)
+
 	pkgManager.installDependencies(ctx, packageJson, install)
 
 	if corepackStepName != "" {
-		install.DependsOn = []string{corepackStepName}
+		install.DependsOn = append(install.DependsOn, corepackStepName)
 	}
 
 	return install, nil
+}
+
+func (p *NodeProvider) Setup(ctx *generate.GenerateContext) (*generate.CommandStepBuilder, error) {
+	setup := ctx.NewCommandStep("setup")
+	setup.AddEnvVars(p.GetNodeEnvVars(ctx))
+	setup.AddPaths([]string{"/app/node_modules/.bin"})
+
+	return setup, nil
 }
 
 func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *PackageJson) (*generate.MiseStepBuilder, error) {
@@ -150,6 +165,17 @@ func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *Pack
 	packageManager.GetPackageManagerPackages(ctx, packages)
 
 	return packages, nil
+}
+
+func (p *NodeProvider) GetNodeEnvVars(ctx *generate.GenerateContext) map[string]string {
+	envVars := map[string]string{
+		"NODE_ENV":              "production",
+		"NPM_CONFIG_PRODUCTION": "false",
+		"YARN_PRODUCTION":       "false",
+		"CI":                    "true",
+	}
+
+	return envVars
 }
 
 func (p *NodeProvider) usesCorepack(packageJson *PackageJson) bool {

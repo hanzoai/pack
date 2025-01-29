@@ -1,6 +1,7 @@
 
 [TestGenerateContext - 1]
 {
+ "baseImage": "debian:stable-slim",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -20,7 +21,10 @@
   "RAILWAY_SECRET_2"
  ],
  "start": {
-  "cmd": "npm run start"
+  "cmd": "npm run start",
+  "variables": {
+   "HELLO": "world"
+  }
  },
  "steps": [
   {
@@ -119,10 +123,7 @@
   {
    "commands": [
     {
-     "cmd": "npm run build"
-    },
-    {
-     "cmd": "echo building"
+     "cmd": "sh -c 'echo building'"
     }
    ],
    "dependsOn": [

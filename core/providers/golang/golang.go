@@ -47,7 +47,7 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 		ctx.Start.Command = fmt.Sprintf("./%s", GO_BINARY_NAME)
 
 		if !p.hasCGOEnabled(ctx) {
-			ctx.Start.Paths = []string{GO_BINARY_NAME}
+			ctx.Start.AddOutputs([]string{GO_BINARY_NAME})
 
 			ctx.Start.BaseImage = START_IMAGE
 			if startImage, _ := ctx.Env.GetConfigVariable("START_IMAGE"); startImage != "" {
@@ -56,7 +56,7 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 		}
 
 		if p.isGin(ctx) {
-			ctx.Start.Env["GIN_MODE"] = "release"
+			ctx.Start.AddEnvVars(map[string]string{"GIN_MODE": "release"})
 		}
 	}
 

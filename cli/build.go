@@ -6,16 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/charmbracelet/log"
 	"github.com/railwayapp/railpack/buildkit"
 	"github.com/railwayapp/railpack/core"
 	"github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/urfave/cli/v3"
-)
-
-const (
-	PRINT_PLAN = false
 )
 
 var BuildCommand = &cli.Command{
@@ -55,6 +50,11 @@ var BuildCommand = &cli.Command{
 			Usage: "buildkit progress output mode. Values: auto, plain, tty",
 			Value: "auto",
 		},
+		&cli.BoolFlag{
+			Name:  "show-plan",
+			Usage: "Show the build plan before building. This is useful for development and debugging.",
+			Value: false,
+		},
 	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildResult, app, env, err := GenerateBuildResultForCommand(cmd)
@@ -69,8 +69,8 @@ var BuildCommand = &cli.Command{
 			return cli.Exit(err, 1)
 		}
 
-		if PRINT_PLAN {
-			log.Debug(string(serializedPlan))
+		if cmd.Bool("show-plan") {
+			fmt.Println(string(serializedPlan))
 		}
 
 		err = validateSecrets(buildResult.Plan, env)

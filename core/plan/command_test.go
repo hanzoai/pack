@@ -17,14 +17,14 @@ func TestCommandMarshalUnmarshal(t *testing.T) {
 		// Exec
 		{
 			name:            "exec command without custom name",
-			command:         NewExecCommand("echo hello"),
-			expectedJSON:    `{"cmd":"echo hello"}`,
+			command:         NewExecShellCommand("echo hello"),
+			expectedJSON:    `{"cmd":"sh -c 'echo hello'"}`,
 			unmarshalString: "echo hello",
 		},
 		{
 			name:            "exec command with custom name",
-			command:         NewExecCommand("echo hello", ExecOptions{CustomName: "Say Hello"}),
-			expectedJSON:    `{"cmd":"echo hello","customName":"Say Hello"}`,
+			command:         NewExecShellCommand("echo hello", ExecOptions{CustomName: "Say Hello"}),
+			expectedJSON:    `{"cmd":"sh -c 'echo hello'","customName":"Say Hello"}`,
 			unmarshalString: "RUN#Say Hello:echo hello",
 		},
 		{
@@ -98,6 +98,7 @@ func TestCommandMarshalUnmarshal(t *testing.T) {
 				roundTrip, err = json.Marshal(cmd)
 				require.NoError(t, err, "failed to marshal string-unmarshalled command")
 				require.Equal(t, string(roundTrip), tt.expectedJSON, "string unmarshal to JSON result")
+
 			}
 		})
 	}

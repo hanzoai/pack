@@ -77,11 +77,11 @@ func (p PackageManager) InstallDeps(ctx *generate.GenerateContext, install *gene
 				plan.ExecOptions{Caches: []string{npmCache}}))
 		}
 	case PackageManagerPnpm:
-		install.AddCommand(plan.NewExecCommand("pnpm install --frozen-lockfile", plan.ExecOptions{
+		install.AddCommand(plan.NewExecCommand("pnpm install --frozen-lockfile --prod=false", plan.ExecOptions{
 			Caches: []string{ctx.Caches.AddCache("pnpm-install", "/root/.local/share/pnpm/store/v3")},
 		}))
 	case PackageManagerBun:
-		install.AddCommand(plan.NewExecCommand("bun i --no-save", plan.ExecOptions{
+		install.AddCommand(plan.NewExecCommand("bun install --frozen-lockfile", plan.ExecOptions{
 			Caches: []string{ctx.Caches.AddCache("bun-install", "/root/.bun/install/cache")},
 		}))
 	case PackageManagerYarn1:

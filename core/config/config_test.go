@@ -32,6 +32,12 @@ func TestMergeConfigSmall(t *testing.T) {
 					"echo first"
 				]
 			}
+		},
+		"start": {
+			"variables": {
+				"SHARED": "one",
+				"HELLO": "world"
+			}
 		}
 	}`
 
@@ -43,6 +49,12 @@ func TestMergeConfigSmall(t *testing.T) {
 		},
 		"steps": {
 			"install": {}
+		},
+		"start": {
+			"variables": {
+				"SHARED": "two",
+				"FOO": "bar"
+			}
 		}
 	}`
 
@@ -60,6 +72,13 @@ func TestMergeConfigSmall(t *testing.T) {
 				"commands": [
 					"echo first"
 				]
+			}
+		},
+		"start": {
+			"variables": {
+				"HELLO": "world",
+				"SHARED": "two",
+				"FOO": "bar"
 			}
 		},
 		"caches": {}

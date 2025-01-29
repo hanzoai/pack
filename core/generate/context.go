@@ -138,7 +138,9 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 
 	buildPlan.Start.BaseImage = c.Start.BaseImage
 	buildPlan.Start.Command = c.Start.Command
-	buildPlan.Start.Paths = utils.RemoveDuplicates(c.Start.Paths)
+	buildPlan.Start.Outputs = utils.RemoveDuplicates(c.Start.outputs)
+	buildPlan.Start.Paths = utils.RemoveDuplicates(c.Start.paths)
+	buildPlan.Start.Variables = c.Start.variables
 
 	return buildPlan, resolvedPackages, nil
 }
@@ -180,9 +182,11 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 		if len(configStep.DependsOn) > 0 {
 			commandStepBuilder.DependsOn = configStep.DependsOn
 		}
+
 		if configStep.Commands != nil {
-			commandStepBuilder.AddCommands(*configStep.Commands)
+			commandStepBuilder.Commands = configStep.Commands
 		}
+
 		if configStep.Outputs != nil {
 			commandStepBuilder.Outputs = configStep.Outputs
 		}
@@ -210,8 +214,14 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 		c.Start.Command = config.Start.Command
 	}
 
-	if len(config.Start.Paths) > 0 {
-		c.Start.Paths = append(c.Start.Paths, config.Start.Paths...)
+	if config.Start.Variables != nil {
+		c.Start.AddEnvVars(config.Start.Variables)
+	}
+
+	c.Start.AddPaths(config.Start.Paths)
+
+	if len(config.Start.Outputs) > 0 {
+		c.Start.outputs = config.Start.Outputs
 	}
 
 	return nil

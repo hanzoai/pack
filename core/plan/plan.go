@@ -15,8 +15,14 @@ type Start struct {
 	// The command to run in the container
 	Command string `json:"cmd,omitempty"`
 
+	// Outputs to be copied from the container to the host
+	Outputs []string `json:"outputs,omitempty"`
+
 	// $PATHs to be prefixed to the container's base $PATH
 	Paths []string `json:"paths,omitempty"`
+
+	// Environment variables to set in the container. These are not available at build time.
+	Variables map[string]string `json:"variables,omitempty"`
 }
 
 func NewBuildPlan() *BuildPlan {

@@ -69,6 +69,15 @@ func NewExecCommand(cmd string, options ...ExecOptions) Command {
 	return exec
 }
 
+func NewExecShellCommand(cmd string, options ...ExecOptions) Command {
+	exec := ExecCommand{Cmd: "sh -c '" + cmd + "'"}
+	if len(options) > 0 {
+		exec.CustomName = options[0].CustomName
+		exec.Caches = options[0].Caches
+	}
+	return exec
+}
+
 func NewPathCommand(path string, customName ...string) Command {
 	pathCmd := PathCommand{Path: path}
 	return pathCmd
@@ -160,7 +169,7 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 
 	// If no prefix, treat as exec command
 	if !strings.Contains(str, ":") {
-		return NewExecCommand(strings.Trim(str, "\"")), nil
+		return NewExecShellCommand(strings.Trim(str, "\"")), nil
 	}
 
 	parts := strings.SplitN(str, ":", 2)
@@ -181,7 +190,7 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 
 	switch cmdType {
 	case "RUN":
-		return NewExecCommand(payload, ExecOptions{CustomName: customName}), nil
+		return NewExecShellCommand(payload, ExecOptions{CustomName: customName}), nil
 	case "PATH":
 		return NewPathCommand(payload), nil
 	case "ENV":
@@ -205,5 +214,5 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 	}
 
 	// fallback to exec command type
-	return NewExecCommand(strings.Trim(str, "\""), ExecOptions{CustomName: customName}), nil
+	return NewExecShellCommand(strings.Trim(str, "\""), ExecOptions{CustomName: customName}), nil
 }

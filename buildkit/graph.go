@@ -23,8 +23,7 @@ type BuildGraph struct {
 
 type BuildGraphOutput struct {
 	State    *llb.State
-	PathList []string
-	EnvVars  map[string]string
+	GraphEnv GraphEnvironment
 }
 
 func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
@@ -41,12 +40,12 @@ func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *Build
 	for i := range plan.Steps {
 		step := &plan.Steps[i]
 		graph.Nodes[step.Name] = &Node{
-			Step:           step,
-			Parents:        make([]*Node, 0),
-			Children:       make([]*Node, 0),
-			Processed:      false,
-			OutputEnvVars:  make(map[string]string),
-			OutputPathList: make([]string, 0),
+			Step:      step,
+			Parents:   make([]*Node, 0),
+			Children:  make([]*Node, 0),
+			Processed: false,
+
+			OutputEnv: NewGraphEnvironment(),
 		}
 	}
 
@@ -83,18 +82,12 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 	// Find all leaf nodes and get their states
 	var leafNodes []*Node
 
-	outputPathList := make([]string, 0)
-	outputEnvVars := make(map[string]string)
+	graphEnv := NewGraphEnvironment()
 
 	for _, node := range g.Nodes {
 		if len(node.Children) == 0 && node.State != nil {
 			leafNodes = append(leafNodes, node)
-
-			// Add output path and env vars
-			outputPathList = append(outputPathList, node.OutputPathList...)
-			for k, v := range node.OutputEnvVars {
-				outputEnvVars[k] = v
-			}
+			graphEnv.Merge(node.OutputEnv)
 		}
 	}
 
@@ -102,8 +95,7 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 	if len(leafNodes) == 0 {
 		return &BuildGraphOutput{
 			State:    g.BaseState,
-			PathList: outputPathList,
-			EnvVars:  outputEnvVars,
+			GraphEnv: graphEnv,
 		}, nil
 	}
 
@@ -111,8 +103,7 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 	if len(leafNodes) == 1 {
 		return &BuildGraphOutput{
 			State:    leafNodes[0].State,
-			PathList: outputPathList,
-			EnvVars:  outputEnvVars,
+			GraphEnv: graphEnv,
 		}, nil
 	}
 
@@ -120,8 +111,7 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 
 	return &BuildGraphOutput{
 		State:    &result,
-		PathList: outputPathList,
-		EnvVars:  outputEnvVars,
+		GraphEnv: graphEnv,
 	}, nil
 }
 
@@ -192,16 +182,17 @@ func (g *BuildGraph) processNode(node *Node) error {
 
 	// Determine the state to build upon
 	var currentState *llb.State
-	currentEnvVars := make(map[string]string)
-	currentPathList := make([]string, 0)
+	currentGraphEnv := NewGraphEnvironment()
+
+	for _, parent := range node.Parents {
+		currentGraphEnv.Merge(parent.OutputEnv)
+	}
 
 	if len(node.Parents) == 0 {
 		currentState = g.BaseState
 	} else if len(node.Parents) == 1 {
 		// If only one parent, use its state directly
 		currentState = node.Parents[0].State
-		currentEnvVars = node.Parents[0].OutputEnvVars
-		currentPathList = node.Parents[0].OutputPathList
 	} else {
 		// If multiple parents, merge their states
 		parentStates := make([]llb.State, len(node.Parents))
@@ -213,12 +204,6 @@ func (g *BuildGraph) processNode(node *Node) error {
 					parent.Step.Name, node.Step.Name)
 			}
 
-			// Build up the current path and env vars
-			currentPathList = append(currentPathList, parent.OutputPathList...)
-			for k, v := range parent.OutputEnvVars {
-				currentEnvVars[k] = v
-			}
-
 			parentStates[i] = *parent.State
 			mergeStepNames[i] = parent.Step.Name
 		}
@@ -228,11 +213,10 @@ func (g *BuildGraph) processNode(node *Node) error {
 		currentState = &merged
 	}
 
-	node.InputPathList = currentPathList
-	node.InputEnvVars = currentEnvVars
+	node.InputEnv = currentGraphEnv
 
 	// Convert this node's step to LLB
-	stepState, err := g.convertStepToLLB(node, currentState)
+	stepState, err := g.convertNodeToLLB(node, currentState)
 	if err != nil {
 		return err
 	}
@@ -243,47 +227,30 @@ func (g *BuildGraph) processNode(node *Node) error {
 	return nil
 }
 
-func (g *BuildGraph) convertStepToLLB(node *Node, baseState *llb.State) (*llb.State, error) {
-	step := node.Step
+func (g *BuildGraph) convertNodeToLLB(node *Node, baseState *llb.State) (*llb.State, error) {
 	state := *baseState
 	state = state.Dir("/app")
 
-	if step.StartingImage != "" {
-		state = llb.Image(step.StartingImage, llb.Platform(*g.Platform))
-	}
-
-	// Add commands for input variables and path
-	for k, v := range node.InputEnvVars {
-		newState, err := g.convertCommandToLLB(node, plan.VariableCommand{Name: k, Value: v}, state, step)
-		if err != nil {
-			return nil, err
-		}
-		state = newState
-	}
-
-	for _, path := range node.InputPathList {
-		newState, err := g.convertCommandToLLB(node, plan.PathCommand{Path: path}, state, step)
-		if err != nil {
-			return nil, err
-		}
-		state = newState
+	state, err := g.getNodeStartingState(state, node)
+	if err != nil {
+		return nil, err
 	}
 
 	// Process the step commands
-	if step.Commands != nil {
-		for _, cmd := range *step.Commands {
+	if node.Step.Commands != nil {
+		for _, cmd := range *node.Step.Commands {
 			var err error
-			state, err = g.convertCommandToLLB(node, cmd, state, step)
+			state, err = g.convertCommandToLLB(node, cmd, state, node.Step)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	if step.Outputs != nil {
+	if node.Step.Outputs != nil {
 		result := llb.Scratch()
 
-		for _, output := range *step.Outputs {
+		for _, output := range *node.Step.Outputs {
 			result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
 				CreateDestPath:      true,
 				AllowWildcard:       true,
@@ -305,6 +272,34 @@ func (g *BuildGraph) convertStepToLLB(node *Node, baseState *llb.State) (*llb.St
 	}
 
 	return &state, nil
+}
+
+// Adds the input environment to the base state of the node
+// This includes things like the environment variables and accumulated paths
+func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *Node) (llb.State, error) {
+	state := baseState
+
+	if node.Step.StartingImage != "" {
+		state = llb.Image(node.Step.StartingImage, llb.Platform(*g.Platform))
+	}
+
+	for k, v := range node.InputEnv.EnvVars {
+		newState, err := g.convertCommandToLLB(node, plan.VariableCommand{Name: k, Value: v}, state, node.Step)
+		if err != nil {
+			return state, err
+		}
+		state = newState
+	}
+
+	for _, path := range node.InputEnv.PathList {
+		newState, err := g.convertCommandToLLB(node, plan.PathCommand{Path: path}, state, node.Step)
+		if err != nil {
+			return state, err
+		}
+		state = newState
+	}
+
+	return state, nil
 }
 
 func (g *BuildGraph) convertCommandToLLB(node *Node, cmd plan.Command, state llb.State, step *plan.Step) (llb.State, error) {
@@ -349,7 +344,7 @@ func (g *BuildGraph) convertCommandToLLB(node *Node, cmd plan.Command, state llb
 
 	case plan.VariableCommand:
 		s := state.AddEnv(cmd.Name, cmd.Value)
-		node.OutputEnvVars[cmd.Name] = cmd.Value
+		node.OutputEnv.AddEnvVar(cmd.Name, cmd.Value)
 
 		return s, nil
 

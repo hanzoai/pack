@@ -70,7 +70,12 @@ func TestGenerateContext(t *testing.T) {
 				"commands": ["echo building"]
 			}
 		},
-		"secrets": ["RAILWAY_SECRET_1", "RAILWAY_SECRET_2"]
+		"secrets": ["RAILWAY_SECRET_1", "RAILWAY_SECRET_2"],
+		"start": {
+			"variables": {
+				"HELLO": "world"
+			}
+		}
 	}`
 
 	var cfg config.Config
