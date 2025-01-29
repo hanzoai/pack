@@ -65,13 +65,7 @@ func Merge(configs ...*Config) *Config {
 			continue
 		}
 
-		fmt.Printf("\n\nmerging\n\n")
-		fmt.Printf("base: %s\n", serializeConfig(result))
-		fmt.Printf("config: %s\n", serializeConfig(config))
-
 		utils.MergeStructs(result, config)
-
-		fmt.Printf("\n\nresult: %s\n", serializeConfig(result))
 	}
 
 	return result

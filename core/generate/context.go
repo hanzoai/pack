@@ -1,6 +1,7 @@
 package generate
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -9,6 +10,7 @@ import (
 	"github.com/railwayapp/railpack/core/mise"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/resolver"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
 type BuildStepOptions struct {
@@ -93,6 +95,53 @@ func (c *GenerateContext) GetStepByName(name string) *StepBuilder {
 
 func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackage, error) {
 	return c.resolver.ResolvePackages()
+}
+
+func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.ResolvedPackage, error) {
+	// Resolve all package versions into a fully qualified and valid version
+	resolvedPackages, err := c.ResolvePackages()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to resolve packages: %w", err)
+	}
+
+	// Generate the plan based on the context and resolved packages
+
+	buildPlan := plan.NewBuildPlan()
+
+	buildStepOptions := &BuildStepOptions{
+		ResolvedPackages: resolvedPackages,
+		Caches:           c.Caches,
+	}
+
+	for _, stepBuilder := range c.Steps {
+		step, err := stepBuilder.Build(buildStepOptions)
+
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to build step: %w", err)
+		}
+
+		buildPlan.AddStep(*step)
+	}
+
+	buildPlan.Caches = c.Caches.Caches
+
+	// Get all secrets from the environment
+	// for k := range env.Variables {
+	// 	secretNames = append(secretNames, k)
+	// }
+
+	// Get all secrets from the config
+	// for _, secret := range config.Secrets {
+	// 	secretNames = append(secretNames, secret)
+	// }
+
+	buildPlan.Secrets = utils.RemoveDuplicates(c.Secrets)
+
+	buildPlan.Start.BaseImage = c.Start.BaseImage
+	buildPlan.Start.Command = c.Start.Command
+	buildPlan.Start.Paths = utils.RemoveDuplicates(c.Start.Paths)
+
+	return buildPlan, resolvedPackages, nil
 }
 
 func (c *GenerateContext) ApplyConfig(config *config.Config) error {
