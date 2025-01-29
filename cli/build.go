@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	PRINT_PLAN = true
+	PRINT_PLAN = false
 )
 
 var BuildCommand = &cli.Command{

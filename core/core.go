@@ -165,8 +165,6 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 		config.Secrets = append(config.Secrets, name)
 	}
 
-	log.Debugf("env secrets: %v", config.Secrets)
-
 	return config
 }
 
