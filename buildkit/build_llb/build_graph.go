@@ -68,6 +68,7 @@ func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *Build
 	return g, nil
 }
 
+// GenerateLLB generates the LLB state for the build graph
 func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 	// Get processing order using topological sort
 	order, err := g.graph.ComputeProcessingOrder()
@@ -119,6 +120,8 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 	}, nil
 }
 
+// mergeNodes merges the states of the given nodes into a single state
+// This essentially creates a scratch file system and then copies the contents of each node's state into it
 func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
 	stateNames := []string{}
 	for _, node := range nodes {
@@ -142,6 +145,7 @@ func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
 	return result
 }
 
+// processNode processes a node and its parents to determine the state to build upon
 func (g *BuildGraph) processNode(node *StepNode) error {
 	// If already processed, we're done
 	if node.Processed {
@@ -217,6 +221,7 @@ func (g *BuildGraph) processNode(node *StepNode) error {
 	return nil
 }
 
+// convertNodeToLLB converts a step node to an LLB state
 func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*llb.State, error) {
 	state := *baseState
 	state = state.Dir("/app")
@@ -293,92 +298,105 @@ func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *StepNode) (
 func (g *BuildGraph) convertCommandToLLB(node *StepNode, cmd plan.Command, state llb.State, step *plan.Step) (llb.State, error) {
 	switch cmd := cmd.(type) {
 	case plan.ExecCommand:
-		opts := []llb.RunOption{llb.Shlex(cmd.Cmd)}
-		if cmd.CustomName != "" {
-			opts = append(opts, llb.WithCustomName(cmd.CustomName))
-		}
-
-		if node.Step.UseSecrets == nil || *node.Step.UseSecrets { // default to using secrets
-			for _, secret := range g.Plan.Secrets {
-				opts = append(opts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
-			}
-
-			// If there is a secrets hash, add a mount to invalidate the cache if the secrets hash changes
-			if g.SecretsHash != "" {
-				opts = append(opts, llb.AddMount("/cache-invalidate",
-					llb.Scratch().File(llb.Mkfile("secrets-hash", 0644, []byte(g.SecretsHash)))))
-			}
-		}
-
-		if len(cmd.Caches) > 0 {
-			cacheOpts, err := g.getCacheMountOptions(cmd.Caches)
-			if err != nil {
-				return state, err
-			}
-			opts = append(opts, cacheOpts...)
-		}
-
-		s := state.Run(opts...).Root()
-		return s, nil
-
+		return g.convertExecCommandToLLB(node, cmd, state)
 	case plan.PathCommand:
-		node.appendPath(cmd.Path)
-		pathList := node.getPathList()
-		pathString := strings.Join(pathList, ":")
-
-		s := state.AddEnvf("PATH", "%s:%s", pathString, system.DefaultPathEnvUnix)
-
-		return s, nil
-
+		return g.convertPathCommandToLLB(node, cmd, state)
 	case plan.VariableCommand:
-		s := state.AddEnv(cmd.Name, cmd.Value)
-		node.OutputEnv.AddEnvVar(cmd.Name, cmd.Value)
-
-		return s, nil
-
+		return g.convertVariableCommandToLLB(node, cmd, state)
 	case plan.CopyCommand:
-		src := llb.Local("context")
-		if cmd.Image != "" {
-			src = llb.Image(cmd.Image, llb.Platform(*g.Platform))
-		}
-
-		s := state.File(llb.Copy(src, cmd.Src, cmd.Dest, &llb.CopyInfo{
-			CreateDestPath:      true,
-			FollowSymlinks:      true,
-			CopyDirContentsOnly: false,
-			AllowWildcard:       false,
-		}))
-
-		return s, nil
-
+		return g.convertCopyCommandToLLB(cmd, state)
 	case plan.FileCommand:
-		asset, ok := step.Assets[cmd.Name]
-		if !ok {
-			return state, fmt.Errorf("asset %q not found", cmd.Name)
-		}
+		return g.convertFileCommandToLLB(cmd, state, step)
+	}
+	return state, nil
+}
 
-		// Create parent directories for the file
-		parentDir := filepath.Dir(cmd.Path)
-		if parentDir != "/" {
-			s := state.File(llb.Mkdir(parentDir, 0755, llb.WithParents(true)))
-			state = s
-		}
-
-		var mode os.FileMode = 0644
-		if cmd.Mode != 0 {
-			mode = cmd.Mode
-		}
-
-		fileAction := llb.Mkfile(cmd.Path, mode, []byte(asset))
-		s := state.File(fileAction)
-		if cmd.CustomName != "" {
-			s = state.File(fileAction, llb.WithCustomName(cmd.CustomName))
-		}
-
-		return s, nil
+func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecCommand, state llb.State) (llb.State, error) {
+	opts := []llb.RunOption{llb.Shlex(cmd.Cmd)}
+	if cmd.CustomName != "" {
+		opts = append(opts, llb.WithCustomName(cmd.CustomName))
 	}
 
-	return state, nil
+	if node.Step.UseSecrets == nil || *node.Step.UseSecrets { // default to using secrets
+		for _, secret := range g.Plan.Secrets {
+			opts = append(opts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
+		}
+
+		// If there is a secrets hash, add a mount to invalidate the cache if the secrets hash changes
+		if g.SecretsHash != "" {
+			opts = append(opts, llb.AddMount("/cache-invalidate",
+				llb.Scratch().File(llb.Mkfile("secrets-hash", 0644, []byte(g.SecretsHash)))))
+		}
+	}
+
+	if len(cmd.Caches) > 0 {
+		cacheOpts, err := g.getCacheMountOptions(cmd.Caches)
+		if err != nil {
+			return state, err
+		}
+		opts = append(opts, cacheOpts...)
+	}
+
+	s := state.Run(opts...).Root()
+	return s, nil
+}
+
+func (g *BuildGraph) convertPathCommandToLLB(node *StepNode, cmd plan.PathCommand, state llb.State) (llb.State, error) {
+	node.appendPath(cmd.Path)
+	pathList := node.getPathList()
+	pathString := strings.Join(pathList, ":")
+
+	s := state.AddEnvf("PATH", "%s:%s", pathString, system.DefaultPathEnvUnix)
+	return s, nil
+}
+
+func (g *BuildGraph) convertVariableCommandToLLB(node *StepNode, cmd plan.VariableCommand, state llb.State) (llb.State, error) {
+	s := state.AddEnv(cmd.Name, cmd.Value)
+	node.OutputEnv.AddEnvVar(cmd.Name, cmd.Value)
+	return s, nil
+}
+
+func (g *BuildGraph) convertCopyCommandToLLB(cmd plan.CopyCommand, state llb.State) (llb.State, error) {
+	src := llb.Local("context")
+	if cmd.Image != "" {
+		src = llb.Image(cmd.Image, llb.Platform(*g.Platform))
+	}
+
+	s := state.File(llb.Copy(src, cmd.Src, cmd.Dest, &llb.CopyInfo{
+		CreateDestPath:      true,
+		FollowSymlinks:      true,
+		CopyDirContentsOnly: false,
+		AllowWildcard:       false,
+	}))
+
+	return s, nil
+}
+
+func (g *BuildGraph) convertFileCommandToLLB(cmd plan.FileCommand, state llb.State, step *plan.Step) (llb.State, error) {
+	asset, ok := step.Assets[cmd.Name]
+	if !ok {
+		return state, fmt.Errorf("asset %q not found", cmd.Name)
+	}
+
+	// Create parent directories for the file
+	parentDir := filepath.Dir(cmd.Path)
+	if parentDir != "/" {
+		s := state.File(llb.Mkdir(parentDir, 0755, llb.WithParents(true)))
+		state = s
+	}
+
+	var mode os.FileMode = 0644
+	if cmd.Mode != 0 {
+		mode = cmd.Mode
+	}
+
+	fileAction := llb.Mkfile(cmd.Path, mode, []byte(asset))
+	s := state.File(fileAction)
+	if cmd.CustomName != "" {
+		s = state.File(fileAction, llb.WithCustomName(cmd.CustomName))
+	}
+
+	return s, nil
 }
 
 // getCacheMountOptions returns the llb.RunOption slice for the given cache keys
