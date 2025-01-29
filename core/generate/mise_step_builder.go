@@ -31,7 +31,7 @@ type MiseStepBuilder struct {
 
 func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 	step := &MiseStepBuilder{
-		DisplayName:           c.GetStepName(MisePackageStepName),
+		DisplayName:           MisePackageStepName,
 		Resolver:              c.resolver,
 		MisePackages:          []*resolver.PackageRef{},
 		SupportingAptPackages: []string{},

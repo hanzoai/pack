@@ -150,7 +150,7 @@ func (p *PhpProvider) getConfigFiles(ctx *generate.GenerateContext) (*ConfigFile
 }
 
 func (p *PhpProvider) phpImagePackage(ctx *generate.GenerateContext) (*generate.ImageStepBuilder, error) {
-	imageStep := ctx.NewImageStep("packages", func(options *generate.BuildStepOptions) string {
+	imageStep := ctx.NewImageStep("packages:image", func(options *generate.BuildStepOptions) string {
 		if phpVersion, ok := options.ResolvedPackages["php"]; ok && phpVersion.ResolvedVersion != nil {
 			return getPhpImage(*phpVersion.ResolvedVersion)
 		}

@@ -1,4 +1,4 @@
-package buildkit
+package build_llb
 
 import (
 	"fmt"

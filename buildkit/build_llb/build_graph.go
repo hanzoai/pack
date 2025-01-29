@@ -1,4 +1,4 @@
-package buildkit
+package build_llb
 
 import (
 	"fmt"
@@ -9,11 +9,12 @@ import (
 	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/util/system"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/railwayapp/railpack/buildkit/graph"
 	"github.com/railwayapp/railpack/core/plan"
 )
 
 type BuildGraph struct {
-	Nodes       map[string]*Node
+	graph       *graph.Graph
 	BaseState   *llb.State
 	CacheStore  *BuildKitCacheStore
 	SecretsHash string
@@ -23,12 +24,12 @@ type BuildGraph struct {
 
 type BuildGraphOutput struct {
 	State    *llb.State
-	GraphEnv GraphEnvironment
+	GraphEnv BuildEnvironment
 }
 
 func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
-	graph := &BuildGraph{
-		Nodes:       make(map[string]*Node),
+	g := &BuildGraph{
+		graph:       graph.NewGraph(),
 		BaseState:   baseState,
 		CacheStore:  cacheStore,
 		SecretsHash: secretsHash,
@@ -39,55 +40,58 @@ func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *Build
 	// Create a node for each step
 	for i := range plan.Steps {
 		step := &plan.Steps[i]
-		graph.Nodes[step.Name] = &Node{
+		node := &StepNode{
 			Step:      step,
-			Parents:   make([]*Node, 0),
-			Children:  make([]*Node, 0),
 			Processed: false,
-
 			OutputEnv: NewGraphEnvironment(),
 		}
+		g.graph.AddNode(node)
 	}
 
 	// Add dependencies to each node
-	for _, node := range graph.Nodes {
-		for _, depName := range node.Step.DependsOn {
-			if depNode, exists := graph.Nodes[depName]; exists {
-				node.Parents = append(node.Parents, depNode)
-				depNode.Children = append(depNode.Children, node)
+	for _, node := range g.graph.GetNodes() {
+		llbNode := node.(*StepNode)
+		for _, depName := range llbNode.Step.DependsOn {
+			if depNode, exists := g.graph.GetNode(depName); exists {
+				parents := llbNode.GetParents()
+				parents = append(parents, depNode)
+				llbNode.SetParents(parents)
+
+				children := depNode.GetChildren()
+				children = append(children, node)
+				depNode.SetChildren(children)
 			}
 		}
 	}
 
-	graph.computeTransitiveDependencies()
-	// graph.PrintGraph()
-
-	return graph, nil
+	g.graph.ComputeTransitiveDependencies()
+	return g, nil
 }
 
 func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 	// Get processing order using topological sort
-	order, err := g.getProcessingOrder()
+	order, err := g.graph.ComputeProcessingOrder()
 	if err != nil {
 		return nil, err
 	}
 
 	// Process all nodes in order
 	for _, node := range order {
-		if err := g.processNode(node); err != nil {
+		llbNode := node.(*StepNode)
+		if err := g.processNode(llbNode); err != nil {
 			return nil, err
 		}
 	}
 
 	// Find all leaf nodes and get their states
-	var leafNodes []*Node
-
+	var leafNodes []*StepNode
 	graphEnv := NewGraphEnvironment()
 
-	for _, node := range g.Nodes {
-		if len(node.Children) == 0 && node.State != nil {
-			leafNodes = append(leafNodes, node)
-			graphEnv.Merge(node.OutputEnv)
+	for _, node := range g.graph.GetNodes() {
+		llbNode := node.(*StepNode)
+		if len(llbNode.GetChildren()) == 0 && llbNode.State != nil {
+			leafNodes = append(leafNodes, llbNode)
+			graphEnv.Merge(llbNode.OutputEnv)
 		}
 	}
 
@@ -115,7 +119,7 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 	}, nil
 }
 
-func (g *BuildGraph) mergeNodes(nodes []*Node) llb.State {
+func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
 	stateNames := []string{}
 	for _, node := range nodes {
 		stateNames = append(stateNames, node.Step.Name)
@@ -136,43 +140,27 @@ func (g *BuildGraph) mergeNodes(nodes []*Node) llb.State {
 	}
 
 	return result
-
-	// mergeName := fmt.Sprintf("merging steps: %s", strings.Join(stateNames, ", "))
-
-	// lowerState := states[0]
-	// diffStates := []llb.State{lowerState}
-
-	// for i, s := range states {
-	// 	if i == 0 {
-	// 		continue
-	// 	}
-
-	// 	diffStates = append(diffStates, llb.Diff(lowerState, s, llb.WithCustomNamef("diff(%s, %s)", stateNames[0], stateNames[i])))
-	// }
-
-	// result := llb.Merge(diffStates, llb.WithCustomName(mergeName))
-
-	// return result
 }
 
-func (g *BuildGraph) processNode(node *Node) error {
+func (g *BuildGraph) processNode(node *StepNode) error {
 	// If already processed, we're done
 	if node.Processed {
 		return nil
 	}
 
 	// Check if all parents are processed
-	for _, parent := range node.Parents {
-		if !parent.Processed {
+	for _, parent := range node.GetParents() {
+		parentNode := parent.(*StepNode)
+		if !parentNode.Processed {
 			// If this node is marked in-progress, we have a dependency violation
 			if node.InProgress {
 				return fmt.Errorf("Dependency violation: %s waiting for unprocessed parent %s",
-					node.Step.Name, parent.Step.Name)
+					node.Step.Name, parentNode.Step.Name)
 			}
 
 			// Mark this node as in-progress and process the parent
 			node.InProgress = true
-			if err := g.processNode(parent); err != nil {
+			if err := g.processNode(parentNode); err != nil {
 				node.InProgress = false
 				return err
 			}
@@ -184,32 +172,34 @@ func (g *BuildGraph) processNode(node *Node) error {
 	var currentState *llb.State
 	currentGraphEnv := NewGraphEnvironment()
 
-	for _, parent := range node.Parents {
-		currentGraphEnv.Merge(parent.OutputEnv)
+	for _, parent := range node.GetParents() {
+		parentNode := parent.(*StepNode)
+		currentGraphEnv.Merge(parentNode.OutputEnv)
 	}
 
-	if len(node.Parents) == 0 {
+	if len(node.GetParents()) == 0 {
 		currentState = g.BaseState
-	} else if len(node.Parents) == 1 {
+	} else if len(node.GetParents()) == 1 {
 		// If only one parent, use its state directly
-		currentState = node.Parents[0].State
+		parentNode := node.GetParents()[0].(*StepNode)
+		currentState = parentNode.State
 	} else {
 		// If multiple parents, merge their states
-		parentStates := make([]llb.State, len(node.Parents))
-		mergeStepNames := make([]string, len(node.Parents))
+		parentNodes := make([]*StepNode, len(node.GetParents()))
+		mergeStepNames := make([]string, len(node.GetParents()))
 
-		for i, parent := range node.Parents {
-			if parent.State == nil {
+		for i, parent := range node.GetParents() {
+			parentNode := parent.(*StepNode)
+			if parentNode.State == nil {
 				return fmt.Errorf("Parent %s of %s has nil state",
-					parent.Step.Name, node.Step.Name)
+					parentNode.Step.Name, node.Step.Name)
 			}
 
-			parentStates[i] = *parent.State
-			mergeStepNames[i] = parent.Step.Name
+			parentNodes[i] = parentNode
+			mergeStepNames[i] = parentNode.Step.Name
 		}
 
-		merged := g.mergeNodes(node.Parents)
-
+		merged := g.mergeNodes(parentNodes)
 		currentState = &merged
 	}
 
@@ -227,7 +217,7 @@ func (g *BuildGraph) processNode(node *Node) error {
 	return nil
 }
 
-func (g *BuildGraph) convertNodeToLLB(node *Node, baseState *llb.State) (*llb.State, error) {
+func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*llb.State, error) {
 	state := *baseState
 	state = state.Dir("/app")
 
@@ -260,8 +250,6 @@ func (g *BuildGraph) convertNodeToLLB(node *Node, baseState *llb.State) (*llb.St
 			}))
 		}
 
-		// merged := llb.Merge([]llb.State{*baseState, result})
-
 		merged := baseState.File(llb.Copy(result, "/", "/", &llb.CopyInfo{
 			CreateDestPath: true,
 			FollowSymlinks: true,
@@ -276,7 +264,7 @@ func (g *BuildGraph) convertNodeToLLB(node *Node, baseState *llb.State) (*llb.St
 
 // Adds the input environment to the base state of the node
 // This includes things like the environment variables and accumulated paths
-func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *Node) (llb.State, error) {
+func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *StepNode) (llb.State, error) {
 	state := baseState
 
 	if node.Step.StartingImage != "" {
@@ -302,7 +290,7 @@ func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *Node) (llb.
 	return state, nil
 }
 
-func (g *BuildGraph) convertCommandToLLB(node *Node, cmd plan.Command, state llb.State, step *plan.Step) (llb.State, error) {
+func (g *BuildGraph) convertCommandToLLB(node *StepNode, cmd plan.Command, state llb.State, step *plan.Step) (llb.State, error) {
 	switch cmd := cmd.(type) {
 	case plan.ExecCommand:
 		opts := []llb.RunOption{llb.Shlex(cmd.Cmd)}
@@ -391,136 +379,6 @@ func (g *BuildGraph) convertCommandToLLB(node *Node, cmd plan.Command, state llb
 	}
 
 	return state, nil
-}
-
-// getProcessingOrder returns nodes in topological order
-func (g *BuildGraph) getProcessingOrder() ([]*Node, error) {
-	order := make([]*Node, 0, len(g.Nodes))
-	visited := make(map[string]bool)
-	temp := make(map[string]bool)
-
-	var visit func(node *Node) error
-	visit = func(node *Node) error {
-		if temp[node.Step.Name] {
-			return fmt.Errorf("cycle detected: %s", node.Step.Name)
-		}
-		if visited[node.Step.Name] {
-			return nil
-		}
-		temp[node.Step.Name] = true
-
-		for _, parent := range node.Parents {
-			if err := visit(parent); err != nil {
-				return err
-			}
-		}
-
-		delete(temp, node.Step.Name)
-		visited[node.Step.Name] = true
-		order = append(order, node)
-		return nil
-	}
-
-	// Start with leaf nodes (nodes with no children)
-	for _, node := range g.Nodes {
-		if len(node.Children) == 0 {
-			if err := visit(node); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	// Process any remaining nodes
-	for _, node := range g.Nodes {
-		if !visited[node.Step.Name] {
-			if err := visit(node); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	// Reverse the order since we want parents before children
-	for i := 0; i < len(order)/2; i++ {
-		j := len(order) - 1 - i
-		order[i], order[j] = order[j], order[i]
-	}
-
-	return order, nil
-}
-
-func (g *BuildGraph) computeTransitiveDependencies() {
-	for _, node := range g.Nodes {
-		var newParents []*Node
-		for _, parent := range node.Parents {
-			isRedundant := false
-			for _, otherParent := range node.Parents {
-				if otherParent == parent {
-					continue
-				}
-
-				visited := make(map[string]bool)
-				var traverse func(*Node)
-				traverse = func(n *Node) {
-					if n == parent {
-						isRedundant = true
-						return
-					}
-					for _, p := range n.Parents {
-						if !visited[p.Step.Name] {
-							visited[p.Step.Name] = true
-							traverse(p)
-						}
-					}
-				}
-				traverse(otherParent)
-
-				if isRedundant {
-					break
-				}
-			}
-
-			if !isRedundant {
-				newParents = append(newParents, parent)
-			} else {
-				// Remove child relationship
-				parent.Children = removeNode(parent.Children, node)
-			}
-		}
-		node.Parents = newParents
-	}
-}
-
-func removeNode(nodes []*Node, target *Node) []*Node {
-	result := make([]*Node, 0, len(nodes))
-	for _, n := range nodes {
-		if n != target {
-			result = append(result, n)
-		}
-	}
-	return result
-}
-
-func (g *BuildGraph) PrintGraph() {
-	fmt.Println("\nBuild Graph Structure:")
-	fmt.Println("=====================")
-
-	for name, node := range g.Nodes {
-		fmt.Printf("\nNode: %s\n", name)
-		fmt.Printf("  Status:\n")
-		fmt.Printf("    Processed: %v\n", node.Processed)
-		fmt.Printf("    InProgress: %v\n", node.InProgress)
-
-		fmt.Printf("  Parents (%d):\n", len(node.Parents))
-		for _, parent := range node.Parents {
-			fmt.Printf("    - %s\n", parent.Step.Name)
-		}
-
-		fmt.Printf("  Children (%d):\n", len(node.Children))
-		for _, child := range node.Children {
-			fmt.Printf("    - %s\n", child.Step.Name)
-		}
-	}
-	fmt.Println("\n=====================")
 }
 
 // getCacheMountOptions returns the llb.RunOption slice for the given cache keys

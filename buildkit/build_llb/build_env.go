@@ -1,19 +1,19 @@
-package buildkit
+package build_llb
 
-type GraphEnvironment struct {
+type BuildEnvironment struct {
 	PathList []string
 	EnvVars  map[string]string
 }
 
-func NewGraphEnvironment() GraphEnvironment {
-	return GraphEnvironment{
+func NewGraphEnvironment() BuildEnvironment {
+	return BuildEnvironment{
 		PathList: make([]string, 0),
 		EnvVars:  make(map[string]string),
 	}
 }
 
 // Merges the other environment into the current environment
-func (e *GraphEnvironment) Merge(other GraphEnvironment) {
+func (e *BuildEnvironment) Merge(other BuildEnvironment) {
 	e.PathList = append(e.PathList, other.PathList...)
 
 	for k, v := range other.EnvVars {
@@ -21,7 +21,7 @@ func (e *GraphEnvironment) Merge(other GraphEnvironment) {
 	}
 }
 
-func (e *GraphEnvironment) AddPath(path string) {
+func (e *BuildEnvironment) AddPath(path string) {
 	for _, existingPath := range e.PathList {
 		if existingPath == path {
 			return
@@ -31,6 +31,6 @@ func (e *GraphEnvironment) AddPath(path string) {
 	e.PathList = append(e.PathList, path)
 }
 
-func (e *GraphEnvironment) AddEnvVar(key, value string) {
+func (e *BuildEnvironment) AddEnvVar(key, value string) {
 	e.EnvVars[key] = value
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/util/system"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/railwayapp/railpack/buildkit/build_llb"
 	p "github.com/railwayapp/railpack/core/plan"
 )
 
@@ -25,9 +26,9 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 
 	state := getBaseState(plan, platform)
 
-	cacheStore := NewBuildKitCacheStore(opts.CacheKey)
+	cacheStore := build_llb.NewBuildKitCacheStore(opts.CacheKey)
 
-	graph, err := NewBuildGraph(plan, &state, cacheStore, opts.SecretsHash, &platform)
+	graph, err := build_llb.NewBuildGraph(plan, &state, cacheStore, opts.SecretsHash, &platform)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -104,7 +105,7 @@ func getStartState(buildState llb.State, plan *p.BuildPlan, platform specs.Platf
 	return startState
 }
 
-func getImageEnv(graphOutput *BuildGraphOutput, plan *p.BuildPlan) []string {
+func getImageEnv(graphOutput *build_llb.BuildGraphOutput, plan *p.BuildPlan) []string {
 	paths := graphOutput.GraphEnv.PathList
 	paths = append(paths, plan.Start.Paths...)
 
