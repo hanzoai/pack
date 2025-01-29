@@ -14,6 +14,10 @@ import (
 	"github.com/railwayapp/railpack/core/utils"
 )
 
+const (
+	DefaultBaseImage = "debian:stable-slim"
+)
+
 type BuildStepOptions struct {
 	ResolvedPackages map[string]*resolver.ResolvedPackage
 	Caches           *CacheContext
@@ -28,8 +32,9 @@ type GenerateContext struct {
 	App *a.App
 	Env *a.Environment
 
-	Steps []StepBuilder
-	Start StartContext
+	BaseImage string
+	Steps     []StepBuilder
+	Start     StartContext
 
 	Caches  *CacheContext
 	Secrets []string
@@ -49,14 +54,15 @@ func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error
 	}
 
 	return &GenerateContext{
-		App:      app,
-		Env:      env,
-		Steps:    make([]StepBuilder, 0),
-		Start:    *NewStartContext(),
-		Caches:   NewCacheContext(),
-		Secrets:  []string{},
-		Metadata: NewMetadata(),
-		resolver: resolver,
+		App:       app,
+		Env:       env,
+		BaseImage: DefaultBaseImage,
+		Steps:     make([]StepBuilder, 0),
+		Start:     *NewStartContext(),
+		Caches:    NewCacheContext(),
+		Secrets:   []string{},
+		Metadata:  NewMetadata(),
+		resolver:  resolver,
 	}, nil
 }
 
@@ -109,6 +115,7 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 	// Generate the plan based on the context and resolved packages
 
 	buildPlan := plan.NewBuildPlan()
+	buildPlan.BaseImage = c.BaseImage
 
 	buildStepOptions := &BuildStepOptions{
 		ResolvedPackages: resolvedPackages,

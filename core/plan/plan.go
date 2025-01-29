@@ -1,10 +1,11 @@
 package plan
 
 type BuildPlan struct {
-	Steps   []Step            `json:"steps,omitempty"`
-	Start   Start             `json:"start,omitempty"`
-	Caches  map[string]*Cache `json:"caches,omitempty"`
-	Secrets []string          `json:"secrets,omitempty"`
+	BaseImage string            `json:"baseImage,omitempty"`
+	Steps     []Step            `json:"steps,omitempty"`
+	Start     Start             `json:"start,omitempty"`
+	Caches    map[string]*Cache `json:"caches,omitempty"`
+	Secrets   []string          `json:"secrets,omitempty"`
 }
 
 type Start struct {

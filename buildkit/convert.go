@@ -23,7 +23,7 @@ const (
 func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *Image, error) {
 	platform := opts.BuildPlatform.ToPlatform()
 
-	state := getBaseState(platform)
+	state := getBaseState(plan, platform)
 
 	cacheStore := NewBuildKitCacheStore(opts.CacheKey)
 
@@ -38,7 +38,7 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 	}
 
 	state = *graphOutput.State
-	imageEnv := getImageEnv(graphOutput, plan)
+	imageEnv := getImageEnv(graphOutput)
 
 	state = getStartState(state, plan, platform)
 
@@ -104,7 +104,7 @@ func getStartState(buildState llb.State, plan *p.BuildPlan, platform specs.Platf
 	return startState
 }
 
-func getImageEnv(graphOutput *BuildGraphOutput, plan *p.BuildPlan) []string {
+func getImageEnv(graphOutput *BuildGraphOutput) []string {
 	pathString := strings.Join(graphOutput.PathList, ":")
 
 	var pathEnv string
@@ -123,14 +123,12 @@ func getImageEnv(graphOutput *BuildGraphOutput, plan *p.BuildPlan) []string {
 	return imageEnv
 }
 
-func getBaseState(platform specs.Platform) llb.State {
-	state := llb.Image("debian:bookworm-slim",
+func getBaseState(plan *p.BuildPlan, platform specs.Platform) llb.State {
+	state := llb.Image(plan.BaseImage,
 		llb.Platform(platform),
 	)
 
-	state = state.Run(llb.Shlex("sh -c 'apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*'"), llb.WithCustomName("install base packages")).Root()
-	state = state.AddEnv("SSL_CERT_FILE", "/etc/ssl/certs/ca-certificates.crt")
-	state = state.AddEnv("SSL_CERT_DIR", "/etc/ssl/certs")
+	state = state.Run(llb.Shlex("sh -c 'apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*'"), llb.WithCustomName("install base packages")).Root()
 	state = state.Dir(WorkingDir)
 
 	return state
