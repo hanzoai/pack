@@ -1,4 +1,4 @@
-# Railpack Go
+# Railpack
 
 [![CI](https://github.com/railwayapp/railpack/actions/workflows/ci.yml/badge.svg)](https://github.com/railwayapp/railpack/actions/workflows/ci.yml)
 
@@ -26,11 +26,20 @@ _Huge work in progress_
   - We look for a `rpk.json` file, which is a serialized build plan
   - We convert the build plan to LLB and return it
 
+
 ## Usage
 
-Railpack can currently be used to build an image with BuildKit directly, or as a custom BuildKit frontend.
+Railpack can currently be used to ① build an image with BuildKit directly, or ② as a custom BuildKit frontend.
 
-### Building directly
+### List Available Commands
+
+```bash
+go run cmd/cli/main.go --help
+```
+
+### ① Building directly with Buildkit
+
+**👋 Requirement**: an instance of Buildkit must be running locally. Instructions in "[Run BuildKit Locally](#run-buildkit-locally)" at the bottom of the readme.
 
 Railpack will instantiate a BuildKit client and communicate to over GRPC in order to build the generated LLB.
 
@@ -40,7 +49,7 @@ go run cmd/cli/main.go --verbose build examples/node-bun
 
 You need to have a BuildKit instance running (see below).
 
-### Custom frontend
+### ② Custom frontend
 
 A custom frontend allows us to build the build plan and serialize into a
 `rpk.json` file. At a later time, we can use this file to build an image by invoking `buildctl`.
@@ -73,17 +82,10 @@ To update the frontend image, you can run
 mise run build-and-push-frontend
 ```
 
-### Mise commands
 
-```bash
-# Lint and format
-mise run check
+### References
 
-# Run tests
-mise run test
-```
-
-### BuildKit setup
+#### Run BuildKit Locally
 
 If building with the `build` command, you need to have a BuildKit instance
 running with the `BUILDKIT_HOST` environment variable set to the container.
@@ -93,4 +95,14 @@ docker run --rm --privileged -d --name buildkit moby/buildkit
 
 # Set the buildkit host to the container
 export BUILDKIT_HOST=docker-container://buildkit
+```
+
+#### Mise commands
+
+```bash
+# Lint and format
+mise run check
+
+# Run tests
+mise run test
 ```
