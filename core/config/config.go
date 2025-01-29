@@ -1,6 +1,9 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/invopop/jsonschema"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/utils"
@@ -57,38 +60,18 @@ func Merge(configs ...*Config) *Config {
 	}
 
 	result := EmptyConfig()
-
 	for _, config := range configs {
 		if config == nil {
 			continue
 		}
 
-		// Strings (use last non-empty value)
-		if config.BaseImage != "" {
-			result.BaseImage = config.BaseImage
-		}
+		fmt.Printf("\n\nmerging\n\n")
+		fmt.Printf("base: %s\n", serializeConfig(result))
+		fmt.Printf("config: %s\n", serializeConfig(config))
 
-		if config.Start.Command != "" {
-			result.Start = config.Start
-		}
+		utils.MergeStructs(result, config)
 
-		// Maps (overwrite existing values)
-		for k, v := range config.Caches {
-			result.Caches[k] = v
-		}
-		for k, v := range config.Packages {
-			result.Packages[k] = v
-		}
-		for k, v := range config.Steps {
-			result.Steps[k] = v
-		}
-
-		// Arrays (extend)
-		result.AptPackages = append(result.AptPackages, config.AptPackages...)
-		result.Secrets = append(result.Secrets, config.Secrets...)
-
-		// Merge providers
-		result.Providers = utils.MergeStringSlicePointers(result.Providers, config.Providers)
+		fmt.Printf("\n\nresult: %s\n", serializeConfig(result))
 	}
 
 	return result
@@ -109,4 +92,14 @@ func GetJsonSchema() *jsonschema.Schema {
 
 	schema := r.Reflect(&Config{})
 	return schema
+}
+
+func serializeConfig(config *Config) string {
+	// json serialize the config
+	json, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		fmt.Printf("Error serializing config: %v\n", err)
+	}
+
+	return string(json)
 }

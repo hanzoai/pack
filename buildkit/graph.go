@@ -270,11 +270,13 @@ func (g *BuildGraph) convertStepToLLB(node *Node, baseState *llb.State) (*llb.St
 	}
 
 	// Process the step commands
-	for _, cmd := range step.Commands {
-		var err error
-		state, err = g.convertCommandToLLB(node, cmd, state, step)
-		if err != nil {
-			return nil, err
+	if step.Commands != nil {
+		for _, cmd := range *step.Commands {
+			var err error
+			state, err = g.convertCommandToLLB(node, cmd, state, step)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

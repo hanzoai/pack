@@ -132,8 +132,8 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 		if len(configStep.DependsOn) > 0 {
 			commandStepBuilder.DependsOn = configStep.DependsOn
 		}
-		if len(configStep.Commands) > 0 {
-			commandStepBuilder.Commands = configStep.Commands
+		if configStep.Commands != nil {
+			commandStepBuilder.AddCommands(*configStep.Commands)
 		}
 		if configStep.Outputs != nil {
 			commandStepBuilder.Outputs = configStep.Outputs

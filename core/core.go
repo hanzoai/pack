@@ -177,13 +177,13 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 
 	if installCmdVar, _ := env.GetConfigVariable("INSTALL_CMD"); installCmdVar != "" {
 		installStep := config.GetOrCreateStep("install")
-		installStep.Commands = []plan.Command{plan.NewExecCommand(installCmdVar)}
+		installStep.Commands = &[]plan.Command{plan.NewExecCommand(installCmdVar)}
 		installStep.DependsOn = append(installStep.DependsOn, "packages")
 	}
 
 	if buildCmdVar, _ := env.GetConfigVariable("BUILD_CMD"); buildCmdVar != "" {
 		buildStep := config.GetOrCreateStep("build")
-		buildStep.Commands = []plan.Command{plan.NewExecCommand(buildCmdVar)}
+		buildStep.Commands = &[]plan.Command{plan.NewExecCommand(buildCmdVar)}
 		buildStep.DependsOn = append(buildStep.DependsOn, "install")
 	}
 
@@ -215,7 +215,7 @@ func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config
 
 	if options.BuildCommand != "" {
 		buildStep := config.GetOrCreateStep("build")
-		buildStep.Commands = []plan.Command{plan.NewExecCommand(options.BuildCommand)}
+		buildStep.Commands = &[]plan.Command{plan.NewExecCommand(options.BuildCommand)}
 		buildStep.DependsOn = append(buildStep.DependsOn, "install")
 	}
 

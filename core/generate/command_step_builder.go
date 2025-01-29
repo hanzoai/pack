@@ -8,7 +8,7 @@ import (
 type CommandStepBuilder struct {
 	DisplayName string
 	DependsOn   []string
-	Commands    []plan.Command
+	Commands    *[]plan.Command
 	Outputs     *[]string
 	Assets      map[string]string
 	UseSecrets  *bool
@@ -18,7 +18,7 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 	step := &CommandStepBuilder{
 		DisplayName: c.GetStepName(name),
 		DependsOn:   []string{MisePackageStepName},
-		Commands:    []plan.Command{},
+		Commands:    &[]plan.Command{},
 		Assets:      map[string]string{},
 	}
 
@@ -32,11 +32,17 @@ func (b *CommandStepBuilder) DependOn(name string) {
 }
 
 func (b *CommandStepBuilder) AddCommand(command plan.Command) {
-	b.Commands = append(b.Commands, command)
+	if b.Commands == nil {
+		b.Commands = &[]plan.Command{}
+	}
+	*b.Commands = append(*b.Commands, command)
 }
 
 func (b *CommandStepBuilder) AddCommands(commands []plan.Command) {
-	b.Commands = append(b.Commands, commands...)
+	if b.Commands == nil {
+		b.Commands = &[]plan.Command{}
+	}
+	*b.Commands = append(*b.Commands, commands...)
 }
 
 func (b *CommandStepBuilder) Name() string {
