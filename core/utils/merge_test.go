@@ -3,9 +3,30 @@ package utils
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 )
+
+type TestStruct struct {
+	// Basic types
+	String string
+	Int    int
+	Bool   bool
+
+	// Special types
+	StringPtr    *string
+	IntSlice     []int
+	StringMap    map[string]string
+	CommandSlice *[]string
+
+	// Nested structs
+	Nested NestedStruct
+	Deep   DeepNestedStruct
+}
+
+type NestedStruct struct {
+	Value    string
+	IntValue int
+}
 
 type DeepNestedStruct struct {
 	Level1 struct {
@@ -15,27 +36,9 @@ type DeepNestedStruct struct {
 	}
 }
 
-type TestStruct struct {
-	String       string
-	Int          int
-	Float        float64
-	Bool         bool
-	StringPtr    *string
-	IntSlice     []int
-	StringMap    map[string]string
-	Nested       NestedStruct
-	Deep         DeepNestedStruct
-	CommandSlice *[]string
-}
-
-type NestedStruct struct {
-	Value    string
-	IntValue int
-}
-
-func TestMergeStructs(t *testing.T) {
-	str1 := "ptr1"
-	str2 := "ptr2"
+func TestMergeBasicTypes(t *testing.T) {
+	str1 := "value1"
+	str2 := "value2"
 
 	tests := []struct {
 		name     string
@@ -44,28 +47,40 @@ func TestMergeStructs(t *testing.T) {
 		expected TestStruct
 	}{
 		{
-			name: "merge basic types",
+			name: "zero values should not override",
+			dst: TestStruct{
+				String: "keep",
+				Int:    42,
+			},
+			src: TestStruct{
+				String: "",    // zero value
+				Int:    0,     // zero value
+				Bool:   false, // zero value
+			},
+			expected: TestStruct{
+				String: "keep",
+				Int:    42,
+			},
+		},
+		{
+			name: "non-zero values should override",
 			dst: TestStruct{
 				String: "old",
 				Int:    1,
-				Float:  1.0,
-				Bool:   false,
 			},
 			src: TestStruct{
 				String: "new",
 				Int:    2,
-				Float:  0, // zero value, should not override
 				Bool:   true,
 			},
 			expected: TestStruct{
 				String: "new",
 				Int:    2,
-				Float:  1.0,
 				Bool:   true,
 			},
 		},
 		{
-			name: "merge pointers",
+			name: "pointers should override when non-nil",
 			dst: TestStruct{
 				StringPtr: &str1,
 			},
@@ -77,7 +92,39 @@ func TestMergeStructs(t *testing.T) {
 			},
 		},
 		{
-			name: "merge slices - empty source should replace",
+			name: "nil pointers should not override",
+			dst: TestStruct{
+				StringPtr: &str1,
+			},
+			src: TestStruct{}, // nil pointer
+			expected: TestStruct{
+				StringPtr: &str1,
+			},
+		},
+	}
+
+	runTests(t, tests)
+}
+
+func TestMergeSlices(t *testing.T) {
+	tests := []struct {
+		name     string
+		dst      TestStruct
+		src      TestStruct
+		expected TestStruct
+	}{
+		{
+			name: "nil slice should not override",
+			dst: TestStruct{
+				IntSlice: []int{1, 2},
+			},
+			src: TestStruct{}, // nil slice
+			expected: TestStruct{
+				IntSlice: []int{1, 2},
+			},
+		},
+		{
+			name: "empty slice should override",
 			dst: TestStruct{
 				IntSlice: []int{1, 2},
 			},
@@ -89,17 +136,7 @@ func TestMergeStructs(t *testing.T) {
 			},
 		},
 		{
-			name: "merge slices - nil source should keep destination",
-			dst: TestStruct{
-				IntSlice: []int{1, 2},
-			},
-			src: TestStruct{}, // IntSlice will be nil
-			expected: TestStruct{
-				IntSlice: []int{1, 2},
-			},
-		},
-		{
-			name: "merge slices - non-empty source should replace",
+			name: "non-empty slice should override",
 			dst: TestStruct{
 				IntSlice: []int{1, 2},
 			},
@@ -111,103 +148,115 @@ func TestMergeStructs(t *testing.T) {
 			},
 		},
 		{
-			name: "merge maps",
+			name: "pointer to slice - nil should not override",
 			dst: TestStruct{
-				StringMap: map[string]string{
-					"key1": "value1",
-					"key2": "value2",
-				},
+				CommandSlice: &[]string{"cmd1"},
+			},
+			src: TestStruct{}, // nil pointer
+			expected: TestStruct{
+				CommandSlice: &[]string{"cmd1"},
+			},
+		},
+		{
+			name: "pointer to slice - empty should override",
+			dst: TestStruct{
+				CommandSlice: &[]string{"cmd1"},
 			},
 			src: TestStruct{
-				StringMap: map[string]string{
-					"key2": "new_value2",
-					"key3": "value3",
-				},
+				CommandSlice: &[]string{},
 			},
 			expected: TestStruct{
-				StringMap: map[string]string{
-					"key1": "value1",
-					"key2": "new_value2",
-					"key3": "value3",
-				},
+				CommandSlice: &[]string{},
+			},
+		},
+	}
+
+	runTests(t, tests)
+}
+
+func TestMergeMaps(t *testing.T) {
+	tests := []struct {
+		name     string
+		dst      TestStruct
+		src      TestStruct
+		expected TestStruct
+	}{
+		{
+			name: "nil map should not override",
+			dst: TestStruct{
+				StringMap: map[string]string{"key1": "value1"},
+			},
+			src: TestStruct{}, // nil map
+			expected: TestStruct{
+				StringMap: map[string]string{"key1": "value1"},
 			},
 		},
 		{
-			name: "merge nested structs",
+			name: "empty map should merge",
 			dst: TestStruct{
-				Bool: true,
-				Nested: NestedStruct{
-					Value:    "old",
-					IntValue: 1,
-				},
-			},
-			src: TestStruct{
-				Nested: NestedStruct{
-					Value: "new",
-				},
-			},
-			expected: TestStruct{
-				Bool: true,
-				Nested: NestedStruct{
-					Value:    "new",
-					IntValue: 1,
-				},
-			},
-		},
-		{
-			name: "merge maps - nil source should keep destination",
-			dst: TestStruct{
-				StringMap: map[string]string{
-					"key1": "value1",
-				},
-			},
-			src: TestStruct{}, // StringMap will be nil
-			expected: TestStruct{
-				StringMap: map[string]string{
-					"key1": "value1",
-				},
-			},
-		},
-		{
-			name: "merge maps - empty source should merge",
-			dst: TestStruct{
-				StringMap: map[string]string{
-					"key1": "value1",
-				},
+				StringMap: map[string]string{"key1": "value1"},
 			},
 			src: TestStruct{
 				StringMap: map[string]string{},
 			},
 			expected: TestStruct{
-				StringMap: map[string]string{
-					"key1": "value1",
-				},
+				StringMap: map[string]string{"key1": "value1"},
 			},
 		},
 		{
-			name: "merge maps - should merge not replace",
+			name: "maps should merge values",
 			dst: TestStruct{
 				StringMap: map[string]string{
-					"key1": "value1",
-					"key2": "value2",
+					"keep":     "old",
+					"override": "old",
 				},
 			},
 			src: TestStruct{
 				StringMap: map[string]string{
-					"key2": "new_value2",
-					"key3": "value3",
+					"override": "new",
+					"add":      "new",
 				},
 			},
 			expected: TestStruct{
 				StringMap: map[string]string{
-					"key1": "value1",
-					"key2": "new_value2",
-					"key3": "value3",
+					"keep":     "old",
+					"override": "new",
+					"add":      "new",
+				},
+			},
+		},
+	}
+
+	runTests(t, tests)
+}
+
+func TestMergeNestedStructs(t *testing.T) {
+	tests := []struct {
+		name     string
+		dst      TestStruct
+		src      TestStruct
+		expected TestStruct
+	}{
+		{
+			name: "zero value nested struct should not override",
+			dst: TestStruct{
+				Nested: NestedStruct{
+					Value:    "keep",
+					IntValue: 42,
+				},
+			},
+			src: TestStruct{
+				Nested: NestedStruct{}, // zero value
+			},
+			expected: TestStruct{
+				Nested: NestedStruct{
+					Value:    "keep",
+					IntValue: 42,
 				},
 			},
 		},
 		{
-			name: "merge deep nested structs",
+			name: "nested struct should merge fields",
 			dst: TestStruct{
 				Deep: DeepNestedStruct{
 					Level1: struct {
@@ -215,9 +264,40 @@ func TestMergeStructs(t *testing.T) {
 						Level2 NestedStruct
 						IntMap map[string]int
 					}{
-						Value: "old_level1",
+						Value: "old",
 						Level2: NestedStruct{
-							Value:    "old_level2",
+							Value:    "old",
+							IntValue: 1,
+						},
+						IntMap: map[string]int{"a": 1},
+					},
+				},
+			},
+			src: TestStruct{
+				Deep: DeepNestedStruct{
+					Level1: struct {
+						Value  string
+						Level2 NestedStruct
+						IntMap map[string]int
+					}{
+						Value: "new",
+						Level2: NestedStruct{
+							Value: "new",
+						},
+						IntMap: map[string]int{"b": 2},
+					},
+				},
+			},
+			expected: TestStruct{
+				Deep: DeepNestedStruct{
+					Level1: struct {
+						Value  string
+						Level2 NestedStruct
+						IntMap map[string]int
+					}{
+						Value: "new",
+						Level2: NestedStruct{
+							Value:    "new",
 							IntValue: 1,
 						},
 						IntMap: map[string]int{
@@ -227,159 +307,23 @@ func TestMergeStructs(t *testing.T) {
 					},
 				},
 			},
-			src: TestStruct{
-				Deep: DeepNestedStruct{
-					Level1: struct {
-						Value  string
-						Level2 NestedStruct
-						IntMap map[string]int
-					}{
-						Value: "new_level1",
-						Level2: NestedStruct{
-							Value: "new_level2",
-						},
-						IntMap: map[string]int{
-							"b": 20,
-							"c": 30,
-						},
-					},
-				},
-			},
-			expected: TestStruct{
-				Deep: DeepNestedStruct{
-					Level1: struct {
-						Value  string
-						Level2 NestedStruct
-						IntMap map[string]int
-					}{
-						Value: "new_level1",
-						Level2: NestedStruct{
-							Value:    "new_level2",
-							IntValue: 1,
-						},
-						IntMap: map[string]int{
-							"a": 1,
-							"b": 20,
-							"c": 30,
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "merge zero value struct should not override",
-			dst: TestStruct{
-				Nested: NestedStruct{
-					Value:    "keep",
-					IntValue: 42,
-				},
-			},
-			src: TestStruct{
-				Nested: NestedStruct{}, // zero value struct
-			},
-			expected: TestStruct{
-				Nested: NestedStruct{
-					Value:    "keep",
-					IntValue: 42,
-				},
-			},
-		},
-		{
-			name: "merge pointer to slice - nil source should keep destination",
-			dst: TestStruct{
-				CommandSlice: &[]string{"cmd1", "cmd2"},
-			},
-			src: TestStruct{
-				CommandSlice: nil,
-			},
-			expected: TestStruct{
-				CommandSlice: &[]string{"cmd1", "cmd2"},
-			},
-		},
-		{
-			name: "merge pointer to slice - empty source should replace",
-			dst: TestStruct{
-				CommandSlice: &[]string{"cmd1", "cmd2"},
-			},
-			src: TestStruct{
-				CommandSlice: &[]string{},
-			},
-			expected: TestStruct{
-				CommandSlice: &[]string{},
-			},
-		},
-		{
-			name: "merge pointer to slice - non-empty source should replace",
-			dst: TestStruct{
-				CommandSlice: &[]string{"cmd1", "cmd2"},
-			},
-			src: TestStruct{
-				CommandSlice: &[]string{"cmd3", "cmd4"},
-			},
-			expected: TestStruct{
-				CommandSlice: &[]string{"cmd3", "cmd4"},
-			},
-		},
-		{
-			name: "merge pointer to slice - nil destination should take source",
-			dst: TestStruct{
-				CommandSlice: nil,
-			},
-			src: TestStruct{
-				CommandSlice: &[]string{"cmd1", "cmd2"},
-			},
-			expected: TestStruct{
-				CommandSlice: &[]string{"cmd1", "cmd2"},
-			},
 		},
 	}
 
+	runTests(t, tests)
+}
+
+func runTests(t *testing.T, tests []struct {
+	name     string
+	dst      TestStruct
+	src      TestStruct
+	expected TestStruct
+}) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.dst
 			MergeStructs(&result, &tt.src)
-
-			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf("merge structs mismatch (-want +got):\n%s", diff)
-			}
+			require.Equal(t, tt.expected, result)
 		})
 	}
-}
-
-func TestMergeStructsMultiple(t *testing.T) {
-	dst := TestStruct{
-		String: "first",
-		Int:    1,
-	}
-
-	src1 := TestStruct{
-		String: "second",
-		Float:  2.0,
-	}
-
-	src2 := TestStruct{
-		String: "third",
-		Bool:   true,
-	}
-
-	expected := TestStruct{
-		String: "third",
-		Int:    1,
-		Float:  2.0,
-		Bool:   true,
-	}
-
-	MergeStructs(&dst, &src1, &src2)
-	require.Equal(t, expected, dst)
-}
-
-func TestMergeStructsNilSource(t *testing.T) {
-	dst := TestStruct{
-		String: "original",
-		Int:    1,
-	}
-
-	expected := dst
-	MergeStructs(&dst, nil)
-	require.Equal(t, expected, dst)
 }

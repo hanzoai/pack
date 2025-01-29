@@ -34,71 +34,75 @@ func mergeStruct(dst, src interface{}) {
 		dstField := dstValue.Field(i)
 
 		switch srcField.Kind() {
-
-		// Merge map key/values
 		case reflect.Map:
-			if !srcField.IsNil() {
-				if dstField.IsNil() {
-					dstField.Set(reflect.MakeMap(srcField.Type()))
-				}
-				for _, key := range srcField.MapKeys() {
-					srcValue := srcField.MapIndex(key)
-					dstValue := dstField.MapIndex(key)
+			mergeMap(dstField, srcField)
 
-					// If the map values are pointers to structs, merge them
-					if srcValue.Kind() == reflect.Ptr && srcValue.Elem().Kind() == reflect.Struct {
-						if !dstValue.IsValid() {
-							// If destination doesn't have this key, create new struct
-							dstField.SetMapIndex(key, srcValue)
-						} else {
-							// If destination has this key, merge the structs
-							mergeStruct(dstValue.Interface(), srcValue.Interface())
-						}
-					} else {
-						// For non-struct pointers or other types, just set the value
-						dstField.SetMapIndex(key, srcValue)
-					}
-				}
-			}
-
-		// Use any non-nil slice to replace the destination slice
-		// This includes empty slices
 		case reflect.Slice:
+			// This is specific behaviour for how we want to merge slices
+			// Always override with the non-nil slice
 			if !srcField.IsNil() {
 				dstField.Set(srcField)
 			}
 
 		case reflect.Ptr:
-			if !srcField.IsNil() {
-				// Handle different types of pointers
-				switch srcField.Elem().Kind() {
-				case reflect.Struct:
-					// For pointers to structs, merge recursively
-					if dstField.IsNil() {
-						dstField.Set(reflect.New(srcField.Elem().Type()))
-					}
-					mergeStruct(dstField.Interface(), srcField.Interface())
-				case reflect.Slice:
-					// For pointers to slices, only set if source points to non-nil value
-					if dstField.IsNil() || !srcField.Elem().IsNil() {
-						dstField.Set(srcField)
-					}
-				default:
-					// For primitive type pointers (*bool, *string, etc.), just set the value
-					dstField.Set(srcField)
-				}
-			}
+			mergePtr(dstField, srcField)
 
-		// Recursively merge nested structs
 		case reflect.Struct:
 			mergeStruct(dstField.Addr().Interface(), srcField.Interface())
 
-		// Use any non-zero value to replace the destination value
 		default:
 			if !isZeroValue(srcField) {
 				dstField.Set(srcField)
 			}
 		}
+	}
+}
+
+func mergeMap(dst, src reflect.Value) {
+	if src.IsNil() {
+		return
+	}
+
+	if dst.IsNil() {
+		dst.Set(reflect.MakeMap(src.Type()))
+	}
+
+	for _, key := range src.MapKeys() {
+		srcValue := src.MapIndex(key)
+		dstValue := dst.MapIndex(key)
+
+		if srcValue.Kind() == reflect.Ptr && srcValue.Elem().Kind() == reflect.Struct {
+			if !dstValue.IsValid() {
+				dst.SetMapIndex(key, srcValue)
+			} else {
+				mergeStruct(dstValue.Interface(), srcValue.Interface())
+			}
+			continue
+		}
+
+		dst.SetMapIndex(key, srcValue)
+	}
+}
+
+func mergePtr(dst, src reflect.Value) {
+	if src.IsNil() {
+		return
+	}
+
+	switch src.Elem().Kind() {
+	case reflect.Struct:
+		if dst.IsNil() {
+			dst.Set(reflect.New(src.Elem().Type()))
+		}
+		mergeStruct(dst.Interface(), src.Interface())
+
+	case reflect.Slice:
+		if dst.IsNil() || !src.Elem().IsNil() {
+			dst.Set(src)
+		}
+
+	default:
+		dst.Set(src)
 	}
 }
 
