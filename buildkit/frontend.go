@@ -23,7 +23,7 @@ const (
 	configMountName = "dockerfile"
 
 	// The default filename for the serialized Railpack plan
-	defaultRailpackPlan = "rpk.json"
+	defaultRailpackPlan = "railpack-plan.json"
 )
 
 func StartFrontend() {
