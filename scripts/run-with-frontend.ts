@@ -56,21 +56,18 @@ writeFileSync(planPath, planResult.stdout);
 const envVars: Record<string, string> = {};
 const secretArgs: string[] = [];
 
-envArgs.forEach((arg) => {
-  const [_, nameValue] = arg.split("--env ");
-  const [name, value] = nameValue.split("=");
-  if (name && value) {
-    envVars[name] = value;
-    secretArgs.push(`--secret id=${name},env=${name}`);
+// Find all env args and their values
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === "--env" && i + 1 < args.length) {
+    const nameValue = args[i + 1];
+    const [name, value] = nameValue.split("=");
+    if (name && value) {
+      envVars[name] = value;
+      secretArgs.push(`--secret=id=${name},env=${name}`);
+    }
+    i++; // Skip the next argument since we've processed it
   }
-});
-
-// Options that are passed to our custom frontend
-const cacheKey = dir;
-const secretsHash = crypto
-  .createHash("sha256")
-  .update(Object.values(envVars).sort().join(""))
-  .digest("hex");
+}
 
 // Pipe buildctl and docker load together
 const buildctlArgs = [
@@ -82,16 +79,24 @@ const buildctlArgs = [
   "--frontend=gateway.v0",
   "--opt",
   `source=${FRONTEND_IMAGE}`,
-  "--opt",
-  `cache-key=${cacheKey}`,
-  "--opt",
-  `secrets-hash=${secretsHash}`,
   "--output",
   "type=docker,name=test",
   ...secretArgs,
 ];
 
-console.log("Executing buildctl", buildctlArgs.join(" "));
+// Options that are passed to our custom frontend
+const cacheKey = dir;
+buildctlArgs.push("--opt", `cache-key=${cacheKey}`);
+
+if (Object.keys(envVars).length > 0) {
+  const secretsHash = crypto
+    .createHash("sha256")
+    .update(Object.values(envVars).sort().join(""))
+    .digest("hex");
+  buildctlArgs.push("--opt", `secrets-hash=${secretsHash}`);
+}
+
+console.log(`Executing buildctl\n  ${buildctlArgs.join(" ")}`);
 
 const buildctl = spawnSync("buildctl", buildctlArgs, {
   stdio: ["inherit", "pipe", "inherit"],
