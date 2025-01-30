@@ -83,7 +83,7 @@ func getStartState(buildState llb.State, plan *p.BuildPlan, platform specs.Platf
 		startState = llb.Image(plan.Start.BaseImage, llb.Platform(platform)).Dir(WorkingDir)
 
 		// Copy over necessary files to the start image
-		for _, path := range plan.Start.Paths {
+		for _, path := range plan.Start.Outputs {
 			startState = startState.File(llb.Copy(mergedState, path, path, &llb.CopyInfo{
 				CreateDestPath:      true,
 				FollowSymlinks:      true,
@@ -93,7 +93,7 @@ func getStartState(buildState llb.State, plan *p.BuildPlan, platform specs.Platf
 	} else {
 		// If there is no custom start image, we will just copy over any additional files from the local context
 		src := llb.Local("context")
-		for _, path := range plan.Start.Paths {
+		for _, path := range plan.Start.Outputs {
 			startState = startState.Dir(WorkingDir).File(llb.Copy(src, path, path, &llb.CopyInfo{
 				CreateDestPath:      true,
 				FollowSymlinks:      true,
