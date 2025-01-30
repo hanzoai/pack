@@ -20,6 +20,14 @@ golangci-lint run
 [tasks.tidy]
 run = "go mod tidy"
 
+[tasks.docs-build]
+dir = "docs"
+run = "bun run build"
+
+[tasks.docs-dev]
+dir = "docs"
+run = "bun run dev"
+
 [tasks.run-frontend]
 run = """
 # syntax=docker.io/library/railpack-frontend2
@@ -42,8 +50,7 @@ docker tag railpack-frontend:latest ghcr.io/railwayapp/railpack:railpack-fronten
 docker push ghcr.io/railwayapp/railpack:railpack-frontend
 """
 
-[tools.go]
-version = "1.23.4"
-
 [tools]
+go = "1.23.4"
 golangci-lint = "1.63.4"
+bun = "1.2"

@@ -11,8 +11,8 @@ _Huge work in progress_
 - [x] Build LLB with a Buildkit client
 - [x] Buildkit frontend that can be used as an image
 - [x] Optimized build plan to LLB generation
-- [ ] Solidify build plan configuration
-- [ ] Support configuring Railpack with a config file
+- [x] Solidify build plan configuration
+- [x] Support configuring Railpack with a config file
 
 ## Architecture
 
@@ -25,7 +25,6 @@ _Huge work in progress_
   - Buildkit invokes our frontend image with a mounted context
   - We look for a `rpk.json` file, which is a serialized build plan
   - We convert the build plan to LLB and return it
-
 
 ## Usage
 
@@ -81,7 +80,6 @@ To update the frontend image, you can run
 ```bash
 mise run build-and-push-frontend
 ```
-
 
 ### References
 
