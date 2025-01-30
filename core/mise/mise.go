@@ -32,7 +32,7 @@ func New(cacheDir string) (*Mise, error) {
 // GetLatestVersion gets the latest version of a package matching the version constraint
 func (m *Mise) GetLatestVersion(pkg, version string) (string, error) {
 	query := fmt.Sprintf("%s@%s", pkg, strings.TrimSpace(version))
-	output, err := m.runCmd("latest", query)
+	output, err := m.runCmd("latest", "--verbose", query)
 	if err != nil {
 		return "", err
 	}
