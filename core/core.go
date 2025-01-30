@@ -19,8 +19,9 @@ const (
 )
 
 type GenerateBuildPlanOptions struct {
-	BuildCommand string
-	StartCommand string
+	BuildCommand     string
+	StartCommand     string
+	PreviousVersions map[string]string
 }
 
 type BuildResult struct {
@@ -33,6 +34,13 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	ctx, err := generate.NewGenerateContext(app, env)
 	if err != nil {
 		return nil, err
+	}
+
+	// Set the preivous versions
+	if options.PreviousVersions != nil {
+		for name, version := range options.PreviousVersions {
+			ctx.Resolver.SetPreviousVersion(name, version)
+		}
 	}
 
 	// Get the full user config based on file config, env config, and options
@@ -153,6 +161,7 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 	if envPackages, _ := env.GetConfigVariable("PACKAGES"); envPackages != "" {
 		config.Packages = make(map[string]string)
 		for _, pkg := range strings.Split(envPackages, " ") {
+			// TODO: We should support specifying a version here (e.g. "node@18" or just "node")
 			config.Packages[pkg] = "latest"
 		}
 	}

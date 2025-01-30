@@ -11,7 +11,7 @@ import (
 type PackageManager string
 
 const (
-	DEFAULT_NODE_VERSION = "22"
+	DEFAULT_NODE_VERSION = "23"
 	DEFAULT_BUN_VERSION  = "latest"
 )
 

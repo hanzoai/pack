@@ -16,7 +16,7 @@ type ImageStepBuilder struct {
 func (c *GenerateContext) NewImageStep(name string, resolveStepImage func(options *BuildStepOptions) string) *ImageStepBuilder {
 	step := &ImageStepBuilder{
 		DisplayName:      c.GetStepName(name),
-		Resolver:         c.resolver,
+		Resolver:         c.Resolver,
 		ResolveStepImage: resolveStepImage,
 	}
 

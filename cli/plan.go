@@ -26,6 +26,10 @@ var PlanCommand = &cli.Command{
 			Aliases: []string{"o"},
 			Usage:   "output file name",
 		},
+		&cli.StringSliceFlag{
+			Name:  "previous",
+			Usage: "versions of packages used for previous builds. These versions will be used instead of the defaults. format: NAME@VERSION",
+		},
 	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildResult, _, _, err := GenerateBuildResultForCommand(cmd)

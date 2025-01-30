@@ -12,7 +12,6 @@ import (
 var verbose bool
 
 func main() {
-
 	logger := log.Default()
 	logger.SetTimeFormat("")
 	urfaveLogWriter := logger.StandardLog(log.StandardLogOptions{
@@ -39,11 +38,11 @@ func main() {
 			return ctx, nil
 		},
 		Commands: []*urfave.Command{
-			cli.PlanCommand,
-			cli.InfoCommand,
 			cli.BuildCommand,
-			cli.FrontendCommand,
+			cli.InfoCommand,
+			cli.PlanCommand,
 			cli.SchemaCommand,
+			cli.FrontendCommand,
 		},
 	}
 

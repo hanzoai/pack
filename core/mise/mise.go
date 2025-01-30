@@ -48,11 +48,16 @@ func (m *Mise) GetLatestVersion(pkg, version string) (string, error) {
 // runCmd runs a mise command with the given arguments
 func (m *Mise) runCmd(args ...string) (string, error) {
 	cmd := exec.Command(m.binaryPath, args...)
-	var stdout bytes.Buffer
+	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to run mise command: %w", err)
+		return "", fmt.Errorf("failed to run mise command '%s': %w\nstdout: %s\nstderr: %s",
+			strings.Join(append([]string{m.binaryPath}, args...), " "),
+			err,
+			stdout.String(),
+			stderr.String())
 	}
 
 	return stdout.String(), nil
