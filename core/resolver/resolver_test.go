@@ -34,6 +34,11 @@ func TestPackageResolver(t *testing.T) {
 	resolver.Version(golang, "1.22", "GO_VERSION environment variable")
 	resolver.Version(golang, "1.23", ".go-version")
 
+	// Set up Python
+	python := resolver.Default("python", "3.11")
+	resolver.Version(python, "3.12", "PYTHON_VERSION environment variable")
+	resolver.Version(python, "3.13", ".python-version")
+
 	// Resolve all packages
 	resolvedPackages, err := resolver.ResolvePackages()
 	require.NoError(t, err)
@@ -54,6 +59,12 @@ func TestPackageResolver(t *testing.T) {
 	require.NotNil(t, goResolved)
 	require.NotNil(t, goResolved.ResolvedVersion)
 	assert.Contains(t, *goResolved.ResolvedVersion, "1.23")
+
+	// Check Python resolution
+	pythonResolved := resolvedPackages["python"]
+	require.NotNil(t, pythonResolved)
+	require.NotNil(t, pythonResolved.ResolvedVersion)
+	assert.Contains(t, *pythonResolved.ResolvedVersion, "3.13")
 }
 
 func TestPackageResolverWithPreviousVersions(t *testing.T) {
@@ -79,18 +90,4 @@ func TestPackageResolverWithPreviousVersions(t *testing.T) {
 	pkg = resolver.Get("go")
 	assert.Equal(t, "1.23", pkg.Version)
 	assert.Equal(t, DefaultSource, pkg.Source)
-}
-
-func PythonTest1(t *testing.T) {
-	resolver, err := NewResolver(mise.TestInstallDir)
-	require.NoError(t, err)
-
-	resolver.Default("python", "3.11")
-	pkg := resolver.Get("python")
-	assert.Equal(t, "3.11", pkg.Version)
-	assert.Equal(t, DefaultSource, pkg.Source)
-
-	resolvedPackages, err := resolver.ResolvePackages()
-	require.NoError(t, err)
-	assert.Equal(t, 1, len(resolvedPackages))
 }
