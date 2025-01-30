@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/charmbracelet/log"
-	"github.com/railwayapp/railpack/core"
 	"github.com/urfave/cli/v3"
 )
 
@@ -27,11 +26,6 @@ var PlanCommand = &cli.Command{
 			Aliases: []string{"o"},
 			Usage:   "output file name",
 		},
-		&cli.StringFlag{
-			Name:  "format",
-			Usage: "output format. one of: pretty, json",
-			Value: "pretty",
-		},
 	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildResult, _, _, err := GenerateBuildResultForCommand(cmd)
@@ -39,18 +33,11 @@ var PlanCommand = &cli.Command{
 			return cli.Exit(err, 1)
 		}
 
-		format := cmd.String("format")
-
-		var buildResultString string
-		if format == "pretty" {
-			buildResultString = core.FormatBuildResult(buildResult)
-		} else {
-			serializedPlan, err := json.MarshalIndent(buildResult.Plan, "", "  ")
-			if err != nil {
-				return cli.Exit(err, 1)
-			}
-			buildResultString = string(serializedPlan)
+		serializedPlan, err := json.MarshalIndent(buildResult.Plan, "", "  ")
+		if err != nil {
+			return cli.Exit(err, 1)
 		}
+		buildResultString := string(serializedPlan)
 
 		output := cmd.String("out")
 		if output == "" {
