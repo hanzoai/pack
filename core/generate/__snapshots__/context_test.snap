@@ -29,7 +29,7 @@
  "steps": [
   {
    "assets": {
-    "mise.toml": "[tools]\n  [tools.go]\n    version = \"1.23.5\"\n  [tools.node]\n    version = \"20.18.2\"\n"
+    "mise.toml": "[tools]\n  [tools.go]\n    version = \"1.23.5\"\n  [tools.node]\n    version = \"20.18.2\"\n  [tools.python]\n    version = \"3.13.1\"\n"
    },
    "commands": [
     {
@@ -76,7 +76,7 @@
       "mise"
      ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
-     "customName": "install mise packages: go, node"
+     "customName": "install mise packages: go, node, python"
     }
    ],
    "dependsOn": [

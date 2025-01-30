@@ -42,7 +42,7 @@ func TestPackageResolver(t *testing.T) {
 	// Resolve all packages
 	resolvedPackages, err := resolver.ResolvePackages()
 	require.NoError(t, err)
-	assert.Equal(t, 3, len(resolvedPackages))
+	assert.Equal(t, 4, len(resolvedPackages))
 
 	// Check Node.js resolution
 	nodeResolved := resolvedPackages["node"]
