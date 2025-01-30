@@ -51,7 +51,13 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	cmd.Env = append(cmd.Env, "MISE_LOG_FILE_LEVEL=trace")
+
+	// We want to shell out to the git CLI here
+	// Without it, I was noticing races when multiple processes tried to check the version of the same package in parallel
+	// Sometimes a checkout operation would fail.
+	// I am testing out forcing usage of the git CLI to see if it helps
+	// Source: https://github.com/jdx/mise/blob/main/src/git.rs#L124
+	// Config: https://github.com/jdx/mise/blob/main/settings.toml#L369
 	cmd.Env = append(cmd.Env, "MISE_LIBGIT2=false")
 	cmd.Env = append(cmd.Env, "MISE_GIX=false")
 
