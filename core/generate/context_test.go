@@ -114,3 +114,26 @@ func TestGenerateContext(t *testing.T) {
 
 	snaps.MatchJSON(t, serializedPlan)
 }
+
+func TestPython(t *testing.T) {
+	ctx := CreateTestContext(t, "../../examples/node-npm")
+	provider := &TestProvider{}
+	require.NoError(t, provider.Plan(ctx))
+
+	// User defined config
+	configJSON := `{
+		"packages": {
+			"python": "3.11"
+		}
+	}`
+
+	var cfg config.Config
+	require.NoError(t, json.Unmarshal([]byte(configJSON), &cfg))
+
+	// Apply the config to the context
+	require.NoError(t, ctx.ApplyConfig(&cfg))
+
+	// Resolve packages
+	_, err := ctx.ResolvePackages()
+	require.NoError(t, err)
+}

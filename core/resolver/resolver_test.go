@@ -94,17 +94,3 @@ func PythonTest1(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(resolvedPackages))
 }
-
-func PythonTest2(t *testing.T) {
-	resolver, err := NewResolver(mise.TestInstallDir)
-	require.NoError(t, err)
-
-	resolver.Default("python", "3.11")
-	pkg := resolver.Get("python")
-	assert.Equal(t, "3.11", pkg.Version)
-	assert.Equal(t, DefaultSource, pkg.Source)
-
-	resolvedPackages, err := resolver.ResolvePackages()
-	require.NoError(t, err)
-	assert.Equal(t, 1, len(resolvedPackages))
-}
