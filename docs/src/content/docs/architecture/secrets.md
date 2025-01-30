@@ -3,8 +3,6 @@ title: Secrets and Environment Variables
 description: How Railpack handles secrets and environment variables
 ---
 
-# Secrets and Environment Variables
-
 Learn about how Railpack manages secrets and environment variables during builds.
 
 ## Secret Management

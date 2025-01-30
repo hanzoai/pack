@@ -3,8 +3,6 @@ title: High Level Overview
 description: Understanding Railpack's architecture and components
 ---
 
-# Architecture Overview
-
 A high-level overview of Railpack's architecture and how its components work together.
 
 ## Components

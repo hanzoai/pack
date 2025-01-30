@@ -12,8 +12,12 @@ export default defineConfig({
       },
       sidebar: [
         {
-          label: "Start Here",
-          items: [{ label: "Getting Started", link: "/getting-started" }],
+          label: "Getting Started",
+          link: "/getting-started",
+        },
+        {
+          label: "Installation",
+          link: "/installation",
         },
         {
           label: "Guides",
@@ -68,6 +72,10 @@ export default defineConfig({
             { label: "BuildKit Generation", link: "/architecture/buildkit" },
             { label: "Caching", link: "/architecture/caching" },
           ],
+        },
+        {
+          label: "Contributing",
+          link: "/contributing",
         },
       ],
     }),

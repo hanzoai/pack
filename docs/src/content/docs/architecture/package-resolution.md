@@ -3,8 +3,6 @@ title: Packages and Version Resolution
 description: Understanding how Railpack resolves package versions using Mise
 ---
 
-# Package Resolution
-
 Learn how Railpack handles package and version resolution.
 
 ## Mise Integration

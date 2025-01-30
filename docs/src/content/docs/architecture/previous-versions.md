@@ -3,8 +3,6 @@ title: Previous Installed Versions
 description: How Railpack manages previously installed versions
 ---
 
-# Previous Installed Versions
-
 Learn about how Railpack handles previously installed versions of languages and packages.
 
 ## Version Storage

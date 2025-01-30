@@ -3,8 +3,6 @@ title: CLI Reference
 description: Complete reference for the Railpack CLI commands
 ---
 
-# CLI Reference
-
 Complete reference documentation for all Railpack CLI commands.
 
 ## Commands

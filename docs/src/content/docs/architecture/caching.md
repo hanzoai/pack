@@ -3,8 +3,6 @@ title: Caching
 description: Understanding Railpack's caching mechanisms
 ---
 
-# Caching
-
 Learn about Railpack's caching mechanisms and how to optimize them.
 
 ## Layer Cache Optimization
