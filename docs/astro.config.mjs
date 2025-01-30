@@ -30,6 +30,10 @@ export default defineConfig({
               label: "Building with a Custom Frontend",
               link: "/guides/custom-frontend",
             },
+            {
+              label: "Developing Locally",
+              link: "/guides/developing-locally",
+            },
           ],
         },
         {
@@ -52,8 +56,11 @@ export default defineConfig({
           ],
         },
         {
-          label: "CLI Reference",
-          items: [{ label: "CLI Commands", link: "/cli-reference" }],
+          label: "Reference",
+          items: [
+            { label: "CLI Commands", link: "/reference/cli" },
+            { label: "Configuration File", link: "/reference/config" },
+          ],
         },
         {
           label: "Architecture",
