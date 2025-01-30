@@ -12,8 +12,9 @@ const (
 )
 
 type Resolver struct {
-	mise     *mise.Mise
-	packages map[string]*RequestedPackage
+	mise             *mise.Mise
+	packages         map[string]*RequestedPackage
+	previousVersions map[string]string
 }
 
 type RequestedPackage struct {
@@ -54,8 +55,9 @@ func NewResolver(miseDir string) (*Resolver, error) {
 	}
 
 	return &Resolver{
-		mise:     mise,
-		packages: make(map[string]*RequestedPackage),
+		mise:             mise,
+		packages:         make(map[string]*RequestedPackage),
+		previousVersions: make(map[string]string),
 	}, nil
 }
 
@@ -91,6 +93,12 @@ func (r *Resolver) Get(name string) *RequestedPackage {
 
 func (r *Resolver) Default(name, defaultVersion string) PackageRef {
 	r.packages[name] = NewRequestedPackage(name, defaultVersion)
+
+	// If there is a previous version of the package, use that instead of the default version
+	if r.previousVersions[name] != "" && r.previousVersions[name] != defaultVersion {
+		r.Version(PackageRef{Name: name}, r.previousVersions[name], "previous installed version")
+	}
+
 	return PackageRef{Name: name}
 }
 
@@ -99,4 +107,8 @@ func (r *Resolver) Version(ref PackageRef, version, source string) PackageRef {
 		pkg.SetVersion(strings.TrimSpace(version), source)
 	}
 	return ref
+}
+
+func (r *Resolver) SetPreviousVersion(name, version string) {
+	r.previousVersions[name] = version
 }

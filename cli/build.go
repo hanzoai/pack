@@ -55,6 +55,10 @@ var BuildCommand = &cli.Command{
 			Usage: "Show the build plan before building. This is useful for development and debugging.",
 			Value: false,
 		},
+		&cli.StringSliceFlag{
+			Name:  "previous-versions",
+			Usage: "versions of packages used for previous builds. These versions will be used instead of the defaults. format: NAME@VERSION",
+		},
 	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildResult, app, env, err := GenerateBuildResultForCommand(cmd)

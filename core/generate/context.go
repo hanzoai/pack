@@ -43,7 +43,8 @@ type GenerateContext struct {
 
 	Metadata *Metadata
 
-	resolver        *resolver.Resolver
+	Resolver *resolver.Resolver
+
 	miseStepBuilder *MiseStepBuilder
 }
 
@@ -62,7 +63,7 @@ func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error
 		Caches:    NewCacheContext(),
 		Secrets:   []string{},
 		Metadata:  NewMetadata(),
-		resolver:  resolver,
+		Resolver:  resolver,
 	}, nil
 }
 
@@ -101,7 +102,7 @@ func (c *GenerateContext) GetStepByName(name string) *StepBuilder {
 }
 
 func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackage, error) {
-	return c.resolver.ResolvePackages()
+	return c.Resolver.ResolvePackages()
 }
 
 // Generate a build plan from the context
