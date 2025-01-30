@@ -55,3 +55,28 @@ func TestPackageResolver(t *testing.T) {
 	require.NotNil(t, pythonResolved.ResolvedVersion)
 	assert.Contains(t, *pythonResolved.ResolvedVersion, "3.13")
 }
+
+func TestPackageResolverWithPreviousVersions(t *testing.T) {
+	resolver, err := NewResolver(mise.TestInstallDir)
+	require.NoError(t, err)
+
+	resolver.SetPreviousVersion("node", "16")
+
+	// Default should use previous version
+	node := resolver.Default("node", "18")
+	pkg := resolver.Get("node")
+	assert.Equal(t, "16", pkg.Version)
+	assert.Equal(t, "previous installed version", pkg.Source)
+
+	// Custom version should override previous version
+	resolver.Version(node, "20", "manual override")
+	pkg = resolver.Get("node")
+	assert.Equal(t, "20", pkg.Version)
+	assert.Equal(t, "manual override", pkg.Source)
+
+	// If no previous version, default should use the requested version
+	resolver.Default("python", "3.11")
+	pkg = resolver.Get("python")
+	assert.Equal(t, "3.11", pkg.Version)
+	assert.Equal(t, DefaultSource, pkg.Source)
+}
