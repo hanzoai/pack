@@ -29,10 +29,10 @@ func TestPackageResolver(t *testing.T) {
 	// Set up Bun
 	resolver.Default("bun", "latest")
 
-	// Set up Python
-	python := resolver.Default("python", "3.11")
-	resolver.Version(python, "3.12", "PYTHON_VERSION environment variable")
-	resolver.Version(python, "3.13", ".python-version")
+	// Set up Go
+	golang := resolver.Default("go", "1.21")
+	resolver.Version(golang, "1.22", "GO_VERSION environment variable")
+	resolver.Version(golang, "1.23", ".go-version")
 
 	// Resolve all packages
 	resolvedPackages, err := resolver.ResolvePackages()
@@ -49,11 +49,11 @@ func TestPackageResolver(t *testing.T) {
 	bunResolved := resolvedPackages["bun"]
 	assert.NotNil(t, bunResolved)
 
-	// Check Python resolution
-	pythonResolved := resolvedPackages["python"]
-	require.NotNil(t, pythonResolved)
-	require.NotNil(t, pythonResolved.ResolvedVersion)
-	assert.Contains(t, *pythonResolved.ResolvedVersion, "3.13")
+	// Check Go resolution
+	goResolved := resolvedPackages["go"]
+	require.NotNil(t, goResolved)
+	require.NotNil(t, goResolved.ResolvedVersion)
+	assert.Contains(t, *goResolved.ResolvedVersion, "1.23")
 }
 
 func TestPackageResolverWithPreviousVersions(t *testing.T) {
@@ -75,8 +75,8 @@ func TestPackageResolverWithPreviousVersions(t *testing.T) {
 	assert.Equal(t, "manual override", pkg.Source)
 
 	// If no previous version, default should use the requested version
-	resolver.Default("python", "3.11")
-	pkg = resolver.Get("python")
-	assert.Equal(t, "3.11", pkg.Version)
+	resolver.Default("go", "1.23")
+	pkg = resolver.Get("go")
+	assert.Equal(t, "1.23", pkg.Version)
 	assert.Equal(t, DefaultSource, pkg.Source)
 }

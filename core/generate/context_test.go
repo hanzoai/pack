@@ -62,7 +62,7 @@ func TestGenerateContext(t *testing.T) {
 	configJSON := `{
 		"packages": {
 			"node": "20",
-			"python": "3.11"
+			"go": "1.23"
 		},
 		"aptPackages": ["curl"],
 		"steps": {
