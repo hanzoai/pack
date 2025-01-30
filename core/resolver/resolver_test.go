@@ -89,6 +89,10 @@ func PythonTest1(t *testing.T) {
 	pkg := resolver.Get("python")
 	assert.Equal(t, "3.11", pkg.Version)
 	assert.Equal(t, DefaultSource, pkg.Source)
+
+	resolvedPackages, err := resolver.ResolvePackages()
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(resolvedPackages))
 }
 
 func PythonTest2(t *testing.T) {
@@ -99,4 +103,8 @@ func PythonTest2(t *testing.T) {
 	pkg := resolver.Get("python")
 	assert.Equal(t, "3.11", pkg.Version)
 	assert.Equal(t, DefaultSource, pkg.Source)
+
+	resolvedPackages, err := resolver.ResolvePackages()
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(resolvedPackages))
 }
