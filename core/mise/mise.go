@@ -52,6 +52,8 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	cmd.Env = append(cmd.Env, "MISE_LOG_FILE_LEVEL=trace")
+	cmd.Env = append(cmd.Env, "MISE_LIBGIT2=false")
+	cmd.Env = append(cmd.Env, "MISE_GIX=false")
 
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("failed to run mise command '%s': %w\nstdout: %s\nstderr: %s",
