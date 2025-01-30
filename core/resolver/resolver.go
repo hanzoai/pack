@@ -63,7 +63,8 @@ func (r *Resolver) ResolvePackages() (map[string]*ResolvedPackage, error) {
 	resolvedPackages := make(map[string]*ResolvedPackage)
 
 	for name, pkg := range r.packages {
-		latestVersion, err := r.mise.GetLatestVersion(name, pkg.Version)
+		fuzzyVersion := resolveToFuzzyVersion(pkg.Version)
+		latestVersion, err := r.mise.GetLatestVersion(name, fuzzyVersion)
 
 		if err != nil {
 			return nil, err
