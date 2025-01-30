@@ -6,6 +6,7 @@ import (
 	"github.com/railwayapp/railpack/core/providers/node"
 	"github.com/railwayapp/railpack/core/providers/php"
 	"github.com/railwayapp/railpack/core/providers/python"
+	"github.com/railwayapp/railpack/core/providers/staticfile"
 )
 
 type Provider interface {
@@ -20,6 +21,7 @@ func GetLanguageProviders() []Provider {
 		&node.NodeProvider{},
 		&python.PythonProvider{},
 		&golang.GoProvider{},
+		&staticfile.StaticfileProvider{},
 	}
 }
 
