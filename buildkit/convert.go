@@ -106,20 +106,12 @@ func getStartState(buildState llb.State, plan *p.BuildPlan, platform specs.Platf
 }
 
 func getImageEnv(graphOutput *build_llb.BuildGraphOutput, plan *p.BuildPlan) []string {
-	paths := graphOutput.GraphEnv.PathList
+	paths := []string{system.DefaultPathEnvUnix}
+	paths = append(paths, graphOutput.GraphEnv.PathList...)
 	paths = append(paths, plan.Start.Paths...)
-
 	pathString := strings.Join(paths, ":")
 
-	var pathEnv string
-	if pathString == "" {
-		pathEnv = "PATH=" + system.DefaultPathEnvUnix
-	} else {
-		pathEnv = "PATH=" + pathString + ":" + system.DefaultPathEnvUnix
-	}
-
 	envMap := make(map[string]string)
-	envMap["PATH"] = pathEnv
 
 	for k, v := range graphOutput.GraphEnv.EnvVars {
 		envMap[k] = v
@@ -128,6 +120,8 @@ func getImageEnv(graphOutput *build_llb.BuildGraphOutput, plan *p.BuildPlan) []s
 	for k, v := range plan.Start.Variables {
 		envMap[k] = v
 	}
+
+	envMap["PATH"] = pathString
 
 	envVars := make([]string, 0, len(envMap))
 	for k, v := range envMap {
