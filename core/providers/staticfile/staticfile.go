@@ -76,6 +76,8 @@ func (p *StaticfileProvider) SetupCaddy(ctx *generate.GenerateContext, rootDir s
 	setupStep := ctx.NewCommandStep("setup")
 	setupStep.AddCommands([]plan.Command{
 		plan.NewFileCommand(CaddyfilePath, "Caddyfile"),
+
+		// format to validate the Caddyfile
 		plan.NewExecCommand("caddy fmt --overwrite Caddyfile"),
 	})
 
