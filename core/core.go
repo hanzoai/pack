@@ -161,6 +161,7 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 	if envPackages, _ := env.GetConfigVariable("PACKAGES"); envPackages != "" {
 		config.Packages = make(map[string]string)
 		for _, pkg := range strings.Split(envPackages, " ") {
+			// TODO: We should support specifying a version here (e.g. "node@18" or just "node")
 			config.Packages[pkg] = "latest"
 		}
 	}
