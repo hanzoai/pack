@@ -80,3 +80,23 @@ func TestPackageResolverWithPreviousVersions(t *testing.T) {
 	assert.Equal(t, "1.23", pkg.Version)
 	assert.Equal(t, DefaultSource, pkg.Source)
 }
+
+func PythonTest1(t *testing.T) {
+	resolver, err := NewResolver(mise.TestInstallDir)
+	require.NoError(t, err)
+
+	resolver.Default("python", "3.11")
+	pkg := resolver.Get("python")
+	assert.Equal(t, "3.11", pkg.Version)
+	assert.Equal(t, DefaultSource, pkg.Source)
+}
+
+func PythonTest2(t *testing.T) {
+	resolver, err := NewResolver(mise.TestInstallDir)
+	require.NoError(t, err)
+
+	resolver.Default("python", "3.11")
+	pkg := resolver.Get("python")
+	assert.Equal(t, "3.11", pkg.Version)
+	assert.Equal(t, DefaultSource, pkg.Source)
+}
