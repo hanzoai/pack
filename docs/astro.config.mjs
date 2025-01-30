@@ -2,6 +2,8 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 
+import tailwind from "@astrojs/tailwind";
+
 // https://astro.build/config
 export default defineConfig({
   integrations: [
@@ -10,6 +12,14 @@ export default defineConfig({
       social: {
         github: "https://github.com/railwayapp/railpack",
       },
+      customCss: [
+        // Path to your Tailwind base styles:
+        "./src/tailwind.css",
+
+        // Fontsource files for to regular and semi-bold font weights.
+        "@fontsource/inter/400.css",
+        "@fontsource/inter/600.css",
+      ],
       sidebar: [
         {
           label: "Getting Started",
@@ -85,6 +95,10 @@ export default defineConfig({
           link: "/contributing",
         },
       ],
+    }),
+    tailwind({
+      // Disable the default base styles:
+      applyBaseStyles: false,
     }),
   ],
 });
