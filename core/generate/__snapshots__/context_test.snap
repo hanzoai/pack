@@ -49,15 +49,12 @@
      "value": "/mise/cache"
     },
     {
-     "path": "/mise/shims"
-    },
-    {
      "caches": [
       "apt",
       "apt-lists"
      ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl'",
-     "customName": "install apt packages: ca-certificates curl"
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
+     "customName": "install apt packages: ca-certificates curl git"
     },
     {
      "caches": [
@@ -77,6 +74,15 @@
      ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: go, node, python"
+    },
+    {
+     "path": "/mise/installs/node/20.18.2/bin"
+    },
+    {
+     "path": "/mise/installs/python/3.13.1/bin"
+    },
+    {
+     "path": "/mise/installs/go/1.23.5/bin"
     }
    ],
    "dependsOn": [
@@ -85,10 +91,7 @@
    "name": "packages:mise",
    "outputs": [
     "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
+    "/mise/installs"
    ],
    "useSecrets": false
   },
