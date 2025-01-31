@@ -37,7 +37,7 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 		SupportingAptPackages: []string{},
 		Assets:                map[string]string{},
 		DependsOn:             []string{},
-		Outputs:               &[]string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
+		Outputs:               &[]string{"/mise/shims", "/mise/installs"},
 		app:                   c.App,
 		env:                   c.Env,
 	}
@@ -88,8 +88,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		plan.NewVariableCommand("MISE_CONFIG_DIR", "/mise"),
 		plan.NewVariableCommand("MISE_INSTALL_PATH", "/usr/local/bin/mise"),
 		plan.NewVariableCommand("MISE_CACHE_DIR", "/mise/cache"),
-		plan.NewPathCommand("/mise/shims"),
-		options.NewAptInstallCommand([]string{"curl", "ca-certificates"}),
+		options.NewAptInstallCommand([]string{"curl", "ca-certificates", "git"}),
 		plan.NewExecCommand("sh -c 'curl -fsSL https://mise.run | sh'",
 			plan.ExecOptions{
 				CustomName: "install mise",
@@ -143,6 +142,21 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 				CustomName: "install mise packages: " + strings.Join(pkgNames, ", "),
 				Caches:     []string{miseCache},
 			}),
+		})
+	}
+
+	// Packages installed have binaries available at /mise/installs/{package}/{version}/bin
+	// We need to add these to the PATH
+	for _, pkg := range b.MisePackages {
+		resolved, ok := options.ResolvedPackages[pkg.Name]
+		if !ok || resolved.ResolvedVersion == nil {
+			continue
+		}
+
+		version := *resolved.ResolvedVersion
+
+		step.AddCommands([]plan.Command{
+			plan.NewPathCommand("/mise/installs/" + pkg.Name + "/" + version + "/bin"),
 		})
 	}
 
