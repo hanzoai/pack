@@ -4,7 +4,9 @@ import (
 	"context"
 	"os"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/muesli/termenv"
 	"github.com/railwayapp/railpack/cli"
 	urfave "github.com/urfave/cli/v3"
 )
@@ -18,6 +20,10 @@ func main() {
 		ForceLevel: log.ErrorLevel,
 	}).Writer()
 	urfave.ErrWriter = urfaveLogWriter
+
+	if os.Getenv("FORCE_COLOR") != "" {
+		lipgloss.SetColorProfile(termenv.TrueColor)
+	}
 
 	cmd := &urfave.Command{
 		Name:                  "railpack",

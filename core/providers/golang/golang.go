@@ -123,7 +123,7 @@ func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.M
 	// If CGO is enabled, we need to install the gcc packages
 	if p.hasCGOEnabled(ctx) {
 		aptStep := ctx.NewAptStepBuilder("cgo")
-		aptStep.Packages = []string{"gcc", "g++", "libc6-dev", "libgcc-9-dev", "libstdc++-9-dev"}
+		aptStep.Packages = []string{"gcc", "g++", "libc6-dev"}
 		install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
 	} else {
 		install.AddCommand(plan.NewVariableCommand("CGO_ENABLED", "0"))
