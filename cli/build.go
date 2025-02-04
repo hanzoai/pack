@@ -19,27 +19,10 @@ var BuildCommand = &cli.Command{
 	Usage:                 "build an image with BuildKit",
 	ArgsUsage:             "DIRECTORY",
 	EnableShellCompletion: true,
-	Flags: []cli.Flag{
+	Flags: append([]cli.Flag{
 		&cli.StringFlag{
 			Name:  "name",
 			Usage: "name of the image to build",
-		},
-		&cli.StringSliceFlag{
-			Name:  "env",
-			Usage: "environment variables to set",
-		},
-		&cli.StringFlag{
-			Name:  "build-cmd",
-			Usage: "build command to use",
-		},
-		&cli.StringFlag{
-			Name:  "start-cmd",
-			Usage: "start command to use",
-		},
-		&cli.BoolFlag{
-			Name:  "llb",
-			Usage: "output the LLB plan to stdout instead of building the image",
-			Value: false,
 		},
 		&cli.StringFlag{
 			Name:  "output",
@@ -55,11 +38,7 @@ var BuildCommand = &cli.Command{
 			Usage: "Show the build plan before building. This is useful for development and debugging.",
 			Value: false,
 		},
-		&cli.StringSliceFlag{
-			Name:  "previous-versions",
-			Usage: "versions of packages used for previous builds. These versions will be used instead of the defaults. format: NAME@VERSION",
-		},
-	},
+	}, commonFlags()...),
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildResult, app, env, err := GenerateBuildResultForCommand(cmd)
 		if err != nil {
