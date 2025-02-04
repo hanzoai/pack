@@ -85,12 +85,7 @@ export default defineConfig({
               label: "Package Resolution",
               link: "/architecture/package-resolution",
             },
-            { label: "Plan Generation", link: "/architecture/plan-generation" },
             { label: "Secrets and Environment", link: "/architecture/secrets" },
-            {
-              label: "Previous Versions",
-              link: "/architecture/previous-versions",
-            },
             { label: "BuildKit Generation", link: "/architecture/buildkit" },
             { label: "Caching", link: "/architecture/caching" },
           ],
