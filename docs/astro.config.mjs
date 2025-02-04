@@ -17,10 +17,8 @@ export default defineConfig({
         github: "https://github.com/railwayapp/railpack",
       },
       customCss: [
-        // Path to your Tailwind base styles:
         "./src/tailwind.css",
 
-        // Fontsource files for to regular and semi-bold font weights.
         "@fontsource/inter/400.css",
         "@fontsource/inter/600.css",
       ],
@@ -85,9 +83,13 @@ export default defineConfig({
               label: "Package Resolution",
               link: "/architecture/package-resolution",
             },
-            { label: "Secrets and Environment", link: "/architecture/secrets" },
+            {
+              label: "Secrets and Variables",
+              link: "/architecture/secrets",
+            },
             { label: "BuildKit Generation", link: "/architecture/buildkit" },
             { label: "Caching", link: "/architecture/caching" },
+            { label: "User Config", link: "/architecture/user-config" },
           ],
         },
         {

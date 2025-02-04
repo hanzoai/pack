@@ -88,7 +88,7 @@ STRIPE_LIVE_KEY=sk_live_asdf docker build \
   examples/node-bun
 ```
 
-### Secret hash
+### Secrets hash
 
 By default, BuildKit will not invalidate the a layer if a secret is changed. To
 get around this, Railpack uses a hash of the secret values and mounts this as a
