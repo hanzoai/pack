@@ -147,8 +147,8 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 
 	// Packages installed have binaries available at /mise/installs/{package}/{version}/bin
 	// We need to add these to the PATH
-	for _, pkg := range b.MisePackages {
-		resolved, ok := options.ResolvedPackages[pkg.Name]
+	for _, pkg := range b.sortedPackageNames() {
+		resolved, ok := options.ResolvedPackages[pkg]
 		if !ok || resolved.ResolvedVersion == nil {
 			continue
 		}
@@ -156,7 +156,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		version := *resolved.ResolvedVersion
 
 		step.AddCommands([]plan.Command{
-			plan.NewPathCommand("/mise/installs/" + pkg.Name + "/" + version + "/bin"),
+			plan.NewPathCommand("/mise/installs/" + pkg + "/" + version + "/bin"),
 		})
 	}
 
@@ -183,4 +183,13 @@ func (b *MiseStepBuilder) GetSupportingMiseConfigFiles(path string) []string {
 	}
 
 	return files
+}
+
+func (b *MiseStepBuilder) sortedPackageNames() []string {
+	packages := make([]string, 0, len(b.MisePackages))
+	for _, pkg := range b.MisePackages {
+		packages = append(packages, pkg.Name)
+	}
+	sort.Strings(packages)
+	return packages
 }

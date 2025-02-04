@@ -76,13 +76,13 @@
      "customName": "install mise packages: go, node, python"
     },
     {
+     "path": "/mise/installs/go/1.23.5/bin"
+    },
+    {
      "path": "/mise/installs/node/20.18.2/bin"
     },
     {
      "path": "/mise/installs/python/3.13.1/bin"
-    },
-    {
-     "path": "/mise/installs/go/1.23.5/bin"
     }
    ],
    "dependsOn": [
