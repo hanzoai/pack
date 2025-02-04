@@ -110,6 +110,7 @@ func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate
 			plan.NewExecCommand("corepack prepare --activate"),
 		})
 		corepackStepName = corepackStep.DisplayName
+		corepackStep.DependsOn = append(corepackStep.DependsOn, setup.DisplayName)
 	}
 
 	pkgManager := p.getPackageManager(ctx.App)
