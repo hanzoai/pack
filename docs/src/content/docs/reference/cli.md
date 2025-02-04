@@ -20,7 +20,8 @@ The following options are available across multiple commands:
 
 ### build
 
-Build a project using Railpack. This command takes a directory as input and builds a container image using BuildKit.
+Build a project using Railpack. This command takes a directory as input and
+builds a container image using BuildKit.
 
 **Usage:**
 
@@ -39,7 +40,8 @@ railpack build [options] DIRECTORY
 
 ### plan
 
-Generate and view build plans for a project. This command analyzes a directory and outputs the build plan that would be used.
+Generate and view build plans for a project. This command analyzes a directory
+and outputs the build plan that would be used.
 
 **Usage:**
 
@@ -55,7 +57,9 @@ railpack plan [options] DIRECTORY
 
 ### info
 
-View detailed information about a project. This command analyzes a directory and provides information about the detected configuration, dependencies, and build requirements.
+View detailed information about a project. This command analyzes a directory and
+provides information about the detected configuration, dependencies, and build
+requirements.
 
 **Usage:**
 
@@ -72,7 +76,10 @@ railpack info [options] DIRECTORY
 
 ### schema
 
-Output the JSON schema for the Railpack configuration file. This command outputs the schema that defines the structure of valid Railpack configuration files. The schema can be used by IDEs and other tools for providing autocompletion and validation.
+Output the JSON schema for the Railpack configuration file. This command outputs
+the schema that defines the structure of valid Railpack configuration files. The
+schema can be used by IDEs and other tools for providing autocompletion and
+validation.
 
 **Usage:**
 
@@ -82,7 +89,8 @@ railpack schema
 
 ### frontend
 
-Start the BuildKit GRPC frontend server. This command is typically used internally by the build system.
+Start the BuildKit GRPC frontend server. This command is typically used
+internally by the build system.
 
 **Usage:**
 

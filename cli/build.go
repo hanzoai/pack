@@ -38,7 +38,7 @@ var BuildCommand = &cli.Command{
 			Usage: "Show the build plan before building. This is useful for development and debugging.",
 			Value: false,
 		},
-	}, commonFlags()...),
+	}, commonPlanFlags()...),
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildResult, app, env, err := GenerateBuildResultForCommand(cmd)
 		if err != nil {

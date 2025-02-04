@@ -27,7 +27,7 @@ var InfoCommand = &cli.Command{
 			Name:  "out",
 			Usage: "output file name",
 		},
-	}, commonFlags()...),
+	}, commonPlanFlags()...),
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildResult, _, _, err := GenerateBuildResultForCommand(cmd)
 		if err != nil {
