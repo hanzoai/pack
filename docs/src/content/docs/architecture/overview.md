@@ -22,7 +22,7 @@ be added in the future.
 
 ## Build Plan
 
-Thie build plan is a JSON object that contains all the information necessary to
+The build plan is a JSON object that contains all the information necessary to
 generate an image. Things that it includes are:
 
 - Base image
