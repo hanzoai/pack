@@ -112,7 +112,7 @@ func FormatBuildResult(br *BuildResult, options ...PrintOptions) string {
 	// Steps section
 	stepsToPrint := getStepsToPrint(br)
 	if len(stepsToPrint) > 0 {
-		output.WriteString(sectionHeaderStyle.Render("Steps"))
+		output.WriteString(sectionHeaderStyle.MarginTop(1).Render("Steps"))
 		output.WriteString("\n")
 
 		stepCount := 0

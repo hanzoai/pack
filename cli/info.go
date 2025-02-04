@@ -17,29 +17,17 @@ var InfoCommand = &cli.Command{
 	Usage:                 "get as much information as possible about an app",
 	ArgsUsage:             "DIRECTORY",
 	EnableShellCompletion: true,
-	Flags: []cli.Flag{
-		&cli.StringSliceFlag{
-			Name:  "env",
-			Usage: "environment variables to set. format: KEY=VALUE",
-		},
-		&cli.StringFlag{
-			Name:  "build-cmd",
-			Usage: "build command to use",
-		},
-		&cli.StringFlag{
-			Name:  "start-cmd",
-			Usage: "start command to use",
-		},
+	Flags: append([]cli.Flag{
 		&cli.StringFlag{
 			Name:  "format",
 			Usage: "output format. one of: pretty, json",
 			Value: "pretty",
 		},
-		&cli.StringSliceFlag{
-			Name:  "previous",
-			Usage: "versions of packages used for previous builds. These versions will be used instead of the defaults. format: NAME@VERSION",
+		&cli.StringFlag{
+			Name:  "out",
+			Usage: "output file name",
 		},
-	},
+	}, commonPlanFlags()...),
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildResult, _, _, err := GenerateBuildResultForCommand(cmd)
 		if err != nil {

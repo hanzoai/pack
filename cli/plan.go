@@ -16,21 +16,13 @@ var PlanCommand = &cli.Command{
 	Usage:                 "generate a build plan for a directory",
 	ArgsUsage:             "DIRECTORY",
 	EnableShellCompletion: true,
-	Flags: []cli.Flag{
-		&cli.StringSliceFlag{
-			Name:  "env",
-			Usage: "environment variables to set. format: KEY=VALUE",
-		},
+	Flags: append([]cli.Flag{
 		&cli.StringFlag{
 			Name:    "out",
 			Aliases: []string{"o"},
 			Usage:   "output file name",
 		},
-		&cli.StringSliceFlag{
-			Name:  "previous",
-			Usage: "versions of packages used for previous builds. These versions will be used instead of the defaults. format: NAME@VERSION",
-		},
-	},
+	}, commonPlanFlags()...),
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildResult, _, _, err := GenerateBuildResultForCommand(cmd)
 		if err != nil {

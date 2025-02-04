@@ -10,6 +10,27 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+func commonPlanFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringSliceFlag{
+			Name:  "env",
+			Usage: "environment variables to set",
+		},
+		&cli.StringSliceFlag{
+			Name:  "previous-versions",
+			Usage: "versions of packages used for previous builds",
+		},
+		&cli.StringFlag{
+			Name:  "build-cmd",
+			Usage: "build command to use",
+		},
+		&cli.StringFlag{
+			Name:  "start-cmd",
+			Usage: "start command to use",
+		},
+	}
+}
+
 func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App, *a.Environment, error) {
 	directory := cmd.Args().First()
 
