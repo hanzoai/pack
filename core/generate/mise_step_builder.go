@@ -37,7 +37,7 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 		SupportingAptPackages: []string{},
 		Assets:                map[string]string{},
 		DependsOn:             []string{},
-		Outputs:               &[]string{"/mise/shims", "/mise/installs"},
+		Outputs:               &[]string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
 		app:                   c.App,
 		env:                   c.Env,
 	}
@@ -88,7 +88,8 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		plan.NewVariableCommand("MISE_CONFIG_DIR", "/mise"),
 		plan.NewVariableCommand("MISE_INSTALL_PATH", "/usr/local/bin/mise"),
 		plan.NewVariableCommand("MISE_CACHE_DIR", "/mise/cache"),
-		options.NewAptInstallCommand([]string{"curl", "ca-certificates", "git"}),
+		plan.NewPathCommand("/mise/shims"),
+		options.NewAptInstallCommand([]string{"curl", "ca-certificates"}),
 		plan.NewExecCommand("sh -c 'curl -fsSL https://mise.run | sh'",
 			plan.ExecOptions{
 				CustomName: "install mise",
@@ -145,21 +146,6 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		})
 	}
 
-	// Packages installed have binaries available at /mise/installs/{package}/{version}/bin
-	// We need to add these to the PATH
-	for _, pkg := range b.sortedPackageNames() {
-		resolved, ok := options.ResolvedPackages[pkg]
-		if !ok || resolved.ResolvedVersion == nil {
-			continue
-		}
-
-		version := *resolved.ResolvedVersion
-
-		step.AddCommands([]plan.Command{
-			plan.NewPathCommand("/mise/installs/" + pkg + "/" + version + "/bin"),
-		})
-	}
-
 	step.Assets = b.Assets
 	step.Outputs = b.Outputs
 	step.UseSecrets = &[]bool{false}[0]
@@ -183,13 +169,4 @@ func (b *MiseStepBuilder) GetSupportingMiseConfigFiles(path string) []string {
 	}
 
 	return files
-}
-
-func (b *MiseStepBuilder) sortedPackageNames() []string {
-	packages := make([]string, 0, len(b.MisePackages))
-	for _, pkg := range b.MisePackages {
-		packages = append(packages, pkg.Name)
-	}
-	sort.Strings(packages)
-	return packages
 }
