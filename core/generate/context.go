@@ -167,7 +167,9 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	}
 
 	// Step config
-	for name, configStep := range config.Steps {
+	for _, name := range slices.Sorted(maps.Keys(config.Steps)) {
+		configStep := config.Steps[name]
+
 		var commandStepBuilder *CommandStepBuilder
 
 		// We need to use the key as the step name and not `configStep.Name`

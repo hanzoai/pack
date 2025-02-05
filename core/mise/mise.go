@@ -59,7 +59,7 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 	// Source: https://github.com/jdx/mise/blob/main/src/git.rs#L124
 	// Config: https://github.com/jdx/mise/blob/main/settings.toml#L369
 	// cmd.Env = append(cmd.Env, "MISE_LIBGIT2=false")
-	cmd.Env = append(cmd.Env, "MISE_GIX=false")
+	// cmd.Env = append(cmd.Env, "MISE_GIX=false")
 	// cmd.Env = append(cmd.Env, "RUST_BACKTRACE=full")
 
 	if err := cmd.Run(); err != nil {
