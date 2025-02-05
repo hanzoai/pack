@@ -25,7 +25,7 @@ var (
 	}
 )
 
-func determineBuildPlatformFromHost() BuildPlatform {
+func DetermineBuildPlatformFromHost() BuildPlatform {
 	if runtime.GOARCH == "arm64" {
 		return PlatformLinuxARM64
 	}

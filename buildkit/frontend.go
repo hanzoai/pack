@@ -117,7 +117,7 @@ func validatePlatform(opts map[string]string) (BuildPlatform, error) {
 	platformStr := opts["platform"]
 	if platformStr == "" {
 		// Default to host platform if none specified
-		return determineBuildPlatformFromHost(), nil
+		return DetermineBuildPlatformFromHost(), nil
 	}
 
 	// Error if multiple platforms are specified

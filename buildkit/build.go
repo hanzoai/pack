@@ -30,6 +30,7 @@ type BuildWithBuildkitClientOptions struct {
 	ProgressMode string
 	SecretsHash  string
 	Secrets      map[string]string
+	Platform     BuildPlatform
 }
 
 func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWithBuildkitClientOptions) error {
@@ -60,7 +61,10 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 		return fmt.Errorf("failed to get buildkit info: %w", err)
 	}
 
-	buildPlatform := determineBuildPlatformFromHost()
+	buildPlatform := opts.Platform
+	if (buildPlatform == BuildPlatform{}) {
+		buildPlatform = DetermineBuildPlatformFromHost()
+	}
 
 	llbState, image, err := ConvertPlanToLLB(plan, ConvertPlanOptions{
 		BuildPlatform: buildPlatform,

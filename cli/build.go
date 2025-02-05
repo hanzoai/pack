@@ -29,6 +29,10 @@ var BuildCommand = &cli.Command{
 			Usage: "output the final filesystem to a local directory",
 		},
 		&cli.StringFlag{
+			Name:  "platform",
+			Usage: "platform to build for (e.g. linux/amd64, linux/arm64)",
+		},
+		&cli.StringFlag{
 			Name:  "progress",
 			Usage: "buildkit progress output mode. Values: auto, plain, tty",
 			Value: "auto",
@@ -63,6 +67,11 @@ var BuildCommand = &cli.Command{
 
 		secretsHash := getSecretsHash(env)
 
+		platform, err := getPlatform(cmd.String("platform"))
+		if err != nil {
+			return cli.Exit(err, 1)
+		}
+
 		err = buildkit.BuildWithBuildkitClient(app.Source, buildResult.Plan, buildkit.BuildWithBuildkitClientOptions{
 			ImageName:    cmd.String("name"),
 			DumpLLB:      cmd.Bool("llb"),
@@ -70,6 +79,7 @@ var BuildCommand = &cli.Command{
 			ProgressMode: cmd.String("progress"),
 			SecretsHash:  secretsHash,
 			Secrets:      env.Variables,
+			Platform:     platform,
 		})
 		if err != nil {
 			return cli.Exit(err, 1)
@@ -77,6 +87,21 @@ var BuildCommand = &cli.Command{
 
 		return nil
 	},
+}
+
+func getPlatform(platformStr string) (buildkit.BuildPlatform, error) {
+	var platform buildkit.BuildPlatform
+	if platformStr == "" {
+		platform = buildkit.DetermineBuildPlatformFromHost()
+	} else if platformStr == "linux/arm64" {
+		platform = buildkit.PlatformLinuxARM64
+	} else if platformStr != "linux/amd64" {
+		return buildkit.BuildPlatform{}, fmt.Errorf("unsupported platform: %s. Must be one of: linux/amd64, linux/arm64", platformStr)
+	} else {
+		platform = buildkit.PlatformLinuxAMD64
+	}
+
+	return platform, nil
 }
 
 func validateSecrets(plan *plan.BuildPlan, env *app.Environment) error {
