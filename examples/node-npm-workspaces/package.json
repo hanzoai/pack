@@ -1,0 +1,19 @@
+{
+  "name": "npm-workspaces",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "workspaces": [
+    "packages/pkg-a",
+    "packages/pkg-b"
+  ],
+  "dependencies": {
+    "cowsay": "^1.6.0"
+  }
+}
