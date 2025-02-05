@@ -2,6 +2,8 @@ package generate
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"sort"
 	"strings"
 
@@ -149,7 +151,8 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	// Mise package config
 	miseStep := c.GetMiseStepBuilder()
-	for pkg, version := range config.Packages {
+	for _, pkg := range slices.Sorted(maps.Keys(config.Packages)) {
+		version := config.Packages[pkg]
 		pkgRef := miseStep.Default(pkg, version)
 		miseStep.Version(pkgRef, version, "custom config")
 	}
