@@ -89,7 +89,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		plan.NewVariableCommand("MISE_INSTALL_PATH", "/usr/local/bin/mise"),
 		plan.NewVariableCommand("MISE_CACHE_DIR", "/mise/cache"),
 		plan.NewPathCommand("/mise/shims"),
-		options.NewAptInstallCommand([]string{"curl", "ca-certificates"}),
+		options.NewAptInstallCommand([]string{"curl", "ca-certificates", "git"}),
 		plan.NewExecCommand("sh -c 'curl -fsSL https://mise.run | sh'",
 			plan.ExecOptions{
 				CustomName: "install mise",
@@ -103,6 +103,9 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		step.AddCommands([]plan.Command{
 			plan.NewCopyCommand(file, "/app/"+file),
 		})
+
+		// We want to make sure the file is copied into the next step
+		*b.Outputs = append(*b.Outputs, "/app/"+file)
 	}
 
 	// Setup apt commands

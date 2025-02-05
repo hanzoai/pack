@@ -105,7 +105,6 @@ func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate
 		corepackStep := ctx.NewCommandStep("corepack")
 		corepackStep.AddCommands([]plan.Command{
 			plan.NewCopyCommand("package.json"),
-			plan.NewExecCommand("npm install -g corepack"),
 			plan.NewExecCommand("corepack enable"),
 			plan.NewExecCommand("corepack prepare --activate"),
 		})
