@@ -3,7 +3,9 @@ package mise
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -16,6 +18,7 @@ const (
 
 type Mise struct {
 	binaryPath string
+	cacheDir   string
 }
 
 func New(cacheDir string) (*Mise, error) {
@@ -26,6 +29,7 @@ func New(cacheDir string) (*Mise, error) {
 
 	return &Mise{
 		binaryPath: binaryPath,
+		cacheDir:   cacheDir,
 	}, nil
 }
 
@@ -47,6 +51,18 @@ func (m *Mise) GetLatestVersion(pkg, version string) (string, error) {
 
 // runCmd runs a mise command with the given arguments
 func (m *Mise) runCmd(args ...string) (string, error) {
+	// Use persistent directories for mise data and cache
+	cacheDir := filepath.Join(m.cacheDir, "cache")
+	dataDir := filepath.Join(m.cacheDir, "data")
+
+	// mu, err := filemutex.New("/tmp/foo.lock")
+	// if err != nil {
+	// 	return "", fmt.Errorf("failed to create mutex: %w", err)
+	// }
+
+	// mu.Lock() // Will block until lock can be acquired
+	// defer mu.Unlock()
+
 	cmd := exec.Command(m.binaryPath, args...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -61,6 +77,14 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 	// cmd.Env = append(cmd.Env, "MISE_LIBGIT2=false")
 	// cmd.Env = append(cmd.Env, "MISE_GIX=false")
 	// cmd.Env = append(cmd.Env, "RUST_BACKTRACE=full")
+
+	cmd.Env = append(cmd.Env,
+		fmt.Sprintf("MISE_CACHE_DIR=%s", cacheDir),
+		fmt.Sprintf("MISE_DATA_DIR=%s", dataDir),
+		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
+	)
+
+	// cmd.Env = append(cmd.Env, os.Environ()...)
 
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("failed to run mise command '%s': %w\nstdout: %s\nstderr: %s",

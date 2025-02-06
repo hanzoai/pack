@@ -51,7 +51,7 @@ type GenerateContext struct {
 }
 
 func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error) {
-	resolver, err := resolver.NewResolver(mise.TestInstallDir)
+	resolver, err := resolver.NewResolver(mise.InstallDir)
 	if err != nil {
 		return nil, err
 	}

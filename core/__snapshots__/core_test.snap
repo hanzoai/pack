@@ -29,16 +29,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -217,16 +217,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -357,16 +357,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -502,16 +502,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -667,16 +667,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -848,16 +848,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -965,16 +965,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -1147,16 +1147,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -1310,16 +1310,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -1484,16 +1484,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -1652,16 +1652,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -1920,16 +1920,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -2028,16 +2028,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -2146,16 +2146,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -2312,16 +2312,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -2462,16 +2462,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -2656,16 +2656,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -2872,16 +2872,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -3066,16 +3066,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
