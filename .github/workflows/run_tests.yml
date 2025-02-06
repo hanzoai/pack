@@ -1,0 +1,49 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  find-examples:
+    runs-on: ubuntu-latest
+    outputs:
+      examples: ${{ steps.find-examples.outputs.examples }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find examples with test.json
+        id: find-examples
+        run: |
+          examples=$(find examples -name "test.json" -exec dirname {} \; | jq -R -s -c 'split("\n")[:-1]')
+          echo "examples=$examples" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: find-examples
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        example: ${{ fromJson(needs.find-examples.outputs.examples) }}
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Start BuildKit
+        run: |
+          docker run --rm --privileged -d --name buildkit moby/buildkit
+          echo "BUILDKIT_HOST=docker-container://buildkit" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run test for ${{ matrix.example }}
+        run: |
+          go test -v ./integration_tests -run "TestExamplesIntegration/${{ matrix.example }}" -timeout 30m
