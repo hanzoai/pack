@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -18,6 +19,9 @@ import (
 	"github.com/railwayapp/railpack/core/app"
 	"github.com/stretchr/testify/require"
 )
+
+var buildkitCacheImport = flag.String("buildkit-cache-import", "", "BuildKit cache import configuration")
+var buildkitCacheExport = flag.String("buildkit-cache-export", "", "BuildKit cache export configuration")
 
 type TestCase struct {
 	ExpectedOutput string            `json:"expectedOutput"`
@@ -146,7 +150,9 @@ func TestExamplesIntegration(t *testing.T) {
 					strings.ToLower(uuid.New().String()))
 
 				if err := buildkit.BuildWithBuildkitClient(examplePath, buildResult.Plan, buildkit.BuildWithBuildkitClientOptions{
-					ImageName: imageName,
+					ImageName:   imageName,
+					ImportCache: *buildkitCacheImport,
+					ExportCache: *buildkitCacheExport,
 				}); err != nil {
 					t.Fatalf("failed to build image: %v", err)
 				}

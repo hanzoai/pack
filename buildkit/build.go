@@ -31,6 +31,8 @@ type BuildWithBuildkitClientOptions struct {
 	SecretsHash  string
 	Secrets      map[string]string
 	Platform     BuildPlatform
+	ImportCache  string
+	ExportCache  string
 }
 
 func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWithBuildkitClientOptions) error {
@@ -176,6 +178,22 @@ func BuildWithBuildkitClient(appDir string, plan *plan.BuildPlan, opts BuildWith
 		},
 	}
 
+	// Add cache import if specified
+	if opts.ImportCache != "" {
+		solveOpts.CacheImports = append(solveOpts.CacheImports, client.CacheOptionsEntry{
+			Type:  "gha",
+			Attrs: parseKeyValue(opts.ImportCache),
+		})
+	}
+
+	// Add cache export if specified
+	if opts.ExportCache != "" {
+		solveOpts.CacheExports = append(solveOpts.CacheExports, client.CacheOptionsEntry{
+			Type:  "gha",
+			Attrs: parseKeyValue(opts.ExportCache),
+		})
+	}
+
 	// Save the resulting filesystem to a directory
 	if opts.OutputDir != "" {
 		err = os.MkdirAll(opts.OutputDir, 0755)
@@ -236,4 +254,17 @@ func getImageName(appDir string) string {
 		name = "railpack-app" // Fallback if path ends in separator
 	}
 	return name
+}
+
+// Helper function to parse key=value strings into a map
+func parseKeyValue(s string) map[string]string {
+	attrs := make(map[string]string)
+	parts := strings.Split(s, ",")
+	for _, part := range parts {
+		kv := strings.SplitN(part, "=", 2)
+		if len(kv) == 2 {
+			attrs[kv[0]] = kv[1]
+		}
+	}
+	return attrs
 }

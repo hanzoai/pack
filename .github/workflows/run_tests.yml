@@ -37,33 +37,16 @@ jobs:
           go-version: "1.23.4"
           cache: true
 
-      # Set up BuildKit cache
-      - name: Set up BuildKit cache
-        uses: actions/cache@v4
-        with:
-          path: /tmp/buildkit-cache
-          key: ${{ runner.os }}-buildkit-${{ matrix.example }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildkit-${{ matrix.example }}-
-            ${{ runner.os }}-buildkit-
+      # Set up GitHub Actions runtime for BuildKit cache
+      - name: Set up BuildKit GHA cache
+        uses: crazy-max/ghaction-github-runtime@v3
 
       - name: Start BuildKit
         run: |
-          # Create cache directories
-          mkdir -p /tmp/buildkit-cache/buildkit-state
-          mkdir -p /tmp/buildkit-cache/buildkit-cache
-
-          # Start BuildKit with cache configuration
           docker run --rm --privileged -d \
-            -v /tmp/buildkit-cache/buildkit-state:/var/lib/buildkit \
-            -v /tmp/buildkit-cache/buildkit-cache:/var/cache/buildkit \
             --name buildkit \
-            moby/buildkit \
-            --debug \
-            --oci-worker-snapshotter=overlayfs \
-            --oci-worker-max-parallelism=4 \
-            --oci-worker-gc=true \
-            --oci-worker-gc-keepstorage=5120000000
+            -e BUILDKIT_DEBUG=1 \
+            moby/buildkit:latest
 
           # Wait for BuildKit to be ready
           sleep 5
@@ -74,10 +57,13 @@ jobs:
         run: go mod download
 
       - name: Run test for ${{ matrix.example }}
+        env:
+          ACTIONS_CACHE_URL: ${{ env.ACTIONS_CACHE_URL }}
+          ACTIONS_RUNTIME_TOKEN: ${{ env.ACTIONS_RUNTIME_TOKEN }}
         run: |
-          go test -v ./integration_tests -run "TestExamplesIntegration/${{ matrix.example }}" -timeout 30m
-
-      # Cleanup BuildKit
-      - name: Stop BuildKit
-        if: always()
-        run: docker stop buildkit
+          # Add cache import/export flags to the test command
+          go test -v ./integration_tests \
+            -run "TestExamplesIntegration/${{ matrix.example }}" \
+            -timeout 30m \
+            -buildkit-cache-import=type=gha,scope=${{ matrix.example }} \
+            -buildkit-cache-export=type=gha,mode=max,scope=${{ matrix.example }}
