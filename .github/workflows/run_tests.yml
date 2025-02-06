@@ -46,6 +46,8 @@ jobs:
           docker run --rm --privileged -d \
             --name buildkit \
             -e BUILDKIT_DEBUG=1 \
+            -e ACTIONS_CACHE_URL=${{ env.ACTIONS_CACHE_URL }} \
+            -e ACTIONS_RUNTIME_TOKEN=${{ env.ACTIONS_RUNTIME_TOKEN }} \
             moby/buildkit:latest
 
           # Wait for BuildKit to be ready
@@ -57,9 +59,6 @@ jobs:
         run: go mod download
 
       - name: Run test for ${{ matrix.example }}
-        env:
-          ACTIONS_CACHE_URL: ${{ env.ACTIONS_CACHE_URL }}
-          ACTIONS_RUNTIME_TOKEN: ${{ env.ACTIONS_RUNTIME_TOKEN }}
         run: |
           # Add cache import/export flags to the test command
           go test -v ./integration_tests \
@@ -67,3 +66,7 @@ jobs:
             -timeout 30m \
             -buildkit-cache-import=type=gha,scope=${{ matrix.example }} \
             -buildkit-cache-export=type=gha,mode=max,scope=${{ matrix.example }}
+
+      - name: Stop BuildKit
+        if: always()
+        run: docker stop buildkit
