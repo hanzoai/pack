@@ -83,6 +83,7 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 		fmt.Sprintf("MISE_DATA_DIR=%s", dataDir),
 		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
 		"MISE_GIX=false",
+		"MISE_LIBGIT2=false",
 	)
 
 	// cmd.Env = append(cmd.Env, os.Environ()...)
