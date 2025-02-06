@@ -5,7 +5,10 @@ run = "go build -o bin/cli cmd/cli/main.go"
 run = "rm -rf bin"
 
 [tasks.test]
-run = "go test ./..."
+run = "go test -short ./..."
+
+[tasks.test-integration]
+run = "go test ./integration_tests"
 
 [tasks.test-update-snapshots]
 run = "UPDATE_SNAPS=true go test ./..."
