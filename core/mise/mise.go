@@ -57,6 +57,7 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 	dataDir := filepath.Join(m.cacheDir, "data")
 	fileLockPath := filepath.Join(m.cacheDir, "lock")
 
+	// We want to use a file lock to prevent races when using mise in parallel
 	mu, err := filemutex.New(fileLockPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create mutex: %w", err)
@@ -80,18 +81,7 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 		fmt.Sprintf("MISE_CACHE_DIR=%s", cacheDir),
 		fmt.Sprintf("MISE_DATA_DIR=%s", dataDir),
 		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
-
-		// We want to shell out to the git CLI here
-		// Without it, I was noticing races when multiple processes tried to check the version of the same package in parallel
-		// Sometimes a checkout operation would fail.
-		// I am testing out forcing usage of the git CLI to see if it helps
-		// Source: https://github.com/jdx/mise/blob/main/src/git.rs#L124
-		// Config: https://github.com/jdx/mise/blob/main/settings.toml#L369
-		// "MISE_GIX=false",
-		// "MISE_LIBGIT2=false",
 	)
-
-	// cmd.Env = append(cmd.Env, os.Environ()...)
 
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("failed to run mise command '%s': %w\nstdout: %s\nstderr: %s",
