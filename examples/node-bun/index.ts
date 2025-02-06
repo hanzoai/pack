@@ -1,1 +1,1 @@
-console.log("Hello via Bun!");
+console.log("hello from Bun " + Bun.version);

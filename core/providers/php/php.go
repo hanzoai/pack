@@ -53,7 +53,8 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 
 	// Install node
 	nodeProvider := node.NodeProvider{}
-	if packageJson, err := nodeProvider.GetPackageJson(ctx.App); err == nil && packageJson != nil {
+	isNode := ctx.App.HasMatch("package.json")
+	if packageJson, err := nodeProvider.GetPackageJson(ctx.App); isNode && err == nil && packageJson != nil {
 		ctx.EnterSubContext("node")
 
 		nodePackages, err := nodeProvider.Packages(ctx, packageJson)
