@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/alexflint/go-filemutex"
 )
 
 const (
@@ -55,13 +56,13 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 	cacheDir := filepath.Join(m.cacheDir, "cache")
 	dataDir := filepath.Join(m.cacheDir, "data")
 
-	// mu, err := filemutex.New("/tmp/foo.lock")
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to create mutex: %w", err)
-	// }
+	mu, err := filemutex.New("/tmp/foo.lock")
+	if err != nil {
+		return "", fmt.Errorf("failed to create mutex: %w", err)
+	}
 
-	// mu.Lock() // Will block until lock can be acquired
-	// defer mu.Unlock()
+	mu.Lock() // Will block until lock can be acquired
+	defer mu.Unlock()
 
 	cmd := exec.Command(m.binaryPath, args...)
 	var stdout, stderr bytes.Buffer
