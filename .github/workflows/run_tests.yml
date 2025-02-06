@@ -32,13 +32,37 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.23.4"
+          cache: true
+
+      # Set up BuildKit cache
+      - name: Set up BuildKit cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/buildkit-cache
+          key: ${{ runner.os }}-buildkit-${{ matrix.example }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildkit-${{ matrix.example }}-
+            ${{ runner.os }}-buildkit-
 
       - name: Start BuildKit
         run: |
-          docker run --rm --privileged -d --name buildkit moby/buildkit
+          # Start BuildKit with cache configuration
+          docker run --rm --privileged -d \
+            -v /tmp/buildkit-cache:/cache \
+            --name buildkit \
+            --env BUILDKIT_DEBUG=1 \
+            moby/buildkit \
+            --debug \
+            --oci-worker-gc=false \
+            --oci-worker-snapshotter=overlayfs \
+            --root /cache/buildkit
+
+          # Wait for BuildKit to be ready
+          sleep 5
+
           echo "BUILDKIT_HOST=docker-container://buildkit" >> $GITHUB_ENV
 
       - name: Install dependencies
@@ -47,3 +71,10 @@ jobs:
       - name: Run test for ${{ matrix.example }}
         run: |
           go test -v ./integration_tests -run "TestExamplesIntegration/${{ matrix.example }}" -timeout 30m
+
+      # Export BuildKit cache after tests
+      - name: Export BuildKit cache
+        if: always()
+        run: |
+          docker exec buildkit buildctl prune --keep-storage 5GB
+          docker stop buildkit
