@@ -10,6 +10,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/alexflint/go-filemutex"
+	"github.com/charmbracelet/log"
 )
 
 const (
@@ -61,8 +62,14 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 		return "", fmt.Errorf("failed to create mutex: %w", err)
 	}
 
-	mu.Lock() // Will block until lock can be acquired
-	defer mu.Unlock()
+	if err := mu.Lock(); err != nil {
+		return "", fmt.Errorf("failed to acquire lock: %w", err)
+	}
+	defer func() {
+		if err := mu.Unlock(); err != nil {
+			log.Printf("failed to release lock: %v", err)
+		}
+	}()
 
 	cmd := exec.Command(m.binaryPath, args...)
 	var stdout, stderr bytes.Buffer
