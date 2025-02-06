@@ -53,11 +53,11 @@ func (m *Mise) GetLatestVersion(pkg, version string) (string, error) {
 
 // runCmd runs a mise command with the given arguments
 func (m *Mise) runCmd(args ...string) (string, error) {
-	// Use persistent directories for mise data and cache
 	cacheDir := filepath.Join(m.cacheDir, "cache")
 	dataDir := filepath.Join(m.cacheDir, "data")
+	fileLockPath := filepath.Join(m.cacheDir, "lock")
 
-	mu, err := filemutex.New("/tmp/foo.lock")
+	mu, err := filemutex.New(fileLockPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create mutex: %w", err)
 	}
@@ -76,10 +76,6 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	// cmd.Env = append(cmd.Env, "MISE_LIBGIT2=false")
-	// cmd.Env = append(cmd.Env, "MISE_GIX=false")
-	// cmd.Env = append(cmd.Env, "RUST_BACKTRACE=full")
-
 	cmd.Env = append(cmd.Env,
 		fmt.Sprintf("MISE_CACHE_DIR=%s", cacheDir),
 		fmt.Sprintf("MISE_DATA_DIR=%s", dataDir),
@@ -91,8 +87,8 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 		// I am testing out forcing usage of the git CLI to see if it helps
 		// Source: https://github.com/jdx/mise/blob/main/src/git.rs#L124
 		// Config: https://github.com/jdx/mise/blob/main/settings.toml#L369
-		"MISE_GIX=false",
-		"MISE_LIBGIT2=false",
+		// "MISE_GIX=false",
+		// "MISE_LIBGIT2=false",
 	)
 
 	// cmd.Env = append(cmd.Env, os.Environ()...)
