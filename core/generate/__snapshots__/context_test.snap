@@ -33,16 +33,16 @@
    },
    "commands": [
     {
+     "name": "MISE_INSTALL_PATH",
+     "value": "/usr/local/bin/mise"
+    },
+    {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
     },
     {
      "name": "MISE_CONFIG_DIR",
      "value": "/mise"
-    },
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
     },
     {
      "name": "MISE_CACHE_DIR",
@@ -56,8 +56,8 @@
       "apt",
       "apt-lists"
      ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl'",
-     "customName": "install apt packages: ca-certificates curl"
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
+     "customName": "install apt packages: ca-certificates curl git"
     },
     {
      "caches": [

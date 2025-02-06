@@ -2,6 +2,8 @@ package generate
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"sort"
 	"strings"
 
@@ -49,7 +51,7 @@ type GenerateContext struct {
 }
 
 func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error) {
-	resolver, err := resolver.NewResolver(mise.TestInstallDir)
+	resolver, err := resolver.NewResolver(mise.InstallDir)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +151,8 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	// Mise package config
 	miseStep := c.GetMiseStepBuilder()
-	for pkg, version := range config.Packages {
+	for _, pkg := range slices.Sorted(maps.Keys(config.Packages)) {
+		version := config.Packages[pkg]
 		pkgRef := miseStep.Default(pkg, version)
 		miseStep.Version(pkgRef, version, "custom config")
 	}
@@ -164,7 +167,9 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	}
 
 	// Step config
-	for name, configStep := range config.Steps {
+	for _, name := range slices.Sorted(maps.Keys(config.Steps)) {
+		configStep := config.Steps[name]
+
 		var commandStepBuilder *CommandStepBuilder
 
 		// We need to use the key as the step name and not `configStep.Name`

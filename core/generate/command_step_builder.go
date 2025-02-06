@@ -1,6 +1,9 @@
 package generate
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/utils"
 )
@@ -47,8 +50,9 @@ func (b *CommandStepBuilder) AddCommands(commands []plan.Command) {
 
 func (b *CommandStepBuilder) AddEnvVars(envVars map[string]string) {
 	commands := []plan.Command{}
-	for k, v := range envVars {
-		commands = append(commands, plan.NewVariableCommand(k, v))
+
+	for _, k := range slices.Sorted(maps.Keys(envVars)) {
+		commands = append(commands, plan.NewVariableCommand(k, envVars[k]))
 	}
 	b.AddCommands(commands)
 }
