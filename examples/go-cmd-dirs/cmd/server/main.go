@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,5 +15,8 @@ func main() {
 			"message": "Hello world!",
 		})
 	})
+
+	fmt.Println("Hello from Go")
+
 	r.Run()
 }

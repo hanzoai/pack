@@ -46,6 +46,13 @@ func runContainerWithTimeout(t *testing.T, imageName, expectedOutput string) err
 		return fmt.Errorf("failed to start container: %v", err)
 	}
 
+	// Ensure cleanup on function exit
+	defer func() {
+		if cmd.Process != nil {
+			_ = cmd.Process.Kill()
+		}
+	}()
+
 	var output, errOutput strings.Builder
 	done := make(chan error, 1)
 	go func() {
@@ -54,10 +61,13 @@ func runContainerWithTimeout(t *testing.T, imageName, expectedOutput string) err
 			line := scanner.Text()
 			output.WriteString(line + "\n")
 			if strings.Contains(line, expectedOutput) {
-				_ = cmd.Process.Kill()
 				done <- nil
 				return
 			}
+		}
+		if err := scanner.Err(); err != nil {
+			done <- fmt.Errorf("error reading stdout: %v", err)
+			return
 		}
 		done <- fmt.Errorf("container output:\n%s\nErrors:\n%s", output.String(), errOutput.String())
 	}()
@@ -75,8 +85,13 @@ func runContainerWithTimeout(t *testing.T, imageName, expectedOutput string) err
 	case err := <-done:
 		if err != nil {
 			require.Contains(t, output.String(), expectedOutput, "container output did not contain expected string")
+			return err
 		}
-		return err
+		// If we found the expected output, kill the container and return success
+		if cmd.Process != nil {
+			_ = cmd.Process.Kill()
+		}
+		return nil
 	case err := <-cmdDoneChan(cmd):
 		if err != nil && !strings.Contains(err.Error(), "signal: killed") {
 			return fmt.Errorf("container failed: %v", err)
