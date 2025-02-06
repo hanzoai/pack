@@ -17,7 +17,7 @@ jobs:
       - name: Find examples with test.json
         id: find-examples
         run: |
-          examples=$(find examples -name "test.json" -exec dirname {} \; | jq -R -s -c 'split("\n")[:-1]')
+          examples=$(find examples -name "test.json" -exec dirname {} \; | xargs -n 1 basename | jq -R -s -c 'split("\n")[:-1]')
           echo "examples=$examples" >> "$GITHUB_OUTPUT"
 
   test:
