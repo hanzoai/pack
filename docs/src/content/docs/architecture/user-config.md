@@ -5,9 +5,9 @@ description: How Railpack handles user config
 
 Users can configure Railpack in a few different ways:
 
-- CLI flags
-- Environment variables
-- Config file
+- [CLI flags](/reference/cli)
+- [Environment variables](/config/environment-variables)
+- [Config file](/config/file)
 
 These configs are merged together and then applied to the generate context.
 
