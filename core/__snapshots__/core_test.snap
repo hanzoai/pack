@@ -844,7 +844,7 @@
  "steps": [
   {
    "assets": {
-    "mise.toml": "[tools]\n  [tools.node]\n    version = \"23.7.0\"\n  [tools.pnpm]\n    version = \"10.2.0\"\n"
+    "mise.toml": "[tools]\n  [tools.node]\n    version = \"22.13.1\"\n  [tools.pnpm]\n    version = \"10.2.0\"\n"
    },
    "commands": [
     {
@@ -2458,7 +2458,7 @@
  "steps": [
   {
    "assets": {
-    "mise.toml": "[tools]\n  [tools.node]\n    version = \"23.7.0\"\n  [tools.npm]\n    version = \"9.9.4\"\n"
+    "mise.toml": "[tools]\n  [tools.node]\n    version = \"22.13.1\"\n  [tools.npm]\n    version = \"9.9.4\"\n"
    },
    "commands": [
     {
@@ -2652,7 +2652,7 @@
   },
   {
    "assets": {
-    "mise.toml": "[tools]\n  [tools.node]\n    version = \"23.7.0\"\n  [tools.npm]\n    version = \"9.9.4\"\n"
+    "mise.toml": "[tools]\n  [tools.node]\n    version = \"22.13.1\"\n  [tools.npm]\n    version = \"9.9.4\"\n"
    },
    "commands": [
     {

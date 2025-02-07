@@ -11,7 +11,7 @@ run = "go test -short ./..."
 run = "go test ./integration_tests"
 
 [tasks.test-update-snapshots]
-run = "UPDATE_SNAPS=true go test ./..."
+run = "UPDATE_SNAPS=true go test -short ./..."
 
 [tasks.check]
 run = """
