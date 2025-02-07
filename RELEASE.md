@@ -53,4 +53,4 @@ After pushing a tag:
 2. Verify the [GitHub release](https://github.com/railwayapp/railpack/releases)
    is created with the correct artifacts
 3. Confirm the frontend Docker image is available in the [package
-   registry](https://github.com/orgs/railwayapp/packages?repo_name=railpack)
+   registry](https://github.com/railwayapp/railpack/pkgs/container/railpack-frontend)
