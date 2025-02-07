@@ -6,7 +6,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o /usr/bin/railpack cmd/cli/main.go
+RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /usr/bin/railpack cmd/cli/main.go
 
 FROM alpine
 
