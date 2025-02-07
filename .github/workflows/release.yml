@@ -50,12 +50,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
-          cache-from: |
-            type=gha
-            type=registry,ref=ghcr.io/${{ github.repository }}-frontend:buildcache
-          cache-to: |
-            type=gha,mode=max
-            type=registry,ref=ghcr.io/${{ github.repository }}-frontend:buildcache,mode=max
 
   release:
     # needs: build-and-push-frontend
