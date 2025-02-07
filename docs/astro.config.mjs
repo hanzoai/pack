@@ -70,10 +70,7 @@ export default defineConfig({
         },
         {
           label: "Reference",
-          items: [
-            { label: "CLI Commands", link: "/reference/cli" },
-            { label: "Configuration File", link: "/reference/config" },
-          ],
+          items: [{ label: "CLI Commands", link: "/reference/cli" }],
         },
         {
           label: "Architecture",
