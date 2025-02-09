@@ -6,13 +6,16 @@ on:
       - "v*"
 
 permissions:
-  contents: write # needed to create releases
-  packages: write # needed if you're publishing to GitHub Packages
+  contents: write
+  packages: write
 
 jobs:
   build-and-push-frontend:
     name: Build and push frontend
     runs-on: ubuntu-latest
+    env:
+      DOCKER_CLI_EXPERIMENTAL: "enabled"
+      FRONTEND_IMAGE: "ghcr.io/railwayapp/railpack-frontend"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
