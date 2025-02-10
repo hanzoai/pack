@@ -61,7 +61,7 @@ func TestGenerateContext(t *testing.T) {
 	// User defined config
 	configJSON := `{
 		"packages": {
-			"node": "20",
+			"node": "20.18.2",
 			"go": "1.23.5",
 			"python": "3.13.1"
 		},
