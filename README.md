@@ -21,3 +21,5 @@ is early and core architectural changes are still being made.
 Please also make meaninful PRs. "Drive by" PRs for the sake of making any type
 of contribution will be closed. PRs that help improve the project are much more
 likely to be merged.
+
+See the [CONTRIBUTING.md](CONTRIBUTING.md) file for more information.
