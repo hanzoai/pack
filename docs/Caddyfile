@@ -29,6 +29,9 @@
 	# enable gzipping responses
 	encode gzip
 
+	# redirect install.sh to the raw GitHub URL
+	redir /install.sh https://raw.githubusercontent.com/railwayapp/railpack/refs/heads/main/install.sh 301
+
 	# serve files from 'dist'
 	file_server
 

@@ -11,11 +11,6 @@ export default defineConfig({
     defaultStrategy: "hover",
   },
 
-  redirects: {
-    "/install.sh":
-      "https://raw.githubusercontent.com/railwayapp/railpack/refs/heads/main/install.sh",
-  },
-
   integrations: [
     starlight({
       title: "Railpack Docs",
