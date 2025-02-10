@@ -18,8 +18,5 @@ both operators and users is available at [railpack.com](https://railpack.com).
 Railpack is open source and open to contributions. Keep in mind that the project
 is early and core architectural changes are still being made.
 
-Please also make meaninful PRs. "Drive by" PRs for the sake of making any type
-of contribution will be closed. PRs that help improve the project are much more
-likely to be merged.
-
-See the [CONTRIBUTING.md](CONTRIBUTING.md) file for more information.
+Contributions are not being accepted at this time as we are still focusing on
+setting up the core architecture. Issues or questions are still welcome.

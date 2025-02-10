@@ -1,18 +1,11 @@
 # Contributing to Railpack
 
+_Note: Contributions are not being accepted at this time as we are still
+focusing on setting up the core architecture._
+
 ## Project Status
 
-This is an early-stage project that is expected to undergo frequent changes. While we welcome contributions, please note that the API and functionality may change significantly as we evolve.
-
-## Pull Requests
-
-We welcome pull requests that push the project forward in meaningful ways. Please ensure your PRs:
-
-- Address a specific problem or add a well-defined feature
-- Include tests for new functionality
-- Follow the existing code style
-
-Note: We prefer focused, well-thought-out contributions over "drive-by" PRs that make superficial changes.
+This is an early-stage project that is expected to undergo frequent changes.
 
 ## Testing
 
