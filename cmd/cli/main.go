@@ -11,9 +11,14 @@ import (
 	urfave "github.com/urfave/cli/v3"
 )
 
-var verbose bool
+var (
+	verbose bool
+	version = "dev" // This will be overwritten by goreleaser
+)
 
 func main() {
+	cli.Version = version
+
 	logger := log.Default()
 	logger.SetTimeFormat("")
 	urfaveLogWriter := logger.StandardLog(log.StandardLogOptions{
@@ -29,10 +34,10 @@ func main() {
 		Name:                  "railpack",
 		Usage:                 "Automatically analyze and generate build plans for applications",
 		EnableShellCompletion: true,
+		Version:               cli.Version,
 		Flags: []urfave.Flag{
 			&urfave.BoolFlag{
 				Name:        "verbose",
-				Aliases:     []string{"v"},
 				Usage:       "Enable verbose logging",
 				Value:       false,
 				Destination: &verbose,

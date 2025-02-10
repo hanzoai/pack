@@ -40,6 +40,7 @@ var InfoCommand = &cli.Command{
 		if format == "pretty" {
 			buildResultString = core.FormatBuildResult(buildResult, core.PrintOptions{
 				Metadata: true,
+				Version:  Version,
 			})
 		} else {
 			serializedResult, err := json.MarshalIndent(buildResult, "", "  ")

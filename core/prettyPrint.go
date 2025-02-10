@@ -54,6 +54,7 @@ var (
 
 type PrintOptions struct {
 	Metadata bool
+	Version  string
 }
 
 func PrettyPrintBuildResult(buildResult *BuildResult, options ...PrintOptions) {
@@ -69,7 +70,7 @@ func FormatBuildResult(br *BuildResult, options ...PrintOptions) string {
 	var output strings.Builder
 
 	// Header section
-	header := "Railpack v0.0.1"
+	header := fmt.Sprintf("Railpack %s", opts.Version)
 	output.WriteString(headerStyle.Render(header))
 	output.WriteString("\n")
 

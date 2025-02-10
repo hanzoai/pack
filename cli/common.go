@@ -10,6 +10,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+var Version string // This will be set by main
+
 func commonPlanFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringSliceFlag{
