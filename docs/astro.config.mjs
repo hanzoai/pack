@@ -10,6 +10,12 @@ export default defineConfig({
     prefetchAll: true,
     defaultStrategy: "hover",
   },
+
+  redirects: {
+    "/install.sh":
+      "https://raw.githubusercontent.com/railwayapp/railpack/refs/heads/main/install.sh",
+  },
+
   integrations: [
     starlight({
       title: "Railpack Docs",
@@ -95,6 +101,7 @@ export default defineConfig({
         },
       ],
     }),
+
     tailwind({
       // Disable the default base styles:
       applyBaseStyles: false,
