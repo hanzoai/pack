@@ -45,6 +45,7 @@ func main() {
 		},
 		Commands: []*urfave.Command{
 			cli.BuildCommand,
+			cli.PrepareCommand,
 			cli.InfoCommand,
 			cli.PlanCommand,
 			cli.SchemaCommand,

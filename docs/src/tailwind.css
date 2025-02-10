@@ -10,3 +10,7 @@
 ::view-transition-new(root) {
   animation: none;
 }
+
+code {
+  white-space: nowrap;
+}

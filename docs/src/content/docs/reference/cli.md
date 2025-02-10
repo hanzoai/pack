@@ -20,8 +20,7 @@ The following options are available across multiple commands:
 
 ### build
 
-Build a project using Railpack. This command takes a directory as input and
-builds a container image using BuildKit.
+Builds a container image from a project directory using BuildKit.
 
 **Usage:**
 
@@ -38,10 +37,30 @@ railpack build [options] DIRECTORY
 | `--progress`  | BuildKit progress output mode (auto, plain, tty) | `auto`  |
 | `--show-plan` | Show the build plan before building              | `false` |
 
+### prepare
+
+Generates build configuration files without performing the actual build. This is useful for platforms that want to
+
+- Build with a custom frontend and need to save the build plan to a `railpack-plan.json` file
+- Log the Railpack pretty output to stdout
+- Want to save the additional build information for later use
+
+**Usage:**
+
+```bash
+railpack prepare [options] DIRECTORY
+```
+
+**Options:**
+
+| Flag         | Description                                           |
+| ------------ | ----------------------------------------------------- |
+| `--plan-out` | Output file for the JSON serialized build plan        |
+| `--info-out` | Output file for the JSON serialized build result info |
+
 ### plan
 
-Generate and view build plans for a project. This command analyzes a directory
-and outputs the build plan that would be used.
+Analyzes a directory and outputs the build plan that would be used.
 
 **Usage:**
 
@@ -57,9 +76,7 @@ railpack plan [options] DIRECTORY
 
 ### info
 
-View detailed information about a project. This command analyzes a directory and
-provides information about the detected configuration, dependencies, and build
-requirements.
+Provides detailed information about a project's detected configuration, dependencies, and build requirements.
 
 **Usage:**
 
@@ -76,10 +93,7 @@ railpack info [options] DIRECTORY
 
 ### schema
 
-Output the JSON schema for the Railpack configuration file. This command outputs
-the schema that defines the structure of valid Railpack configuration files. The
-schema can be used by IDEs and other tools for providing autocompletion and
-validation.
+Outputs the JSON schema for Railpack configuration files, used by IDEs for autocompletion and validation.
 
 **Usage:**
 
@@ -89,8 +103,7 @@ railpack schema
 
 ### frontend
 
-Start the BuildKit GRPC frontend server. This command is typically used
-internally by the build system.
+Starts the BuildKit GRPC frontend server for internal build system use.
 
 **Usage:**
 
