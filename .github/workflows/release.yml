@@ -12,6 +12,9 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_CLI_EXPERIMENTAL: "enabled"
+      FRONTEND_IMAGE: "ghcr.io/railwayapp/railpack-frontend"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
