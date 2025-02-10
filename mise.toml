@@ -2,13 +2,13 @@
 run = "go build -o bin/cli cmd/cli/main.go"
 
 [tasks.clean]
-run = "rm -rf bin"
+run = "rm -rf bin dist docs/dist"
 
 [tasks.test]
 run = "go test -short ./..."
 
 [tasks.test-integration]
-run = "go test ./integration_tests"
+run = "go test -v ./integration_tests"
 
 [tasks.test-update-snapshots]
 run = "UPDATE_SNAPS=true go test -short ./..."
@@ -30,13 +30,6 @@ run = "bun run build"
 [tasks.docs-dev]
 dir = "docs"
 run = "bun run dev"
-
-[tasks.run-frontend]
-run = """
-# syntax=docker.io/library/railpack-frontend2
-echo 'FROM alpine:latest
-RUN echo "Hello"' | docker buildx build -f - .
-"""
 
 [tasks.run-with-frontend]
 run = "bun scripts/run-with-frontend.ts"

@@ -7,6 +7,7 @@ before:
 builds:
   - id: cli
     main: ./cmd/cli
+    binary: railpack
     env:
       - CGO_ENABLED=0
     goos:
@@ -42,7 +43,7 @@ dockers:
     build_flag_templates:
       - "--pull"
       - "--platform=linux/amd64"
-    dockerfile: frontend.goreleaser.Dockerfile
+    dockerfile: Dockerfiles/frontend.goreleaser.Dockerfile
   - image_templates:
       - "{{ .Env.FRONTEND_IMAGE }}:{{ .Tag }}-arm64"
       - "{{ .Env.FRONTEND_IMAGE }}:latest-arm64"
@@ -51,7 +52,7 @@ dockers:
       - "--pull"
       - "--platform=linux/arm64"
     goarch: arm64
-    dockerfile: frontend.goreleaser.Dockerfile
+    dockerfile: Dockerfiles/frontend.goreleaser.Dockerfile
 
 docker_manifests:
   - name_template: "{{ .Env.FRONTEND_IMAGE }}:{{ .Tag }}"
