@@ -32,7 +32,9 @@ func runContainerWithTimeout(t *testing.T, imageName, expectedOutput string) err
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "docker", "run", "--rm", imageName)
+	// Generate a unique container name so we can reference it later for cleanup
+	containerName := fmt.Sprintf("railpack-test-%s", uuid.New().String())
+	cmd := exec.CommandContext(ctx, "docker", "run", "--rm", "--name", containerName, imageName)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create stdout pipe: %v", err)
@@ -48,9 +50,12 @@ func runContainerWithTimeout(t *testing.T, imageName, expectedOutput string) err
 
 	// Ensure cleanup on function exit
 	defer func() {
-		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
-		}
+		// Stop the container if it's still running
+		stopCmd := exec.Command("docker", "stop", containerName)
+		_ = stopCmd.Run()
+		// Remove the container if it still exists
+		rmCmd := exec.Command("docker", "rm", "-f", containerName)
+		_ = rmCmd.Run()
 	}()
 
 	var output, errOutput strings.Builder
@@ -86,10 +91,6 @@ func runContainerWithTimeout(t *testing.T, imageName, expectedOutput string) err
 		if err != nil {
 			require.Contains(t, output.String(), expectedOutput, "container output did not contain expected string")
 			return err
-		}
-		// If we found the expected output, kill the container and return success
-		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
 		}
 		return nil
 	case err := <-cmdDoneChan(cmd):
