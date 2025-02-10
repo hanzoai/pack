@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Repository configuration
-REPO_OWNER="coffee-cup"
-REPO_NAME="railpack-release-testing"
+REPO_OWNER="railwayapp"
+REPO_NAME="railpack"
 REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}"
 
 help_text="Options

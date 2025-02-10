@@ -3,4 +3,31 @@ title: Installation
 description: How to install Railpack
 ---
 
-_todo_
+Railpack is available as a CLI tool. The latest release is available [on
+GitHub](https://github.com/railwayapp/railpack/releases).
+
+The BuildKit frontend is available as a [Docker image on
+GHCR](https://github.com/railwayapp/railpack/pkgs/container/railpack-frontend).
+
+## Curl
+
+Download Nixpacks from GH releases and install automatically
+
+```sh
+curl -sSL https://railpack.com/install.sh | bash
+```
+
+## GitHub Releases
+
+Go to the [latest release](https://github.com/railwayapp/railpack/releases) and
+download the `railpack` binary for your platform.
+
+## From Source
+
+```sh
+git clone https://github.com/railwayapp/railpack.git
+cd railpack
+go build -o railpack
+
+./railpack --help
+```
