@@ -49,7 +49,7 @@ var BuildCommand = &cli.Command{
 			return cli.Exit(err, 1)
 		}
 
-		core.PrettyPrintBuildResult(buildResult)
+		core.PrettyPrintBuildResult(buildResult, core.PrintOptions{Version: Version})
 
 		serializedPlan, err := json.MarshalIndent(buildResult.Plan, "", "  ")
 		if err != nil {

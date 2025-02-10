@@ -34,7 +34,7 @@ var PrepareCommand = &cli.Command{
 		}
 
 		// Pretty print the result to stdout
-		core.PrettyPrintBuildResult(buildResult)
+		core.PrettyPrintBuildResult(buildResult, core.PrintOptions{Version: Version})
 
 		// Save plan if requested
 		if planOut := cmd.String("plan-out"); planOut != "" {
