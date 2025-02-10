@@ -25,9 +25,9 @@ type GenerateBuildPlanOptions struct {
 }
 
 type BuildResult struct {
-	Plan             *plan.BuildPlan                      `json:"plan"`
-	ResolvedPackages map[string]*resolver.ResolvedPackage `json:"resolved_packages"`
-	Metadata         map[string]string                    `json:"metadata"`
+	Plan             *plan.BuildPlan                      `json:"plan,omitempty"`
+	ResolvedPackages map[string]*resolver.ResolvedPackage `json:"resolvedPackages,omitempty"`
+	Metadata         map[string]string                    `json:"metadata,omitempty"`
 }
 
 func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*BuildResult, error) {
