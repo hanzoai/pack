@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	DEFAULT_PHP_VERSION = "8.4"
+	DEFAULT_PHP_VERSION = "8.4.4"
 )
 
 type PhpProvider struct{}
