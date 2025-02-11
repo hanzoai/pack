@@ -42,8 +42,10 @@ func StartFrontend() {
 
 func Build(ctx context.Context, c client.Client) (*client.Result, error) {
 	opts := c.BuildOpts().Opts
-	cacheKey := opts[cacheKey]
-	secretsHash := opts[secretsHash]
+	buildArgs := parseBuildArgs(opts)
+
+	cacheKey := buildArgs[cacheKey]
+	secretsHash := buildArgs[secretsHash]
 
 	buildPlatform, err := validatePlatform(opts)
 	if err != nil {
@@ -175,4 +177,20 @@ func readFile(ctx context.Context, c client.Client, filename string) (string, er
 	fileContents := string(content)
 
 	return fileContents, nil
+}
+
+func parseBuildArgs(opts map[string]string) map[string]string {
+	buildArgs := make(map[string]string)
+
+	for key, arg := range opts {
+		if !strings.HasPrefix(key, "build-arg:") {
+			continue
+		}
+
+		// Remove the "build-arg:" prefix
+		name := strings.TrimPrefix(key, "build-arg:")
+		buildArgs[name] = arg
+	}
+
+	return buildArgs
 }
