@@ -126,7 +126,12 @@ func TestGetNextApps(t *testing.T) {
 		{
 			name: "bun project",
 			path: "../../../examples/node-next",
-			want: []string{},
+			want: []string{""},
+		},
+		{
+			name: "turbo with 2 next apps",
+			path: "../../../examples/node-turborepo",
+			want: []string{"apps/docs/", "apps/web/"},
 		},
 	}
 

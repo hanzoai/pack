@@ -8,7 +8,7 @@ type PackageJson struct {
 	Dependencies    map[string]string `json:"dependencies"`
 	DevDependencies map[string]string `json:"devDependencies"`
 	Engines         map[string]string `json:"engines"`
-	Main            *string           `json:"main"`
+	Main            string            `json:"main"`
 	Workspaces      []string          `json:"workspaces"`
 }
 

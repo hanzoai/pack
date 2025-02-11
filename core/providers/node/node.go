@@ -58,8 +58,8 @@ func (p *NodeProvider) start(ctx *generate.GenerateContext, packageJson *Package
 
 	if start := p.getScripts(packageJson, "start"); start != "" {
 		ctx.Start.Command = packageManager.RunCmd("start")
-	} else if main := packageJson.Main; main != nil {
-		ctx.Start.Command = packageManager.RunScriptCommand(*main)
+	} else if main := packageJson.Main; main != "" {
+		ctx.Start.Command = packageManager.RunScriptCommand(main)
 	} else if files, err := ctx.App.FindFiles("{index.js,index.ts}"); err == nil && len(files) > 0 {
 		ctx.Start.Command = packageManager.RunScriptCommand(files[0])
 	}
