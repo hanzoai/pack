@@ -14,7 +14,7 @@ type CommandStepBuilder struct {
 	Commands    *[]plan.Command
 	Outputs     *[]string
 	Assets      map[string]string
-	UseSecrets  *bool
+	UseSecrets  bool
 }
 
 func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
@@ -23,6 +23,7 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 		DependsOn:   []string{MisePackageStepName},
 		Commands:    &[]plan.Command{},
 		Assets:      map[string]string{},
+		UseSecrets:  true,
 	}
 
 	c.Steps = append(c.Steps, step)
@@ -76,7 +77,7 @@ func (b *CommandStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error
 	step.Outputs = b.Outputs
 	step.Commands = b.Commands
 	step.Assets = b.Assets
-	step.UseSecrets = b.UseSecrets
+	step.UseSecrets = &b.UseSecrets
 
 	return step, nil
 }
