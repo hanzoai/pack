@@ -45,7 +45,10 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 			// Copy composer from the composer image
 			plan.CopyCommand{Image: "composer:latest", Src: "/usr/bin/composer", Dest: "/usr/bin/composer"},
 			plan.NewCopyCommand("."),
-			plan.NewExecCommand("composer install --ignore-platform-reqs"),
+			plan.NewVariableCommand("COMPOSER_CACHE_DIR", "/opt/cache/composer"),
+			plan.NewExecCommand("composer install --ignore-platform-reqs", plan.ExecOptions{
+				Caches: []string{ctx.Caches.AddCache("composer", "/opt/cache/composer")},
+			}),
 		})
 
 		install.DependsOn = []string{nginxPackages.DisplayName}
@@ -68,10 +71,13 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 			return err
 		}
 
-		_, err = nodeProvider.Build(ctx, nodeInstall, packageJson)
+		nodeBuild, err := nodeProvider.Build(ctx, nodeInstall, packageJson)
 		if err != nil {
 			return err
 		}
+
+		// Only copy the changes to the app, not the entire rest of the file system
+		nodeBuild.Outputs = &[]string{"/app"}
 
 		ctx.ExitSubContext()
 	}
