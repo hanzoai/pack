@@ -1,6 +1,10 @@
 package generate
 
-import "github.com/railwayapp/railpack/core/plan"
+import (
+	"strings"
+
+	"github.com/railwayapp/railpack/core/plan"
+)
 
 const (
 	APT_CACHE_KEY  = "apt"
@@ -18,8 +22,9 @@ func NewCacheContext() *CacheContext {
 }
 
 func (c *CacheContext) AddCache(name string, directory string) string {
-	c.Caches[name] = plan.NewCache(directory)
-	return name
+	sanitizedName := sanitizeCacheName(name)
+	c.Caches[sanitizedName] = plan.NewCache(directory)
+	return sanitizedName
 }
 
 func (c *CacheContext) SetCache(name string, cache *plan.Cache) {
@@ -45,4 +50,12 @@ func (c *CacheContext) GetAptCaches() []string {
 	}
 
 	return []string{APT_CACHE_KEY, aptListsKey}
+}
+
+func sanitizeCacheName(name string) string {
+	if len(name) > 0 && name[0] == '/' {
+		name = name[1:]
+	}
+	name = strings.TrimRight(name, "/")
+	return strings.ReplaceAll(name, "/", "-")
 }

@@ -402,6 +402,7 @@ func (g *BuildGraph) convertFileCommandToLLB(cmd plan.FileCommand, state llb.Sta
 // getCacheMountOptions returns the llb.RunOption slice for the given cache keys
 func (g *BuildGraph) getCacheMountOptions(cacheKeys []string) ([]llb.RunOption, error) {
 	var opts []llb.RunOption
+
 	for _, cacheKey := range cacheKeys {
 		if planCache, ok := g.Plan.Caches[cacheKey]; ok {
 			cache := g.CacheStore.GetCache(cacheKey, planCache)
@@ -413,8 +414,6 @@ func (g *BuildGraph) getCacheMountOptions(cacheKeys []string) ([]llb.RunOption, 
 			opts = append(opts,
 				llb.AddMount(planCache.Directory, *cache.cacheState, llb.AsPersistentCacheDir(cache.cacheKey, cacheType)),
 			)
-
-			return opts, nil
 		} else {
 			return nil, fmt.Errorf("cache with key %q not found", cacheKey)
 		}
