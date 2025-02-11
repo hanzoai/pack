@@ -2883,7 +2883,7 @@
  "steps": [
   {
    "name": "packages:image",
-   "startingImage": "php:8.4.4-fpm",
+   "startingImage": "php:8.4.3-fpm",
    "useSecrets": false
   },
   {
