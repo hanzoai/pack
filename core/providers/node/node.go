@@ -2,6 +2,7 @@ package node
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/generate"
@@ -220,4 +221,45 @@ func (p *NodeProvider) getScripts(packageJson *PackageJson, name string) string 
 	}
 
 	return ""
+}
+
+func (p *NodeProvider) getNextApps(ctx *generate.GenerateContext) ([]string, error) {
+	nextPaths, err := p.filterPackageJson(ctx, func(packageJson *PackageJson) bool {
+		if packageJson.HasScript("build") {
+			return strings.Contains(packageJson.Scripts["build"], "next build")
+		}
+
+		return false
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nextPaths, nil
+}
+
+func (p *NodeProvider) filterPackageJson(ctx *generate.GenerateContext, filterFunc func(packageJson *PackageJson) bool) ([]string, error) {
+	filteredPaths := []string{}
+
+	files, err := ctx.App.FindFiles("**/package.json")
+	if err != nil {
+		return filteredPaths, err
+	}
+
+	for _, file := range files {
+		var packageJson PackageJson
+		err := ctx.App.ReadJSON(file, &packageJson)
+		if err != nil {
+			return filteredPaths, err
+		}
+
+		if filterFunc(&packageJson) {
+			fmt.Printf("file: %s\n", file)
+			dirPath := strings.TrimSuffix(file, "package.json")
+			fmt.Printf("dirPath: %s\n", dirPath)
+			filteredPaths = append(filteredPaths, dirPath)
+		}
+	}
+
+	return filteredPaths, nil
 }

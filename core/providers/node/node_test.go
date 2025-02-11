@@ -111,3 +111,33 @@ func TestNodeCorepack(t *testing.T) {
 		})
 	}
 }
+
+func TestGetNextApps(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		want []string
+	}{
+		{
+			name: "npm project",
+			path: "../../../examples/node-npm",
+			want: []string{},
+		},
+		{
+			name: "bun project",
+			path: "../../../examples/node-next",
+			want: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := testingUtils.CreateGenerateContext(t, tt.path)
+			provider := NodeProvider{}
+
+			nextApps, err := provider.getNextApps(ctx)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, nextApps)
+		})
+	}
+}
