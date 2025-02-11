@@ -2,6 +2,7 @@ package node
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/railwayapp/railpack/core/app"
@@ -74,11 +75,27 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.Co
 	packageManager := p.getPackageManager(ctx.App)
 	_, ok := packageJson.Scripts["build"]
 	if ok {
+		buildCaches := []string{}
+
+		// Generic node_modules cache
+		buildCaches = append(buildCaches, ctx.Caches.AddCache("node-modules", "/app/node_modules/.cache"))
+
+		// Add caches for Next.JS apps
+		if nextApps, err := p.getNextApps(ctx); err == nil {
+			for _, nextApp := range nextApps {
+				nextCacheDir := path.Join("/app", nextApp, ".next/cache")
+				nextCache := ctx.Caches.AddCache(fmt.Sprintf("next-%s", nextApp), nextCacheDir)
+				buildCaches = append(buildCaches, nextCache)
+			}
+		}
+
 		build := ctx.NewCommandStep("build")
 
 		build.AddCommands([]plan.Command{
 			plan.NewCopyCommand("."),
-			plan.NewExecCommand(packageManager.RunCmd("build")),
+			plan.NewExecCommand(packageManager.RunCmd("build"), plan.ExecOptions{
+				Caches: buildCaches,
+			}),
 		})
 
 		build.DependsOn = []string{install.DisplayName}
