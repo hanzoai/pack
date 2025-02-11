@@ -325,7 +325,7 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 		// If there is a secrets hash, add a mount to invalidate the cache if the secrets hash changes
 		if g.SecretsHash != "" {
 			opts = append(opts, llb.AddMount("/cache-invalidate",
-				llb.Scratch().File(llb.Mkfile("secrets-hash", 0644, []byte(g.SecretsHash)))))
+				llb.Scratch().File(llb.Mkfile("secrets-hash", 0644, []byte(g.SecretsHash)), llb.WithCustomName("invalidate cache on secrets hash change"))))
 		}
 	}
 
