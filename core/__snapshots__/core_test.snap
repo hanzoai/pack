@@ -481,6 +481,10 @@
   "mise": {
    "directory": "/mise/cache",
    "type": "shared"
+  },
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -615,6 +619,9 @@
      "src": "."
     },
     {
+     "caches": [
+      "node-modules"
+     ],
      "cmd": "bun run build"
     }
    ],
@@ -641,6 +648,10 @@
   },
   "mise": {
    "directory": "/mise/cache",
+   "type": "shared"
+  },
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
    "type": "shared"
   },
   "pnpm-install": {
@@ -800,6 +811,9 @@
      "src": "."
     },
     {
+     "caches": [
+      "node-modules"
+     ],
      "cmd": "pnpm run build"
     }
    ],
@@ -2121,6 +2135,10 @@
    "directory": "/mise/cache",
    "type": "shared"
   },
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
+  },
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
@@ -2259,6 +2277,9 @@
      "src": "."
     },
     {
+     "caches": [
+      "node-modules"
+     ],
      "cmd": "npm run build"
     }
    ],
@@ -2599,6 +2620,10 @@
    "directory": "/mise/cache",
    "type": "shared"
   },
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
+  },
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
@@ -2782,6 +2807,9 @@
      "src": "."
     },
     {
+     "caches": [
+      "node-modules"
+     ],
      "cmd": "npm run build"
     }
    ],
@@ -3042,6 +3070,14 @@
    "directory": "/mise/cache",
    "type": "shared"
   },
+  "next-": {
+   "directory": "/app/.next/cache",
+   "type": "shared"
+  },
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
+  },
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
@@ -3179,6 +3215,10 @@
      "src": "."
     },
     {
+     "caches": [
+      "node-modules",
+      "next-"
+     ],
      "cmd": "npm run build"
     }
    ],
@@ -3205,6 +3245,18 @@
   },
   "mise": {
    "directory": "/mise/cache",
+   "type": "shared"
+  },
+  "next-apps-docs": {
+   "directory": "/app/apps/docs/.next/cache",
+   "type": "shared"
+  },
+  "next-apps-web": {
+   "directory": "/app/apps/web/.next/cache",
+   "type": "shared"
+  },
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
    "type": "shared"
   },
   "npm-install": {
@@ -3387,6 +3439,11 @@
      "src": "."
     },
     {
+     "caches": [
+      "node-modules",
+      "next-apps-docs",
+      "next-apps-web"
+     ],
      "cmd": "npm run build"
     }
    ],
