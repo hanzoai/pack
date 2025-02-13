@@ -64,7 +64,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		if err != nil {
 			return err
 		}
-		nodePackages.DependsOn = []string{imageStep.DisplayName}
+		// nodePackages.DependsOn = []string{imageStep.DisplayName}
 
 		nodeInstall, err := nodeProvider.Install(ctx, nodePackages, packageJson)
 		if err != nil {

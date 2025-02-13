@@ -13,6 +13,7 @@ import (
 
 const (
 	MisePackageStepName = "packages:mise"
+	BuilderBaseImage    = "ghcr.io/railwayapp/railpack-builder-base:latest"
 )
 
 type MiseStepBuilder struct {
@@ -22,8 +23,8 @@ type MiseStepBuilder struct {
 	MisePackages          []*resolver.PackageRef
 	SupportingMiseFiles   []string
 	Assets                map[string]string
-	DependsOn             []string
-	Outputs               *[]string
+	// DependsOn             []string
+	Outputs *[]string
 
 	app *a.App
 	env *a.Environment
@@ -36,10 +37,10 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 		MisePackages:          []*resolver.PackageRef{},
 		SupportingAptPackages: []string{},
 		Assets:                map[string]string{},
-		DependsOn:             []string{},
-		Outputs:               &[]string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
-		app:                   c.App,
-		env:                   c.Env,
+		// DependsOn:             []string{},
+		Outputs: &[]string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
+		app:     c.App,
+		env:     c.Env,
 	}
 
 	c.Steps = append(c.Steps, step)
@@ -78,9 +79,11 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		return step, nil
 	}
 
-	step.DependsOn = b.DependsOn
+	// step.DependsOn = b.DependsOn
 
-	miseCache := options.Caches.AddCache("mise", "/mise/cache")
+	// miseCache := options.Caches.AddCache("mise", "/mise/cache")
+
+	step.StartingImage = BuilderBaseImage
 
 	// Install mise
 	step.AddCommands([]plan.Command{
@@ -89,12 +92,11 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		plan.NewVariableCommand("MISE_CONFIG_DIR", "/mise"),
 		plan.NewVariableCommand("MISE_CACHE_DIR", "/mise/cache"),
 		plan.NewPathCommand("/mise/shims"),
-		options.NewAptInstallCommand([]string{"curl", "ca-certificates", "git"}),
-		plan.NewExecCommand("sh -c 'curl -fsSL https://mise.run | sh'",
-			plan.ExecOptions{
-				CustomName: "install mise",
-				Caches:     []string{miseCache},
-			}),
+		// options.NewAptInstallCommand([]string{"curl", "ca-certificates", "git"}),
+		// plan.NewExecCommand("sh -c 'curl -fsSL https://mise.run | sh'",
+		// 	plan.ExecOptions{
+		// 		CustomName: "install mise",
+		// 	}),
 	})
 
 	// Add user mise config files if they exist
@@ -144,7 +146,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 			}),
 			plan.NewExecCommand("sh -c 'mise trust -a && mise install'", plan.ExecOptions{
 				CustomName: "install mise packages: " + strings.Join(pkgNames, ", "),
-				Caches:     []string{miseCache},
+				// Caches:     []string{miseCache},
 			}),
 		})
 	}

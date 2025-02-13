@@ -163,7 +163,8 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 		aptStep.Packages = config.AptPackages
 
 		// The apt step should run first
-		miseStep.DependsOn = append(miseStep.DependsOn, aptStep.DisplayName)
+		// miseStep.DependsOn = append(miseStep.DependsOn, aptStep.DisplayName)
+		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, config.AptPackages...)
 	}
 
 	// Step config
