@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	DEFAULT_PYTHON_VERSION = "3.13.1"
+	DEFAULT_PYTHON_VERSION = "3.13.2"
 	UV_CACHE_DIR           = "/opt/uv-cache"
 	PIP_CACHE_DIR          = "/opt/pip-cache"
 )
