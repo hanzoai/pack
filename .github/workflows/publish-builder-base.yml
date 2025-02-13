@@ -10,7 +10,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-debian-base
+  IMAGE_NAME: ${{ github.repository }}-builder-base
 
 jobs:
   build:
