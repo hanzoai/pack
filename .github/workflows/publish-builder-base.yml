@@ -43,6 +43,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
+            type=raw,value=debian-bookworm
             type=sha,format=long
             type=raw,value={{date 'YYYYMMDD'}}
 
