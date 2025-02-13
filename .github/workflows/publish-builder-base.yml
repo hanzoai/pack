@@ -1,11 +1,11 @@
-name: Build Debian Base Image
+name: Publish Builder Base Image
 
 on:
   push:
     branches: [main]
     paths:
       - "images/debian/build/Dockerfile"
-      - ".github/workflows/build-debian-base.yml"
+      - ".github/workflows/publish-debian-base.yml"
   workflow_dispatch:
 
 env:
