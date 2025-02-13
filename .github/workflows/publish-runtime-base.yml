@@ -4,13 +4,13 @@ on:
   push:
     branches: [main]
     paths:
-      - "images/debian/build/Dockerfile"
-      - ".github/workflows/publish-builder-base.yml"
+      - "images/debian/runtime/Dockerfile"
+      - ".github/workflows/publish-runtime-base.yml"
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-builder-base
+  IMAGE_NAME: ${{ github.repository }}-runtime-base
 
 jobs:
   build:
