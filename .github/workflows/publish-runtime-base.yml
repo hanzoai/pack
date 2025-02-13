@@ -1,4 +1,4 @@
-name: Publish Builder Base Image
+name: Publish Runtime Base Image
 
 on:
   push:
