@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	DefaultBaseImage = "debian:stable-slim"
+	DefaultBaseImage = "ghcr.io/railwayapp/railpack-runtime-base:latest"
 )
 
 type BuildStepOptions struct {

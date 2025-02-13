@@ -137,7 +137,7 @@ func getBaseState(plan *p.BuildPlan, platform specs.Platform) llb.State {
 	)
 
 	state = state.AddEnv("DEBIAN_FRONTEND", "noninteractive")
-	state = state.Run(llb.Shlex("sh -c 'apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*'")).Root()
+	// state = state.Run(llb.Shlex("sh -c 'apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*'")).Root()
 	state = state.Dir(WorkingDir)
 
 	return state

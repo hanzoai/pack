@@ -1,7 +1,7 @@
 
 [TestGenerateBuildPlanForExamples/config-file - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -10,10 +10,6 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
   }
  },
  "start": {
@@ -52,15 +48,8 @@
       "apt",
       "apt-lists"
      ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
+     "customName": "install apt packages: neofetch"
     },
     {
      "customName": "create mise config",
@@ -68,15 +57,9 @@
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: python"
     }
-   ],
-   "dependsOn": [
-    "packages:apt:config"
    ],
    "name": "packages:mise",
    "outputs": [
@@ -86,6 +69,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -181,22 +165,10 @@
 
 [TestGenerateBuildPlanForExamples/go-cmd-dirs - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
   "go-build": {
    "directory": "/root/.cache/go-build",
-   "type": "shared"
-  },
-  "mise": {
-   "directory": "/mise/cache",
    "type": "shared"
   }
  },
@@ -236,29 +208,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: go"
     }
@@ -271,6 +225,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -324,22 +279,10 @@
 
 [TestGenerateBuildPlanForExamples/go-mod - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
   "go-build": {
    "directory": "/root/.cache/go-build",
-   "type": "shared"
-  },
-  "mise": {
-   "directory": "/mise/cache",
    "type": "shared"
   }
  },
@@ -376,29 +319,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: go"
     }
@@ -411,6 +336,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -464,22 +390,10 @@
 
 [TestGenerateBuildPlanForExamples/node-bun - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
   "bun-install": {
    "directory": "/root/.bun/install/cache",
-   "type": "shared"
-  },
-  "mise": {
-   "directory": "/mise/cache",
    "type": "shared"
   },
   "node-modules": {
@@ -525,29 +439,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: bun"
     }
@@ -560,6 +456,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -636,20 +533,8 @@
 
 [TestGenerateBuildPlanForExamples/node-corepack - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
-  },
   "node-modules": {
    "directory": "/app/node_modules/.cache",
    "type": "shared"
@@ -697,29 +582,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: node, pnpm"
     }
@@ -732,6 +599,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -828,21 +696,7 @@
 
 [TestGenerateBuildPlanForExamples/node-pnpm-workspaces - 1]
 {
- "baseImage": "debian:stable-slim",
- "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
-  }
- },
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "start": {
   "cmd": "node index.js",
   "outputs": [
@@ -881,29 +735,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: node, pnpm"
     }
@@ -916,6 +752,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -951,7 +788,7 @@
 
 [TestGenerateBuildPlanForExamples/python-pdm - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -960,10 +797,6 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
   }
  },
  "start": {
@@ -998,29 +831,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: pipx, python"
     }
@@ -1033,6 +848,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -1129,7 +945,7 @@
 
 [TestGenerateBuildPlanForExamples/python-pip - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -1138,10 +954,6 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
   },
   "pip": {
    "directory": "/opt/pip-cache",
@@ -1180,29 +992,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: python"
     }
@@ -1215,6 +1009,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -1296,7 +1091,7 @@
 
 [TestGenerateBuildPlanForExamples/python-poetry - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -1305,10 +1100,6 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
   }
  },
  "start": {
@@ -1343,29 +1134,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: pipx, python"
     }
@@ -1378,6 +1151,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -1466,7 +1240,7 @@
 
 [TestGenerateBuildPlanForExamples/python-system-deps - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -1475,10 +1249,6 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
   },
   "pip": {
    "directory": "/opt/pip-cache",
@@ -1517,21 +1287,6 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "dest": "/app/.python-version",
      "src": ".python-version"
     },
@@ -1541,9 +1296,6 @@
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: python"
     }
@@ -1557,6 +1309,7 @@
     "/root/.local/state/mise",
     "/app/.python-version"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -1638,7 +1391,7 @@
 
 [TestGenerateBuildPlanForExamples/python-uv - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -1647,10 +1400,6 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
   }
  },
  "start": {
@@ -1685,21 +1434,6 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "dest": "/app/.python-version",
      "src": ".python-version"
     },
@@ -1709,9 +1443,6 @@
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: pipx, python"
     }
@@ -1725,6 +1456,7 @@
     "/root/.local/state/mise",
     "/app/.python-version"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -1832,7 +1564,7 @@
 
 [TestGenerateBuildPlanForExamples/secrets - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "secrets": [
   "MY_SECRET",
   "MY_OTHER_SECRET",
@@ -1905,21 +1637,7 @@
 
 [TestGenerateBuildPlanForExamples/staticfile-config - 1]
 {
- "baseImage": "debian:stable-slim",
- "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
-  }
- },
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "start": {
   "cmd": "caddy run --config Caddyfile --adapter caddyfile 2\u003e\u00261",
   "outputs": [
@@ -1952,29 +1670,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: caddy"
     }
@@ -1987,6 +1687,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -2013,21 +1714,7 @@
 
 [TestGenerateBuildPlanForExamples/staticfile-index - 1]
 {
- "baseImage": "debian:stable-slim",
- "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
-  }
- },
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "start": {
   "cmd": "caddy run --config Caddyfile --adapter caddyfile 2\u003e\u00261",
   "outputs": [
@@ -2060,29 +1747,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: caddy"
     }
@@ -2095,6 +1764,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -2121,20 +1791,8 @@
 
 [TestGenerateBuildPlanForExamples/mise-config - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
-  },
   "node-modules": {
    "directory": "/app/node_modules/.cache",
    "type": "shared"
@@ -2182,21 +1840,6 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "dest": "/app/mise.toml",
      "src": "mise.toml"
     },
@@ -2206,9 +1849,6 @@
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: node, npm"
     }
@@ -2222,6 +1862,7 @@
     "/root/.local/state/mise",
     "/app/mise.toml"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -2294,20 +1935,8 @@
 
 [TestGenerateBuildPlanForExamples/node-npm - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
-  },
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
@@ -2351,29 +1980,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: node, npm"
     }
@@ -2386,6 +1997,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -2444,20 +2056,8 @@
 
 [TestGenerateBuildPlanForExamples/node-npm-workspaces - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
-  },
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
@@ -2501,29 +2101,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: node, npm"
     }
@@ -2536,6 +2118,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -2602,7 +2185,7 @@
 
 [TestGenerateBuildPlanForExamples/php-laravel-inertia - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -2614,10 +2197,6 @@
   },
   "composer": {
    "directory": "/opt/cache/composer",
-   "type": "shared"
-  },
-  "mise": {
-   "directory": "/mise/cache",
    "type": "shared"
   },
   "node-modules": {
@@ -2710,35 +2289,14 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: node, npm"
     }
-   ],
-   "dependsOn": [
-    "packages:image"
    ],
    "name": "packages:mise",
    "outputs": [
@@ -2748,6 +2306,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -2863,7 +2422,7 @@
 
 [TestGenerateBuildPlanForExamples/php-vanilla - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -2944,7 +2503,7 @@
 
 [TestGenerateBuildPlanForExamples/php-vanilla-82 - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -3056,20 +2615,8 @@
 
 [TestGenerateBuildPlanForExamples/node-next - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
-  },
   "next-": {
    "directory": "/app/.next/cache",
    "type": "shared"
@@ -3121,29 +2668,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: node, npm"
     }
@@ -3156,6 +2685,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
@@ -3233,20 +2763,8 @@
 
 [TestGenerateBuildPlanForExamples/node-turborepo - 1]
 {
- "baseImage": "debian:stable-slim",
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
-  "mise": {
-   "directory": "/mise/cache",
-   "type": "shared"
-  },
   "next-apps-docs": {
    "directory": "/app/apps/docs/.next/cache",
    "type": "shared"
@@ -3301,29 +2819,11 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates curl git'",
-     "customName": "install apt packages: ca-certificates curl git"
-    },
-    {
-     "caches": [
-      "mise"
-     ],
-     "cmd": "sh -c 'curl -fsSL https://mise.run | sh'",
-     "customName": "install mise"
-    },
-    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
     },
     {
-     "caches": [
-      "mise"
-     ],
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
      "customName": "install mise packages: node, npm"
     }
@@ -3336,6 +2836,7 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "useSecrets": false
   },
   {
