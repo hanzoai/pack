@@ -273,7 +273,7 @@ func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *StepNode) (
 	state := baseState
 
 	if node.Step.StartingImage != "" {
-		state = llb.Image(node.Step.StartingImage, llb.Platform(*g.Platform))
+		state = llb.Image(node.Step.StartingImage, llb.Platform(*g.Platform)).Dir("/app")
 	}
 
 	for k, v := range node.InputEnv.EnvVars {
