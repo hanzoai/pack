@@ -89,6 +89,7 @@ func (b *CommandStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error
 	step.Outputs = b.Outputs
 	step.Commands = b.Commands
 	step.Assets = b.Assets
+	step.Caches = b.Caches
 
 	if !b.UseSecrets {
 		step.UseSecrets = &b.UseSecrets

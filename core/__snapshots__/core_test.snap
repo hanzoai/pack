@@ -243,6 +243,7 @@
   },
   {
    "caches": [
+    "go-build",
     "root"
    ],
    "commands": [
@@ -269,6 +270,7 @@
   },
   {
    "caches": [
+    "go-build",
     "root"
    ],
    "commands": [
@@ -357,6 +359,7 @@
   },
   {
    "caches": [
+    "go-build",
     "root"
    ],
    "commands": [
@@ -383,6 +386,7 @@
   },
   {
    "caches": [
+    "go-build",
     "root"
    ],
    "commands": [
@@ -510,6 +514,7 @@
   },
   {
    "caches": [
+    "bun-install",
     "root"
    ],
    "commands": [
@@ -533,6 +538,7 @@
   },
   {
    "caches": [
+    "node-modules",
     "root"
    ],
    "commands": [
@@ -681,6 +687,7 @@
   },
   {
    "caches": [
+    "pnpm-install",
     "root"
    ],
    "commands": [
@@ -705,6 +712,7 @@
   },
   {
    "caches": [
+    "node-modules",
     "root"
    ],
    "commands": [
@@ -729,6 +737,10 @@
 {
  "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
+  },
   "root": {
    "directory": "/root/.cache",
    "type": "shared"
@@ -820,6 +832,17 @@
     "packages:mise"
    ],
    "name": "setup"
+  },
+  {
+   "caches": [
+    "node-modules",
+    "root"
+   ],
+   "commands": [],
+   "dependsOn": [
+    "setup"
+   ],
+   "name": "build"
   }
  ]
 }
@@ -1108,6 +1131,7 @@
   },
   {
    "caches": [
+    "pip",
     "root"
    ],
    "commands": [
@@ -1425,6 +1449,7 @@
   },
   {
    "caches": [
+    "pip",
     "root"
    ],
    "commands": [
@@ -2017,6 +2042,7 @@
   },
   {
    "caches": [
+    "npm-install",
     "root"
    ],
    "commands": [
@@ -2036,6 +2062,7 @@
   },
   {
    "caches": [
+    "node-modules",
     "root"
    ],
    "commands": [
@@ -2060,6 +2087,10 @@
 {
  "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
+  },
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
@@ -2158,6 +2189,7 @@
   },
   {
    "caches": [
+    "npm-install",
     "root"
    ],
    "commands": [
@@ -2178,6 +2210,17 @@
     "setup"
    ],
    "name": "install"
+  },
+  {
+   "caches": [
+    "node-modules",
+    "root"
+   ],
+   "commands": [],
+   "dependsOn": [
+    "install"
+   ],
+   "name": "build"
   }
  ]
 }
@@ -2187,6 +2230,10 @@
 {
  "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
+  },
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
@@ -2285,6 +2332,7 @@
   },
   {
    "caches": [
+    "npm-install",
     "root"
    ],
    "commands": [
@@ -2313,6 +2361,17 @@
     "setup"
    ],
    "name": "install"
+  },
+  {
+   "caches": [
+    "node-modules",
+    "root"
+   ],
+   "commands": [],
+   "dependsOn": [
+    "install"
+   ],
+   "name": "build"
   }
  ]
 }
@@ -2382,6 +2441,7 @@
   },
   {
    "caches": [
+    "composer",
     "root"
    ],
    "commands": [
@@ -2483,6 +2543,7 @@
   },
   {
    "caches": [
+    "npm-install",
     "root"
    ],
    "commands": [
@@ -2506,6 +2567,7 @@
   },
   {
    "caches": [
+    "node-modules",
     "root"
    ],
    "commands": [
@@ -2719,6 +2781,7 @@
   },
   {
    "caches": [
+    "composer",
     "root"
    ],
    "commands": [
@@ -2899,6 +2962,7 @@
   },
   {
    "caches": [
+    "npm-install",
     "root"
    ],
    "commands": [
@@ -2922,6 +2986,8 @@
   },
   {
    "caches": [
+    "node-modules",
+    "next-",
     "root"
    ],
    "commands": [
@@ -3077,6 +3143,7 @@
   },
   {
    "caches": [
+    "npm-install",
     "root"
    ],
    "commands": [
@@ -3125,6 +3192,9 @@
   },
   {
    "caches": [
+    "node-modules",
+    "next-apps-docs",
+    "next-apps-web",
     "root"
    ],
    "commands": [
