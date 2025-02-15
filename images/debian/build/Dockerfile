@@ -1,3 +1,18 @@
+FROM rust:1-slim-bookworm AS builder
+
+# Compile mise from source with size optimizations
+RUN apt-get update && apt-get install -y \
+    git \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/jdx/mise.git /tmp/mise && \
+    cd /tmp/mise && \
+    RUSTFLAGS="-C opt-level=z -C link-arg=-s -C codegen-units=1" \
+    cargo build --profile serious \
+    --config debuginfo=0
+
 FROM buildpack-deps:bookworm-scm
 
 # Install any system deps that might be needed to build a language from source
@@ -17,15 +32,13 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     liblzma-dev
 
-# Install mise
-# TODO: I don't think we need these envs here. Or we can remove from the mise_step
+# Mise config
 ENV MISE_INSTALL_PATH=/usr/local/bin/mise \
     MISE_DATA_DIR=/mise \
     MISE_CONFIG_DIR=/mise \
     MISE_CACHE_DIR=/mise/cache \
-    MISE_VERBOSE=1 \
     PATH=/mise/shims:$PATH
 
-# TODO: Install mise from source to get a smaller binary
-
-RUN curl -fsSL https://mise.run | sh
+# Copy mise binary from builder
+COPY --from=builder /tmp/mise/target/serious/mise /usr/local/bin/
+RUN chmod +x /usr/local/bin/mise
