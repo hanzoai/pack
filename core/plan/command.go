@@ -28,12 +28,6 @@ type PathCommand struct {
 	Path string `json:"path" jsonschema:"description=Directory path to add to the global PATH environment variable. This path will be available to all subsequent commands in the build"`
 }
 
-// VariableCommand represents setting an environment variable for the build
-type VariableCommand struct {
-	Name  string `json:"name" jsonschema:"description=Name of the environment variable to set (e.g. 'NODE_ENV')"`
-	Value string `json:"value" jsonschema:"description=Value to set for the environment variable (e.g. 'production')"`
-}
-
 // CopyCommand represents copying files or directories during the build
 type CopyCommand struct {
 	Image string `json:"image,omitempty" jsonschema:"description=Optional source image to copy from. This can be any public image URL"`
@@ -54,11 +48,10 @@ type FileCommand struct {
 	CustomName string      `json:"customName,omitempty" jsonschema:"description=Optional custom name to display for this file operation"`
 }
 
-func (e ExecCommand) CommandType() string     { return "exec" }
-func (g PathCommand) CommandType() string     { return "globalPath" }
-func (v VariableCommand) CommandType() string { return "variable" }
-func (c CopyCommand) CommandType() string     { return "copy" }
-func (f FileCommand) CommandType() string     { return "file" }
+func (e ExecCommand) CommandType() string { return "exec" }
+func (g PathCommand) CommandType() string { return "globalPath" }
+func (c CopyCommand) CommandType() string { return "copy" }
+func (f FileCommand) CommandType() string { return "file" }
 
 func NewExecCommand(cmd string, options ...ExecOptions) Command {
 	exec := ExecCommand{Cmd: cmd}
@@ -77,11 +70,6 @@ func NewExecShellCommand(cmd string, options ...ExecOptions) Command {
 func NewPathCommand(path string, customName ...string) Command {
 	pathCmd := PathCommand{Path: path}
 	return pathCmd
-}
-
-func NewVariableCommand(name, value string, customName ...string) Command {
-	variableCmd := VariableCommand{Name: name, Value: value}
-	return variableCmd
 }
 
 func NewCopyCommand(src string, dst ...string) Command {
@@ -128,6 +116,7 @@ func UnmarshalJsonCommand(data []byte) (Command, error) {
 		}
 		return cmd, nil
 	}
+
 	if _, ok := rawMap["path"]; ok {
 		if _, ok := rawMap["name"]; ok {
 			var file FileCommand
@@ -142,13 +131,7 @@ func UnmarshalJsonCommand(data []byte) (Command, error) {
 		}
 		return path, nil
 	}
-	if _, ok := rawMap["name"]; ok && rawMap["value"] != nil {
-		var env VariableCommand
-		if err := json.Unmarshal(data, &env); err != nil {
-			return nil, err
-		}
-		return env, nil
-	}
+
 	if _, ok := rawMap["src"]; ok {
 		var copy CopyCommand
 		if err := json.Unmarshal(data, &copy); err != nil {
@@ -189,12 +172,6 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 		return NewExecShellCommand(payload, ExecOptions{CustomName: customName}), nil
 	case "PATH":
 		return NewPathCommand(payload), nil
-	case "ENV":
-		envParts := strings.SplitN(payload, "=", 2)
-		if len(envParts) != 2 {
-			return nil, fmt.Errorf("invalid ENV format: %s", payload)
-		}
-		return NewVariableCommand(envParts[0], envParts[1]), nil
 	case "COPY":
 		copyParts := strings.Fields(payload)
 		if len(copyParts) != 2 {

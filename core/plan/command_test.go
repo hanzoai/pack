@@ -36,14 +36,6 @@ func TestCommandMarshalUnmarshal(t *testing.T) {
 			unmarshalString: "PATH:/usr/local/bin",
 		},
 
-		// Variable
-		{
-			name:            "variable command",
-			command:         NewVariableCommand("KEY", "value"),
-			expectedJSON:    `{"name":"KEY","value":"value"}`,
-			unmarshalString: "ENV:KEY=value",
-		},
-
 		// Copy
 		{
 			name:            "copy command",

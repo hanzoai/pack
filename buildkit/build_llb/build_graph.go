@@ -158,7 +158,7 @@ func (g *BuildGraph) processNode(node *StepNode) error {
 		if !parentNode.Processed {
 			// If this node is marked in-progress, we have a dependency violation
 			if node.InProgress {
-				return fmt.Errorf("Dependency violation: %s waiting for unprocessed parent %s",
+				return fmt.Errorf("dependency violation: %s waiting for unprocessed parent %s",
 					node.Step.Name, parentNode.Step.Name)
 			}
 
@@ -272,18 +272,24 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *StepNode) (llb.State, error) {
 	state := baseState
 
+	// If a custom image is specified, we build off that instead of the parent's state
 	if node.Step.StartingImage != "" {
 		state = llb.Image(node.Step.StartingImage, llb.Platform(*g.Platform)).Dir("/app")
 	}
 
+	// Add all the variables coming from the parent nodes
 	for k, v := range node.InputEnv.EnvVars {
-		newState, err := g.convertCommandToLLB(node, plan.VariableCommand{Name: k, Value: v}, state, node.Step)
-		if err != nil {
-			return state, err
-		}
-		state = newState
+		state = state.AddEnv(k, v)
+		node.OutputEnv.AddEnvVar(k, v)
 	}
 
+	// Add all the variables coming from the step
+	for k, v := range node.Step.Variables {
+		state = state.AddEnv(k, v)
+		node.OutputEnv.AddEnvVar(k, v)
+	}
+
+	// Add all the paths coming from the parent nodes
 	for _, path := range node.InputEnv.PathList {
 		newState, err := g.convertCommandToLLB(node, plan.PathCommand{Path: path}, state, node.Step)
 		if err != nil {
@@ -301,8 +307,6 @@ func (g *BuildGraph) convertCommandToLLB(node *StepNode, cmd plan.Command, state
 		return g.convertExecCommandToLLB(node, cmd, state)
 	case plan.PathCommand:
 		return g.convertPathCommandToLLB(node, cmd, state)
-	case plan.VariableCommand:
-		return g.convertVariableCommandToLLB(node, cmd, state)
 	case plan.CopyCommand:
 		return g.convertCopyCommandToLLB(cmd, state)
 	case plan.FileCommand:
@@ -311,6 +315,7 @@ func (g *BuildGraph) convertCommandToLLB(node *StepNode, cmd plan.Command, state
 	return state, nil
 }
 
+// convertExecCommandToLLB converts an exec command to an LLB state
 func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecCommand, state llb.State) (llb.State, error) {
 	opts := []llb.RunOption{llb.Shlex(cmd.Cmd)}
 	if cmd.CustomName != "" {
@@ -341,8 +346,9 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 	return s, nil
 }
 
+// convertPathCommandToLLB converts a path command to an LLB state
 func (g *BuildGraph) convertPathCommandToLLB(node *StepNode, cmd plan.PathCommand, state llb.State) (llb.State, error) {
-	node.appendPath(cmd.Path)
+	node.OutputEnv.AddPath(cmd.Path)
 	pathList := node.getPathList()
 	pathString := strings.Join(pathList, ":")
 
@@ -350,12 +356,7 @@ func (g *BuildGraph) convertPathCommandToLLB(node *StepNode, cmd plan.PathComman
 	return s, nil
 }
 
-func (g *BuildGraph) convertVariableCommandToLLB(node *StepNode, cmd plan.VariableCommand, state llb.State) (llb.State, error) {
-	s := state.AddEnv(cmd.Name, cmd.Value)
-	node.OutputEnv.AddEnvVar(cmd.Name, cmd.Value)
-	return s, nil
-}
-
+// convertCopyCommandToLLB converts a copy command to an LLB state
 func (g *BuildGraph) convertCopyCommandToLLB(cmd plan.CopyCommand, state llb.State) (llb.State, error) {
 	src := llb.Local("context")
 	if cmd.Image != "" {
@@ -372,6 +373,7 @@ func (g *BuildGraph) convertCopyCommandToLLB(cmd plan.CopyCommand, state llb.Sta
 	return s, nil
 }
 
+// convertFileCommandToLLB converts a file command to an LLB state
 func (g *BuildGraph) convertFileCommandToLLB(cmd plan.FileCommand, state llb.State, step *plan.Step) (llb.State, error) {
 	asset, ok := step.Assets[cmd.Name]
 	if !ok {

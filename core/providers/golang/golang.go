@@ -124,7 +124,7 @@ func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.M
 		aptStep.Packages = []string{"gcc", "g++", "libc6-dev"}
 		install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
 	} else {
-		install.AddCommand(plan.NewVariableCommand("CGO_ENABLED", "0"))
+		install.AddEnvVars(map[string]string{"CGO_ENABLED": "0"})
 	}
 
 	install.DependsOn = []string{packages.DisplayName}

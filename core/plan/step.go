@@ -39,8 +39,9 @@ type Step struct {
 
 func NewStep(name string) *Step {
 	return &Step{
-		Name:   name,
-		Assets: make(map[string]string),
+		Name:      name,
+		Assets:    make(map[string]string),
+		Variables: make(map[string]string),
 	}
 }
 
@@ -111,11 +112,10 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 func CommandsSchema() *jsonschema.Schema {
 	execSchema := generateSchemaWithComments(ExecCommand{})
 	pathSchema := generateSchemaWithComments(PathCommand{})
-	variableSchema := generateSchemaWithComments(VariableCommand{})
 	copySchema := generateSchemaWithComments(CopyCommand{})
 	fileSchema := generateSchemaWithComments(FileCommand{})
 
-	availableCommands := []*jsonschema.Schema{execSchema, pathSchema, variableSchema, copySchema, fileSchema}
+	availableCommands := []*jsonschema.Schema{execSchema, pathSchema, copySchema, fileSchema}
 
 	// Add string schema type as an additional valid command type
 	stringSchema := &jsonschema.Schema{

@@ -205,6 +205,14 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 		if configStep.UseSecrets != nil {
 			commandStepBuilder.UseSecrets = *configStep.UseSecrets
 		}
+
+		if len(configStep.Caches) > 0 {
+			commandStepBuilder.Caches = configStep.Caches
+		}
+
+		if configStep.Variables != nil {
+			commandStepBuilder.AddEnvVars(configStep.Variables)
+		}
 	}
 
 	// Cache config

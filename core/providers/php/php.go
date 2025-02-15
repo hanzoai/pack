@@ -42,12 +42,12 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	if _, err := p.readComposerJson(ctx); err == nil {
 		install := ctx.NewCommandStep("install")
 		install.AddCache(ctx.Caches.AddCache("composer", "/opt/cache/composer"))
+		install.AddEnvVars(map[string]string{"COMPOSER_CACHE_DIR": "/opt/cache/composer"})
 
 		install.AddCommands([]plan.Command{
 			// Copy composer from the composer image
 			plan.CopyCommand{Image: "composer:latest", Src: "/usr/bin/composer", Dest: "/usr/bin/composer"},
 			plan.NewCopyCommand("."),
-			plan.NewVariableCommand("COMPOSER_CACHE_DIR", "/opt/cache/composer"),
 			plan.NewExecCommand("composer install --ignore-platform-reqs"),
 		})
 
@@ -97,9 +97,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	})
 
 	if p.usesLaravel(ctx) {
-		nginxSetup.AddCommands([]plan.Command{
-			plan.NewVariableCommand("IS_LARAVEL", "true"),
-		})
+		nginxSetup.AddEnvVars(map[string]string{"IS_LARAVEL": "true"})
 	}
 
 	nginxSetup.Assets["start-nginx.sh"] = startNginxScriptAsset

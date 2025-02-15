@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 
@@ -85,17 +86,16 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 
 	step.StartingImage = BuilderBaseImage
 
-	// Install mise
+	// Setup mise
 	step.AddCommands([]plan.Command{
-		plan.NewVariableCommand("MISE_DATA_DIR", "/mise"),
-		plan.NewVariableCommand("MISE_CONFIG_DIR", "/mise"),
-		plan.NewVariableCommand("MISE_CACHE_DIR", "/mise/cache"),
 		plan.NewPathCommand("/mise/shims"),
-		// options.NewAptInstallCommand([]string{"curl", "ca-certificates", "git"}),
-		// plan.NewExecCommand("sh -c 'curl -fsSL https://mise.run | sh'",
-		// 	plan.ExecOptions{
-		// 		CustomName: "install mise",
-		// 	}),
+	})
+	maps.Copy(step.Variables, map[string]string{
+		"MISE_DATA_DIR":     "/mise",
+		"MISE_CONFIG_DIR":   "/mise",
+		"MISE_CACHE_DIR":    "/mise/cache",
+		"MISE_SHIMS_DIR":    "/mise/shims",
+		"MISE_INSTALLS_DIR": "/mise/installs",
 	})
 
 	// Add user mise config files if they exist
@@ -145,7 +145,6 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 			}),
 			plan.NewExecCommand("sh -c 'mise trust -a && mise install'", plan.ExecOptions{
 				CustomName: "install mise packages: " + strings.Join(pkgNames, ", "),
-				// Caches:     []string{miseCache},
 			}),
 		})
 	}

@@ -36,18 +36,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -73,7 +61,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [

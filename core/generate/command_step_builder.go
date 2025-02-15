@@ -2,7 +2,6 @@ package generate
 
 import (
 	"maps"
-	"slices"
 
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/utils"
@@ -62,12 +61,7 @@ func (b *CommandStepBuilder) AddCommands(commands []plan.Command) {
 }
 
 func (b *CommandStepBuilder) AddEnvVars(envVars map[string]string) {
-	commands := []plan.Command{}
-
-	for _, k := range slices.Sorted(maps.Keys(envVars)) {
-		commands = append(commands, plan.NewVariableCommand(k, envVars[k]))
-	}
-	b.AddCommands(commands)
+	maps.Copy(b.Variables, envVars)
 }
 
 func (b *CommandStepBuilder) AddPaths(paths []string) {
@@ -90,6 +84,7 @@ func (b *CommandStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error
 	step.Commands = b.Commands
 	step.Assets = b.Assets
 	step.Caches = b.Caches
+	step.Variables = b.Variables
 
 	if !b.UseSecrets {
 		step.UseSecrets = &b.UseSecrets

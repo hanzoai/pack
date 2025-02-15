@@ -75,6 +75,7 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.Co
 	packageManager := p.getPackageManager(ctx.App)
 	build := ctx.NewCommandStep("build")
 	build.DependsOn = []string{install.DisplayName}
+	build.AddEnvVars(map[string]string{"HELLO": "world"})
 
 	_, ok := packageJson.Scripts["build"]
 	if ok {

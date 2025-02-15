@@ -32,18 +32,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -69,7 +57,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -77,41 +72,22 @@
    ],
    "commands": [
     {
-     "name": "PIP_CACHE_DIR",
-     "value": "/opt/pip-cache"
-    },
-    {
-     "name": "PIP_DEFAULT_TIMEOUT",
-     "value": "100"
-    },
-    {
-     "name": "PIP_DISABLE_PIP_VERSION_CHECK",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONDONTWRITEBYTECODE",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONFAULTHANDLER",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONHASHSEED",
-     "value": "random"
-    },
-    {
-     "name": "PYTHONUNBUFFERED",
-     "value": "1"
-    },
-    {
      "path": "/root/.local/bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "PIP_CACHE_DIR": "/opt/pip-cache",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONUNBUFFERED": "1"
+   }
   },
   {
    "caches": [
@@ -206,18 +182,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -239,7 +203,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -257,16 +228,15 @@
     },
     {
      "cmd": "go mod download"
-    },
-    {
-     "name": "CGO_ENABLED",
-     "value": "0"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "install"
+   "name": "install",
+   "variables": {
+    "CGO_ENABLED": "0"
+   }
   },
   {
    "caches": [
@@ -322,18 +292,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -355,7 +313,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -373,16 +338,15 @@
     },
     {
      "cmd": "go mod download"
-    },
-    {
-     "name": "CGO_ENABLED",
-     "value": "0"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "install"
+   "name": "install",
+   "variables": {
+    "CGO_ENABLED": "0"
+   }
   },
   {
    "caches": [
@@ -447,18 +411,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -480,7 +432,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -488,29 +447,19 @@
    ],
    "commands": [
     {
-     "name": "CI",
-     "value": "true"
-    },
-    {
-     "name": "NODE_ENV",
-     "value": "production"
-    },
-    {
-     "name": "NPM_CONFIG_PRODUCTION",
-     "value": "false"
-    },
-    {
-     "name": "YARN_PRODUCTION",
-     "value": "false"
-    },
-    {
      "path": "/app/node_modules/.bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "YARN_PRODUCTION": "false"
+   }
   },
   {
    "caches": [
@@ -553,7 +502,10 @@
    "dependsOn": [
     "install"
    ],
-   "name": "build"
+   "name": "build",
+   "variables": {
+    "HELLO": "world"
+   }
   }
  ]
 }
@@ -598,18 +550,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -631,7 +571,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -639,29 +586,19 @@
    ],
    "commands": [
     {
-     "name": "CI",
-     "value": "true"
-    },
-    {
-     "name": "NODE_ENV",
-     "value": "production"
-    },
-    {
-     "name": "NPM_CONFIG_PRODUCTION",
-     "value": "false"
-    },
-    {
-     "name": "YARN_PRODUCTION",
-     "value": "false"
-    },
-    {
      "path": "/app/node_modules/.bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "YARN_PRODUCTION": "false"
+   }
   },
   {
    "caches": [
@@ -727,7 +664,10 @@
    "dependsOn": [
     "install"
    ],
-   "name": "build"
+   "name": "build",
+   "variables": {
+    "HELLO": "world"
+   }
   }
  ]
 }
@@ -768,18 +708,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -801,7 +729,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -809,29 +744,19 @@
    ],
    "commands": [
     {
-     "name": "CI",
-     "value": "true"
-    },
-    {
-     "name": "NODE_ENV",
-     "value": "production"
-    },
-    {
-     "name": "NPM_CONFIG_PRODUCTION",
-     "value": "false"
-    },
-    {
-     "name": "YARN_PRODUCTION",
-     "value": "false"
-    },
-    {
      "path": "/app/node_modules/.bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "YARN_PRODUCTION": "false"
+   }
   },
   {
    "caches": [
@@ -842,7 +767,10 @@
    "dependsOn": [
     "setup"
    ],
-   "name": "build"
+   "name": "build",
+   "variables": {
+    "HELLO": "world"
+   }
   }
  ]
 }
@@ -881,18 +809,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -914,7 +830,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -922,41 +845,22 @@
    ],
    "commands": [
     {
-     "name": "PIP_CACHE_DIR",
-     "value": "/opt/pip-cache"
-    },
-    {
-     "name": "PIP_DEFAULT_TIMEOUT",
-     "value": "100"
-    },
-    {
-     "name": "PIP_DISABLE_PIP_VERSION_CHECK",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONDONTWRITEBYTECODE",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONFAULTHANDLER",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONHASHSEED",
-     "value": "random"
-    },
-    {
-     "name": "PYTHONUNBUFFERED",
-     "value": "1"
-    },
-    {
      "path": "/root/.local/bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "PIP_CACHE_DIR": "/opt/pip-cache",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONUNBUFFERED": "1"
+   }
   },
   {
    "caches": [
@@ -965,10 +869,6 @@
    "commands": [
     {
      "cmd": "pipx install pdm"
-    },
-    {
-     "name": "PDM_CHECK_UPDATE",
-     "value": "false"
     },
     {
      "dest": "pyproject.toml",
@@ -994,7 +894,10 @@
     "setup",
     "packages:apt:python-system-deps"
    ],
-   "name": "install"
+   "name": "install",
+   "variables": {
+    "PDM_CHECK_UPDATE": "false"
+   }
   },
   {
    "caches": [
@@ -1052,18 +955,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -1085,7 +976,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -1093,41 +991,22 @@
    ],
    "commands": [
     {
-     "name": "PIP_CACHE_DIR",
-     "value": "/opt/pip-cache"
-    },
-    {
-     "name": "PIP_DEFAULT_TIMEOUT",
-     "value": "100"
-    },
-    {
-     "name": "PIP_DISABLE_PIP_VERSION_CHECK",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONDONTWRITEBYTECODE",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONFAULTHANDLER",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONHASHSEED",
-     "value": "random"
-    },
-    {
-     "name": "PYTHONUNBUFFERED",
-     "value": "1"
-    },
-    {
      "path": "/root/.local/bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "PIP_CACHE_DIR": "/opt/pip-cache",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONUNBUFFERED": "1"
+   }
   },
   {
    "caches": [
@@ -1202,18 +1081,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -1235,7 +1102,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -1243,41 +1117,22 @@
    ],
    "commands": [
     {
-     "name": "PIP_CACHE_DIR",
-     "value": "/opt/pip-cache"
-    },
-    {
-     "name": "PIP_DEFAULT_TIMEOUT",
-     "value": "100"
-    },
-    {
-     "name": "PIP_DISABLE_PIP_VERSION_CHECK",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONDONTWRITEBYTECODE",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONFAULTHANDLER",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONHASHSEED",
-     "value": "random"
-    },
-    {
-     "name": "PYTHONUNBUFFERED",
-     "value": "1"
-    },
-    {
      "path": "/root/.local/bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "PIP_CACHE_DIR": "/opt/pip-cache",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONUNBUFFERED": "1"
+   }
   },
   {
    "caches": [
@@ -1365,18 +1220,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -1403,7 +1246,14 @@
     "/app/.python-version"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -1411,41 +1261,22 @@
    ],
    "commands": [
     {
-     "name": "PIP_CACHE_DIR",
-     "value": "/opt/pip-cache"
-    },
-    {
-     "name": "PIP_DEFAULT_TIMEOUT",
-     "value": "100"
-    },
-    {
-     "name": "PIP_DISABLE_PIP_VERSION_CHECK",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONDONTWRITEBYTECODE",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONFAULTHANDLER",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONHASHSEED",
-     "value": "random"
-    },
-    {
-     "name": "PYTHONUNBUFFERED",
-     "value": "1"
-    },
-    {
      "path": "/root/.local/bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "PIP_CACHE_DIR": "/opt/pip-cache",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONUNBUFFERED": "1"
+   }
   },
   {
    "caches": [
@@ -1520,18 +1351,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -1558,41 +1377,20 @@
     "/app/.python-version"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
     "root"
    ],
    "commands": [
-    {
-     "name": "PIP_CACHE_DIR",
-     "value": "/opt/pip-cache"
-    },
-    {
-     "name": "PIP_DEFAULT_TIMEOUT",
-     "value": "100"
-    },
-    {
-     "name": "PIP_DISABLE_PIP_VERSION_CHECK",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONDONTWRITEBYTECODE",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONFAULTHANDLER",
-     "value": "1"
-    },
-    {
-     "name": "PYTHONHASHSEED",
-     "value": "random"
-    },
-    {
-     "name": "PYTHONUNBUFFERED",
-     "value": "1"
-    },
     {
      "path": "/root/.local/bin"
     }
@@ -1600,25 +1398,22 @@
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "PIP_CACHE_DIR": "/opt/pip-cache",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONUNBUFFERED": "1"
+   }
   },
   {
    "caches": [
     "root"
    ],
    "commands": [
-    {
-     "name": "UV_COMPILE_BYTECODE",
-     "value": "1"
-    },
-    {
-     "name": "UV_LINK_MODE",
-     "value": "copy"
-    },
-    {
-     "name": "UV_CACHE_DIR",
-     "value": "/opt/uv-cache"
-    },
     {
      "cmd": "pipx install uv"
     },
@@ -1649,7 +1444,12 @@
     "setup",
     "packages:apt:python-system-deps"
    ],
-   "name": "install"
+   "name": "install",
+   "variables": {
+    "UV_CACHE_DIR": "/opt/uv-cache",
+    "UV_COMPILE_BYTECODE": "1",
+    "UV_LINK_MODE": "copy"
+   }
   },
   {
    "caches": [
@@ -1700,8 +1500,7 @@
    ],
    "commands": [
     {
-     "name": "NOT_SECRET",
-     "value": "not secret"
+     "cmd": "sh -c '{ \"name\": \"NOT_SECRET\", \"value\": \"not secret\" }'"
     },
     {
      "dest": ".",
@@ -1741,8 +1540,7 @@
    ],
    "commands": [
     {
-     "name": "NOT_SECRET",
-     "value": "not secret"
+     "cmd": "sh -c '{ \"name\": \"NOT_SECRET\", \"value\": \"not secret\" }'"
     },
     {
      "dest": ".",
@@ -1786,18 +1584,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -1819,7 +1605,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "assets": {
@@ -1871,18 +1664,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -1904,7 +1685,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "assets": {
@@ -1970,18 +1758,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -2008,7 +1784,14 @@
     "/app/mise.toml"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -2016,29 +1799,19 @@
    ],
    "commands": [
     {
-     "name": "CI",
-     "value": "true"
-    },
-    {
-     "name": "NODE_ENV",
-     "value": "production"
-    },
-    {
-     "name": "NPM_CONFIG_PRODUCTION",
-     "value": "false"
-    },
-    {
-     "name": "YARN_PRODUCTION",
-     "value": "false"
-    },
-    {
      "path": "/app/node_modules/.bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "YARN_PRODUCTION": "false"
+   }
   },
   {
    "caches": [
@@ -2077,7 +1850,10 @@
    "dependsOn": [
     "install"
    ],
-   "name": "build"
+   "name": "build",
+   "variables": {
+    "HELLO": "world"
+   }
   }
  ]
 }
@@ -2122,18 +1898,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -2155,7 +1919,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -2163,29 +1934,19 @@
    ],
    "commands": [
     {
-     "name": "CI",
-     "value": "true"
-    },
-    {
-     "name": "NODE_ENV",
-     "value": "production"
-    },
-    {
-     "name": "NPM_CONFIG_PRODUCTION",
-     "value": "false"
-    },
-    {
-     "name": "YARN_PRODUCTION",
-     "value": "false"
-    },
-    {
      "path": "/app/node_modules/.bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "YARN_PRODUCTION": "false"
+   }
   },
   {
    "caches": [
@@ -2220,7 +1981,10 @@
    "dependsOn": [
     "install"
    ],
-   "name": "build"
+   "name": "build",
+   "variables": {
+    "HELLO": "world"
+   }
   }
  ]
 }
@@ -2265,18 +2029,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -2298,7 +2050,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -2306,29 +2065,19 @@
    ],
    "commands": [
     {
-     "name": "CI",
-     "value": "true"
-    },
-    {
-     "name": "NODE_ENV",
-     "value": "production"
-    },
-    {
-     "name": "NPM_CONFIG_PRODUCTION",
-     "value": "false"
-    },
-    {
-     "name": "YARN_PRODUCTION",
-     "value": "false"
-    },
-    {
      "path": "/app/node_modules/.bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "YARN_PRODUCTION": "false"
+   }
   },
   {
    "caches": [
@@ -2371,7 +2120,10 @@
    "dependsOn": [
     "install"
    ],
-   "name": "build"
+   "name": "build",
+   "variables": {
+    "HELLO": "world"
+   }
   }
  ]
 }
@@ -2455,17 +2207,16 @@
      "src": "."
     },
     {
-     "name": "COMPOSER_CACHE_DIR",
-     "value": "/opt/cache/composer"
-    },
-    {
      "cmd": "composer install --ignore-platform-reqs"
     }
    ],
    "dependsOn": [
     "packages:apt:nginx"
    ],
-   "name": "install"
+   "name": "install",
+   "variables": {
+    "COMPOSER_CACHE_DIR": "/opt/cache/composer"
+   }
   },
   {
    "assets": {
@@ -2475,18 +2226,6 @@
     "root"
    ],
    "commands": [
-    {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
     {
      "path": "/mise/shims"
     },
@@ -2509,7 +2248,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -2517,29 +2263,19 @@
    ],
    "commands": [
     {
-     "name": "CI",
-     "value": "true"
-    },
-    {
-     "name": "NODE_ENV",
-     "value": "production"
-    },
-    {
-     "name": "NPM_CONFIG_PRODUCTION",
-     "value": "false"
-    },
-    {
-     "name": "YARN_PRODUCTION",
-     "value": "false"
-    },
-    {
      "path": "/app/node_modules/.bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup:node"
+   "name": "setup:node",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "YARN_PRODUCTION": "false"
+   }
   },
   {
    "caches": [
@@ -2585,7 +2321,10 @@
    "name": "build:node",
    "outputs": [
     "/app"
-   ]
+   ],
+   "variables": {
+    "HELLO": "world"
+   }
   },
   {
    "assets": {
@@ -2615,16 +2354,15 @@
      "mode": 493,
      "name": "start-nginx.sh",
      "path": "/start-nginx.sh"
-    },
-    {
-     "name": "IS_LARAVEL",
-     "value": "true"
     }
    ],
    "dependsOn": [
     "packages:apt:nginx"
    ],
-   "name": "nginx:setup"
+   "name": "nginx:setup",
+   "variables": {
+    "IS_LARAVEL": "true"
+   }
   }
  ]
 }
@@ -2795,17 +2533,16 @@
      "src": "."
     },
     {
-     "name": "COMPOSER_CACHE_DIR",
-     "value": "/opt/cache/composer"
-    },
-    {
      "cmd": "composer install --ignore-platform-reqs"
     }
    ],
    "dependsOn": [
     "packages:apt:nginx"
    ],
-   "name": "install"
+   "name": "install",
+   "variables": {
+    "COMPOSER_CACHE_DIR": "/opt/cache/composer"
+   }
   },
   {
    "assets": {
@@ -2895,18 +2632,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -2928,7 +2653,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -2936,29 +2668,19 @@
    ],
    "commands": [
     {
-     "name": "CI",
-     "value": "true"
-    },
-    {
-     "name": "NODE_ENV",
-     "value": "production"
-    },
-    {
-     "name": "NPM_CONFIG_PRODUCTION",
-     "value": "false"
-    },
-    {
-     "name": "YARN_PRODUCTION",
-     "value": "false"
-    },
-    {
      "path": "/app/node_modules/.bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "YARN_PRODUCTION": "false"
+   }
   },
   {
    "caches": [
@@ -3002,7 +2724,10 @@
    "dependsOn": [
     "install"
    ],
-   "name": "build"
+   "name": "build",
+   "variables": {
+    "HELLO": "world"
+   }
   }
  ]
 }
@@ -3054,18 +2779,6 @@
    ],
    "commands": [
     {
-     "name": "MISE_DATA_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CONFIG_DIR",
-     "value": "/mise"
-    },
-    {
-     "name": "MISE_CACHE_DIR",
-     "value": "/mise/cache"
-    },
-    {
      "path": "/mise/shims"
     },
     {
@@ -3087,7 +2800,14 @@
     "/root/.local/state/mise"
    ],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   },
   {
    "caches": [
@@ -3095,29 +2815,19 @@
    ],
    "commands": [
     {
-     "name": "CI",
-     "value": "true"
-    },
-    {
-     "name": "NODE_ENV",
-     "value": "production"
-    },
-    {
-     "name": "NPM_CONFIG_PRODUCTION",
-     "value": "false"
-    },
-    {
-     "name": "YARN_PRODUCTION",
-     "value": "false"
-    },
-    {
      "path": "/app/node_modules/.bin"
     }
    ],
    "dependsOn": [
     "packages:mise"
    ],
-   "name": "setup"
+   "name": "setup",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "YARN_PRODUCTION": "false"
+   }
   },
   {
    "caches": [
@@ -3209,7 +2919,10 @@
    "dependsOn": [
     "install"
    ],
-   "name": "build"
+   "name": "build",
+   "variables": {
+    "HELLO": "world"
+   }
   }
  ]
 }
