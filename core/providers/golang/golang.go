@@ -88,11 +88,10 @@ func (p *GoProvider) Build(ctx *generate.GenerateContext, packages *generate.Mis
 	}
 
 	build := ctx.NewCommandStep("build")
+	build.AddCache(p.goBuildCache(ctx))
 	build.AddCommands([]plan.Command{
 		plan.NewCopyCommand("."),
-		plan.NewExecCommand(buildCmd, plan.ExecOptions{
-			Caches: []string{p.goBuildCacheKey(ctx)},
-		}),
+		plan.NewExecCommand(buildCmd),
 	})
 
 	if packages != nil {
@@ -112,12 +111,11 @@ func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.M
 	}
 
 	install := ctx.NewCommandStep("install")
+	install.AddCache(p.goBuildCache(ctx))
 	install.AddCommands([]plan.Command{
 		plan.NewCopyCommand("go.mod"),
 		plan.NewCopyCommand("go.sum"),
-		plan.NewExecCommand("go mod download", plan.ExecOptions{
-			Caches: []string{p.goBuildCacheKey(ctx)},
-		}),
+		plan.NewExecCommand("go mod download"),
 	})
 
 	// If CGO is enabled, we need to install the gcc packages
@@ -167,7 +165,7 @@ func (p *GoProvider) addMetadata(ctx *generate.GenerateContext) {
 	ctx.Metadata.Set("hasCGOEnabled", strconv.FormatBool(p.hasCGOEnabled(ctx)))
 }
 
-func (p *GoProvider) goBuildCacheKey(ctx *generate.GenerateContext) string {
+func (p *GoProvider) goBuildCache(ctx *generate.GenerateContext) string {
 	return ctx.Caches.AddCache(GO_BUILD_CACHE_KEY, "/root/.cache/go-build")
 }
 

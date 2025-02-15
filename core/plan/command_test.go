@@ -27,12 +27,6 @@ func TestCommandMarshalUnmarshal(t *testing.T) {
 			expectedJSON:    `{"cmd":"sh -c 'echo hello'","customName":"Say Hello"}`,
 			unmarshalString: "RUN#Say Hello:echo hello",
 		},
-		{
-			name:            "exec command with cache key",
-			command:         ExecCommand{Cmd: "npm install", Caches: []string{"v1", "v2"}},
-			expectedJSON:    `{"cmd":"npm install","caches":["v1","v2"]}`,
-			unmarshalString: "",
-		},
 
 		// Path
 		{

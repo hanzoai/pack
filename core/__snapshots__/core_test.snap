@@ -10,6 +10,10 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -23,11 +27,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -44,10 +47,6 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
      "customName": "install apt packages: neofetch"
     },
@@ -73,6 +72,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "PIP_CACHE_DIR",
@@ -112,6 +114,9 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [],
    "dependsOn": [
     "packages:mise",
@@ -121,12 +126,13 @@
    "name": "install"
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y pkg-config'",
      "customName": "install apt packages: pkg-config"
     }
@@ -135,12 +141,13 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
      "customName": "install apt packages: neofetch"
     }
@@ -149,6 +156,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "cmd": "sh -c 'neofetch'"
@@ -170,6 +180,10 @@
   "go-build": {
    "directory": "/root/.cache/go-build",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -187,11 +201,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -229,6 +242,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "go.mod",
@@ -239,9 +255,6 @@
      "src": "go.sum"
     },
     {
-     "caches": [
-      "go-build"
-     ],
      "cmd": "go mod download"
     },
     {
@@ -255,15 +268,15 @@
    "name": "install"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": ".",
      "src": "."
     },
     {
-     "caches": [
-      "go-build"
-     ],
      "cmd": "go build -o out ./cmd/server"
     }
    ],
@@ -284,6 +297,10 @@
   "go-build": {
    "directory": "/root/.cache/go-build",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -298,11 +315,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -340,6 +356,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "go.mod",
@@ -350,9 +369,6 @@
      "src": "go.sum"
     },
     {
-     "caches": [
-      "go-build"
-     ],
      "cmd": "go mod download"
     },
     {
@@ -366,15 +382,15 @@
    "name": "install"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": ".",
      "src": "."
     },
     {
-     "caches": [
-      "go-build"
-     ],
      "cmd": "go build -o out"
     }
    ],
@@ -399,6 +415,10 @@
   "node-modules": {
    "directory": "/app/node_modules/.cache",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -418,11 +438,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -460,6 +479,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "CI",
@@ -487,6 +509,9 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "package.json",
@@ -497,9 +522,6 @@
      "src": "bun.lockb"
     },
     {
-     "caches": [
-      "bun-install"
-     ],
      "cmd": "bun install --frozen-lockfile"
     }
    ],
@@ -510,15 +532,15 @@
    "name": "install"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": ".",
      "src": "."
     },
     {
-     "caches": [
-      "node-modules"
-     ],
      "cmd": "bun run build"
     }
    ],
@@ -542,6 +564,10 @@
   "pnpm-install": {
    "directory": "/root/.local/share/pnpm/store/v3",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -561,11 +587,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -603,6 +628,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "CI",
@@ -630,6 +658,9 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "package.json",
@@ -649,6 +680,9 @@
    "name": "corepack"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "package.json",
@@ -659,9 +693,6 @@
      "src": "pnpm-lock.yaml"
     },
     {
-     "caches": [
-      "pnpm-install"
-     ],
      "cmd": "pnpm install --frozen-lockfile --prod=false"
     }
    ],
@@ -673,15 +704,15 @@
    "name": "install"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": ".",
      "src": "."
     },
     {
-     "caches": [
-      "node-modules"
-     ],
      "cmd": "pnpm run build"
     }
    ],
@@ -697,6 +728,12 @@
 [TestGenerateBuildPlanForExamples/node-pnpm-workspaces - 1]
 {
  "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
+ "caches": {
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
+  }
+ },
  "start": {
   "cmd": "node index.js",
   "outputs": [
@@ -714,11 +751,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -756,6 +792,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "CI",
@@ -797,6 +836,10 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -810,11 +853,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -852,6 +894,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "PIP_CACHE_DIR",
@@ -891,6 +936,9 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "cmd": "pipx install pdm"
@@ -926,12 +974,13 @@
    "name": "install"
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y pkg-config'",
      "customName": "install apt packages: pkg-config"
     }
@@ -958,6 +1007,10 @@
   "pip": {
    "directory": "/opt/pip-cache",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -971,11 +1024,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -1013,6 +1065,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "PIP_CACHE_DIR",
@@ -1052,15 +1107,15 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "requirements.txt",
      "src": "requirements.txt"
     },
     {
-     "caches": [
-      "pip"
-     ],
      "cmd": "pip install -r requirements.txt"
     }
    ],
@@ -1072,12 +1127,13 @@
    "name": "install"
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y pkg-config'",
      "customName": "install apt packages: pkg-config"
     }
@@ -1100,6 +1156,10 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -1113,11 +1173,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -1155,6 +1214,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "PIP_CACHE_DIR",
@@ -1194,6 +1256,9 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "cmd": "pipx install poetry"
@@ -1221,12 +1286,13 @@
    "name": "install"
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y pkg-config'",
      "customName": "install apt packages: pkg-config"
     }
@@ -1253,6 +1319,10 @@
   "pip": {
    "directory": "/opt/pip-cache",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -1266,11 +1336,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -1313,6 +1382,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "PIP_CACHE_DIR",
@@ -1352,15 +1424,15 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "requirements.txt",
      "src": "requirements.txt"
     },
     {
-     "caches": [
-      "pip"
-     ],
      "cmd": "pip install -r requirements.txt"
     }
    ],
@@ -1372,12 +1444,13 @@
    "name": "install"
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ffmpeg gcc pkg-config poppler-utils'",
      "customName": "install apt packages: ffmpeg gcc pkg-config poppler-utils"
     }
@@ -1400,6 +1473,10 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -1413,11 +1490,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -1460,6 +1536,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "PIP_CACHE_DIR",
@@ -1499,6 +1578,9 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "UV_COMPILE_BYTECODE",
@@ -1545,12 +1627,13 @@
    "name": "install"
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y pkg-config'",
      "customName": "install apt packages: pkg-config"
     }
@@ -1565,6 +1648,12 @@
 [TestGenerateBuildPlanForExamples/secrets - 1]
 {
  "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
+ "caches": {
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
+  }
+ },
  "secrets": [
   "MY_SECRET",
   "MY_OTHER_SECRET",
@@ -1575,9 +1664,15 @@
  },
  "steps": [
   {
+   "caches": [
+    "root"
+   ],
    "name": "packages:mise"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "NOT_SECRET",
@@ -1597,6 +1692,9 @@
    "name": "defaultsToUsing"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": ".",
@@ -1613,6 +1711,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "NOT_SECRET",
@@ -1638,6 +1739,12 @@
 [TestGenerateBuildPlanForExamples/staticfile-config - 1]
 {
  "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
+ "caches": {
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
+  }
+ },
  "start": {
   "cmd": "caddy run --config Caddyfile --adapter caddyfile 2\u003e\u00261",
   "outputs": [
@@ -1649,11 +1756,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -1694,6 +1800,9 @@
    "assets": {
     "Caddyfile": "{\n\tadmin off\n\tpersist_config off\n\tauto_https off\n\n\tlog {\n\t\tformat json\n\t}\n\n\tservers {\n\t\ttrusted_proxies static private_ranges\n\t}\n}\n\n:{$PORT:80} {\n\tlog {\n\t\tformat json\n\t}\n\n\trespond /health 200\n\n# Security headers\n\theader {\n\t\t# Enable cross-site filter (XSS) and tell browsers to block detected attacks\n\t\tX-XSS-Protection \"1; mode=block\"\n\t\t# Prevent some browsers from MIME-sniffing a response away from the declared Content-Type\n\t\tX-Content-Type-Options \"nosniff\"\n\t\t# Keep referrer data off of HTTP connections\n\t\tReferrer-Policy \"strict-origin-when-cross-origin\"\n\t\t# Enable strict Content Security Policy\n\t\tContent-Security-Policy \"default-src 'self'; img-src 'self' data: https: *; style-src 'self' 'unsafe-inline' https: *; script-src 'self' 'unsafe-inline' https: *; font-src 'self' data: https: *; connect-src 'self' https: *; media-src 'self' https: *; object-src 'none'; frame-src 'self' https: *;\"\n\t\t# Remove Server header\n\t\t-Server\n\t}\n\n\troot * hello\n\n\t# Handle static files\n\tfile_server {\n\t\thide .git\n\t\thide .env*\n\t}\n\n\t# Compression with more formats\n\tencode {\n\t\tgzip\n\t\tzstd\n\t}\n\n\t# Try files with HTML extension and handle SPA routing\n\ttry_files {path} {path}.html {path}/index.html /index.html\n\n\t# Handle 404 errors\n\thandle_errors {\n\t\trewrite * /{err.status_code}.html\n\t\tfile_server\n\t}\n}\n"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "Caddyfile",
@@ -1715,6 +1824,12 @@
 [TestGenerateBuildPlanForExamples/staticfile-index - 1]
 {
  "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
+ "caches": {
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
+  }
+ },
  "start": {
   "cmd": "caddy run --config Caddyfile --adapter caddyfile 2\u003e\u00261",
   "outputs": [
@@ -1726,11 +1841,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -1771,6 +1885,9 @@
    "assets": {
     "Caddyfile": "{\n\tadmin off\n\tpersist_config off\n\tauto_https off\n\n\tlog {\n\t\tformat json\n\t}\n\n\tservers {\n\t\ttrusted_proxies static private_ranges\n\t}\n}\n\n:{$PORT:80} {\n\tlog {\n\t\tformat json\n\t}\n\n\trespond /health 200\n\n# Security headers\n\theader {\n\t\t# Enable cross-site filter (XSS) and tell browsers to block detected attacks\n\t\tX-XSS-Protection \"1; mode=block\"\n\t\t# Prevent some browsers from MIME-sniffing a response away from the declared Content-Type\n\t\tX-Content-Type-Options \"nosniff\"\n\t\t# Keep referrer data off of HTTP connections\n\t\tReferrer-Policy \"strict-origin-when-cross-origin\"\n\t\t# Enable strict Content Security Policy\n\t\tContent-Security-Policy \"default-src 'self'; img-src 'self' data: https: *; style-src 'self' 'unsafe-inline' https: *; script-src 'self' 'unsafe-inline' https: *; font-src 'self' data: https: *; connect-src 'self' https: *; media-src 'self' https: *; object-src 'none'; frame-src 'self' https: *;\"\n\t\t# Remove Server header\n\t\t-Server\n\t}\n\n\troot * .\n\n\t# Handle static files\n\tfile_server {\n\t\thide .git\n\t\thide .env*\n\t}\n\n\t# Compression with more formats\n\tencode {\n\t\tgzip\n\t\tzstd\n\t}\n\n\t# Try files with HTML extension and handle SPA routing\n\ttry_files {path} {path}.html {path}/index.html /index.html\n\n\t# Handle 404 errors\n\thandle_errors {\n\t\trewrite * /{err.status_code}.html\n\t\tfile_server\n\t}\n}\n"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "Caddyfile",
@@ -1800,6 +1917,10 @@
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -1819,11 +1940,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -1866,6 +1986,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "CI",
@@ -1893,15 +2016,15 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "package.json",
      "src": "package.json"
     },
     {
-     "caches": [
-      "npm-install"
-     ],
      "cmd": "npm install"
     }
    ],
@@ -1912,15 +2035,15 @@
    "name": "install"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": ".",
      "src": "."
     },
     {
-     "caches": [
-      "node-modules"
-     ],
      "cmd": "npm run build"
     }
    ],
@@ -1939,6 +2062,10 @@
  "caches": {
   "npm-install": {
    "directory": "/root/.npm",
+   "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
    "type": "shared"
   }
  },
@@ -1959,11 +2086,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -2001,6 +2127,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "CI",
@@ -2028,6 +2157,9 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "package.json",
@@ -2038,9 +2170,6 @@
      "src": "package-lock.json"
     },
     {
-     "caches": [
-      "npm-install"
-     ],
      "cmd": "npm ci"
     }
    ],
@@ -2061,6 +2190,10 @@
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -2080,11 +2213,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -2122,6 +2254,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "CI",
@@ -2149,6 +2284,9 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "package.json",
@@ -2167,9 +2305,6 @@
      "src": "package-lock.json"
     },
     {
-     "caches": [
-      "npm-install"
-     ],
      "cmd": "npm ci"
     }
    ],
@@ -2206,6 +2341,10 @@
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -2216,17 +2355,21 @@
  },
  "steps": [
   {
+   "caches": [
+    "root"
+   ],
    "name": "packages:image",
    "startingImage": "php:8.2.27-fpm",
    "useSecrets": false
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y git nginx unzip zip'",
      "customName": "install apt packages: git nginx unzip zip"
     }
@@ -2238,6 +2381,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "/usr/bin/composer",
@@ -2253,9 +2399,6 @@
      "value": "/opt/cache/composer"
     },
     {
-     "caches": [
-      "composer"
-     ],
      "cmd": "composer install --ignore-platform-reqs"
     }
    ],
@@ -2268,11 +2411,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -2310,6 +2452,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "CI",
@@ -2337,6 +2482,9 @@
    "name": "setup:node"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "package.json",
@@ -2347,9 +2495,6 @@
      "src": "package-lock.json"
     },
     {
-     "caches": [
-      "npm-install"
-     ],
      "cmd": "npm ci"
     }
    ],
@@ -2360,15 +2505,15 @@
    "name": "install:node"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": ".",
      "src": "."
     },
     {
-     "caches": [
-      "node-modules"
-     ],
      "cmd": "npm run build"
     }
    ],
@@ -2386,6 +2531,9 @@
     "php-fpm.conf": "[www]\nlisten = 127.0.0.1:9000\nuser = nobody\npm = dynamic\npm.max_children = 50\npm.min_spare_servers = 4\npm.max_spare_servers = 32\npm.start_servers = 18\nclear_env = no\ncatch_workers_output = yes\n",
     "start-nginx.sh": "#!/bin/bash\n\nset -e\n\nPORT=${PORT:-80}\n\n# Set the port in the nginx config\nsed -i \"s/80/$PORT/g\" /etc/nginx/railpack.conf\n\n# Set the storage permissions for Laravel\nif [ \"$IS_LARAVEL\" = \"true\" ]; then\n    chmod -R ugo+rw /app/storage\nfi\n\necho \"Starting Nginx on port $PORT\"\n\n# Start php-fpm and nginx\nphp-fpm --fpm-config /etc/php-fpm.conf \u0026 nginx -c /etc/nginx/railpack.conf\n"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "customName": "create nginx config",
@@ -2431,6 +2579,10 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -2441,17 +2593,21 @@
  },
  "steps": [
   {
+   "caches": [
+    "root"
+   ],
    "name": "packages:image",
    "startingImage": "php:8.4.3-fpm",
    "useSecrets": false
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y git nginx unzip zip'",
      "customName": "install apt packages: git nginx unzip zip"
     }
@@ -2468,6 +2624,9 @@
     "php-fpm.conf": "[www]\nlisten = 127.0.0.1:9000\nuser = nobody\npm = dynamic\npm.max_children = 50\npm.min_spare_servers = 4\npm.max_spare_servers = 32\npm.start_servers = 18\nclear_env = no\ncatch_workers_output = yes\n",
     "start-nginx.sh": "#!/bin/bash\n\nset -e\n\nPORT=${PORT:-80}\n\n# Set the port in the nginx config\nsed -i \"s/80/$PORT/g\" /etc/nginx/railpack.conf\n\n# Set the storage permissions for Laravel\nif [ \"$IS_LARAVEL\" = \"true\" ]; then\n    chmod -R ugo+rw /app/storage\nfi\n\necho \"Starting Nginx on port $PORT\"\n\n# Start php-fpm and nginx\nphp-fpm --fpm-config /etc/php-fpm.conf \u0026 nginx -c /etc/nginx/railpack.conf\n"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "customName": "create nginx config",
@@ -2495,6 +2654,9 @@
    "name": "nginx:setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "name": "packages:mise"
   }
  ]
@@ -2516,6 +2678,10 @@
   "composer": {
    "directory": "/opt/cache/composer",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -2526,17 +2692,21 @@
  },
  "steps": [
   {
+   "caches": [
+    "root"
+   ],
    "name": "packages:image",
    "startingImage": "php:8.2.27-fpm",
    "useSecrets": false
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y git nginx unzip zip'",
      "customName": "install apt packages: git nginx unzip zip"
     }
@@ -2548,6 +2718,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "/usr/bin/composer",
@@ -2563,9 +2736,6 @@
      "value": "/opt/cache/composer"
     },
     {
-     "caches": [
-      "composer"
-     ],
      "cmd": "composer install --ignore-platform-reqs"
     }
    ],
@@ -2580,6 +2750,9 @@
     "php-fpm.conf": "[www]\nlisten = 127.0.0.1:9000\nuser = nobody\npm = dynamic\npm.max_children = 50\npm.min_spare_servers = 4\npm.max_spare_servers = 32\npm.start_servers = 18\nclear_env = no\ncatch_workers_output = yes\n",
     "start-nginx.sh": "#!/bin/bash\n\nset -e\n\nPORT=${PORT:-80}\n\n# Set the port in the nginx config\nsed -i \"s/80/$PORT/g\" /etc/nginx/railpack.conf\n\n# Set the storage permissions for Laravel\nif [ \"$IS_LARAVEL\" = \"true\" ]; then\n    chmod -R ugo+rw /app/storage\nfi\n\necho \"Starting Nginx on port $PORT\"\n\n# Start php-fpm and nginx\nphp-fpm --fpm-config /etc/php-fpm.conf \u0026 nginx -c /etc/nginx/railpack.conf\n"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "customName": "create nginx config",
@@ -2607,6 +2780,9 @@
    "name": "nginx:setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "name": "packages:mise"
   }
  ]
@@ -2628,6 +2804,10 @@
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -2647,11 +2827,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -2689,6 +2868,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "CI",
@@ -2716,6 +2898,9 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "package.json",
@@ -2726,9 +2911,6 @@
      "src": "package-lock.json"
     },
     {
-     "caches": [
-      "npm-install"
-     ],
      "cmd": "npm ci"
     }
    ],
@@ -2739,16 +2921,15 @@
    "name": "install"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": ".",
      "src": "."
     },
     {
-     "caches": [
-      "node-modules",
-      "next-"
-     ],
      "cmd": "npm run build"
     }
    ],
@@ -2780,6 +2961,10 @@
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "start": {
@@ -2798,11 +2983,10 @@
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -2840,6 +3024,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "name": "CI",
@@ -2867,6 +3054,9 @@
    "name": "setup"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "package.json",
@@ -2886,6 +3076,9 @@
    "name": "corepack"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": "package.json",
@@ -2920,9 +3113,6 @@
      "src": ".npmrc"
     },
     {
-     "caches": [
-      "npm-install"
-     ],
      "cmd": "npm ci"
     }
    ],
@@ -2934,17 +3124,15 @@
    "name": "install"
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "dest": ".",
      "src": "."
     },
     {
-     "caches": [
-      "node-modules",
-      "next-apps-docs",
-      "next-apps-web"
-     ],
      "cmd": "npm run build"
     }
    ],

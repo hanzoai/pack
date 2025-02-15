@@ -132,6 +132,7 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 			return nil, nil, fmt.Errorf("failed to build step: %w", err)
 		}
 
+		c.AddCommonCachesToStep(step)
 		buildPlan.AddStep(*step)
 	}
 
@@ -236,12 +237,17 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	return nil
 }
 
+func (c *GenerateContext) AddCommonCachesToStep(step *plan.Step) {
+	rootCache := c.Caches.AddCache("root", "/root/.cache")
+
+	step.Caches = append(step.Caches, rootCache)
+}
+
 func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {
 	pkgs = utils.RemoveDuplicates(pkgs)
 	sort.Strings(pkgs)
 
 	return plan.NewExecCommand("sh -c 'apt-get update && apt-get install -y "+strings.Join(pkgs, " ")+"'", plan.ExecOptions{
 		CustomName: "install apt packages: " + strings.Join(pkgs, " "),
-		Caches:     o.Caches.GetAptCaches(),
 	})
 }

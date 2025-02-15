@@ -25,6 +25,12 @@ type Step struct {
 	// The assets available to this step. The key is the name of the asset that is referenced in a file command
 	Assets map[string]string `json:"assets,omitempty" jsonschema:"description=The assets available to this step. The key is the name of the asset that is referenced in a file command"`
 
+	// The variables available to this step. The key is the name of the variable that is referenced in a variable command
+	Variables map[string]string `json:"variables,omitempty" jsonschema:"description=The variables available to this step. The key is the name of the variable that is referenced in a variable command"`
+
+	// The caches available to all commands in this step. Each cache must refer to a cache at the top level of the plan
+	Caches []string `json:"caches,omitempty" jsonschema:"description=The caches available to all commands in this step. Each cache must refer to a cache at the top level of the plan"`
+
 	// The base image that will be used for this step
 	// If empty (default), the base image will be the one from the previous step
 	// Only set this if you don't want to reuse any part of the file system from the previous step

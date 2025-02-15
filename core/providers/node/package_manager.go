@@ -68,30 +68,25 @@ func (p PackageManager) InstallDeps(ctx *generate.GenerateContext, install *gene
 	switch p {
 	case PackageManagerNpm:
 		hasLockfile := ctx.App.HasMatch("package-lock.json")
-		npmCache := ctx.Caches.AddCache("npm-install", "/root/.npm")
+		install.AddCache(ctx.Caches.AddCache("npm-install", "/root/.npm"))
 
 		if hasLockfile {
-			install.AddCommand(plan.NewExecCommand("npm ci", plan.ExecOptions{Caches: []string{npmCache}}))
+			install.AddCommand(plan.NewExecCommand("npm ci"))
 		} else {
-			install.AddCommand(plan.NewExecCommand("npm install",
-				plan.ExecOptions{Caches: []string{npmCache}}))
+			install.AddCommand(plan.NewExecCommand("npm install"))
 		}
 	case PackageManagerPnpm:
-		install.AddCommand(plan.NewExecCommand("pnpm install --frozen-lockfile --prod=false", plan.ExecOptions{
-			Caches: []string{ctx.Caches.AddCache("pnpm-install", "/root/.local/share/pnpm/store/v3")},
-		}))
+		install.AddCommand(plan.NewExecCommand("pnpm install --frozen-lockfile --prod=false"))
+		install.AddCache(ctx.Caches.AddCache("pnpm-install", "/root/.local/share/pnpm/store/v3"))
 	case PackageManagerBun:
-		install.AddCommand(plan.NewExecCommand("bun install --frozen-lockfile", plan.ExecOptions{
-			Caches: []string{ctx.Caches.AddCache("bun-install", "/root/.bun/install/cache")},
-		}))
+		install.AddCommand(plan.NewExecCommand("bun install --frozen-lockfile"))
+		install.AddCache(ctx.Caches.AddCache("bun-install", "/root/.bun/install/cache"))
 	case PackageManagerYarn1:
-		install.AddCommand(plan.NewExecCommand("yarn install --frozen-lockfile", plan.ExecOptions{
-			Caches: []string{ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn")},
-		}))
+		install.AddCommand(plan.NewExecCommand("yarn install --frozen-lockfile"))
+		install.AddCache(ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn"))
 	case PackageManagerYarn2:
-		install.AddCommand(plan.NewExecCommand("yarn install --check-cache", plan.ExecOptions{
-			Caches: []string{ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn")},
-		}))
+		install.AddCommand(plan.NewExecCommand("yarn install --check-cache"))
+		install.AddCache(ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn"))
 	}
 }
 

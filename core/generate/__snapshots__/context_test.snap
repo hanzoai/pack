@@ -10,6 +10,10 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
+  },
+  "root": {
+   "directory": "/root/.cache",
+   "type": "shared"
   }
  },
  "secrets": [
@@ -27,11 +31,10 @@
    "assets": {
     "mise.toml": "[tools]\n  [tools.go]\n    version = \"1.23.5\"\n  [tools.node]\n    version = \"20.18.2\"\n  [tools.python]\n    version = \"3.13.1\"\n"
    },
+   "caches": [
+    "root"
+   ],
    "commands": [
-    {
-     "name": "MISE_INSTALL_PATH",
-     "value": "/usr/local/bin/mise"
-    },
     {
      "name": "MISE_DATA_DIR",
      "value": "/mise"
@@ -48,10 +51,6 @@
      "path": "/mise/shims"
     },
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y curl'",
      "customName": "install apt packages: curl"
     },
@@ -77,12 +76,13 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y git neofetch'",
      "customName": "install apt packages: git neofetch"
     }
@@ -91,6 +91,9 @@
    "useSecrets": false
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "cmd": "npm install"
@@ -105,6 +108,9 @@
    ]
   },
   {
+   "caches": [
+    "root"
+   ],
    "commands": [
     {
      "cmd": "sh -c 'echo building'"
@@ -116,12 +122,13 @@
    "name": "build"
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists",
+    "root"
+   ],
    "commands": [
     {
-     "caches": [
-      "apt",
-      "apt-lists"
-     ],
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y curl'",
      "customName": "install apt packages: curl"
     }

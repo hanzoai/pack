@@ -81,11 +81,10 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 	install.DependsOn = append(install.DependsOn, setup.DisplayName)
 
 	if hasRequirements {
+		install.AddCache(ctx.Caches.AddCache("pip", PIP_CACHE_DIR))
 		install.AddCommands([]plan.Command{
 			plan.NewCopyCommand("requirements.txt"),
-			plan.NewExecCommand("pip install -r requirements.txt", plan.ExecOptions{
-				Caches: []string{ctx.Caches.AddCache("pip", PIP_CACHE_DIR)},
-			}),
+			plan.NewExecCommand("pip install -r requirements.txt"),
 		})
 	} else if hasPyproject && hasPoetry {
 		install.AddCommands([]plan.Command{

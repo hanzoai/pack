@@ -329,8 +329,8 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 		}
 	}
 
-	if len(cmd.Caches) > 0 {
-		cacheOpts, err := g.getCacheMountOptions(cmd.Caches)
+	if len(node.Step.Caches) > 0 {
+		cacheOpts, err := g.getCacheMountOptions(node.Step.Caches)
 		if err != nil {
 			return state, err
 		}

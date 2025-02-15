@@ -14,6 +14,8 @@ type CommandStepBuilder struct {
 	Commands    *[]plan.Command
 	Outputs     *[]string
 	Assets      map[string]string
+	Variables   map[string]string
+	Caches      []string
 	UseSecrets  bool
 }
 
@@ -23,6 +25,8 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 		DependsOn:   []string{MisePackageStepName},
 		Commands:    &[]plan.Command{},
 		Assets:      map[string]string{},
+		Variables:   map[string]string{},
+		Caches:      []string{},
 		UseSecrets:  true,
 	}
 
@@ -33,6 +37,14 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 
 func (b *CommandStepBuilder) DependOn(name string) {
 	b.DependsOn = append(b.DependsOn, name)
+}
+
+func (b *CommandStepBuilder) AddVariables(variables map[string]string) {
+	maps.Copy(b.Variables, variables)
+}
+
+func (b *CommandStepBuilder) AddCache(name string) {
+	b.Caches = append(b.Caches, name)
 }
 
 func (b *CommandStepBuilder) AddCommand(command plan.Command) {

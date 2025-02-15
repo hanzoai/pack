@@ -87,7 +87,6 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 
 	// Install mise
 	step.AddCommands([]plan.Command{
-		plan.NewVariableCommand("MISE_INSTALL_PATH", "/usr/local/bin/mise"),
 		plan.NewVariableCommand("MISE_DATA_DIR", "/mise"),
 		plan.NewVariableCommand("MISE_CONFIG_DIR", "/mise"),
 		plan.NewVariableCommand("MISE_CACHE_DIR", "/mise/cache"),
@@ -160,6 +159,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 
 var miseConfigFiles = []string{
 	"mise.toml",
+	".tool-versions",
 	".python-version",
 	".nvmrc",
 }

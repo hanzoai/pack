@@ -75,10 +75,10 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.Co
 	packageManager := p.getPackageManager(ctx.App)
 	_, ok := packageJson.Scripts["build"]
 	if ok {
-		buildCaches := []string{}
+		build := ctx.NewCommandStep("build")
 
 		// Generic node_modules cache
-		buildCaches = append(buildCaches, ctx.Caches.AddCache("node-modules", "/app/node_modules/.cache"))
+		build.AddCache(ctx.Caches.AddCache("node-modules", "/app/node_modules/.cache"))
 
 		// Add caches for Next.JS apps
 		if nextApps, err := p.getNextApps(ctx); err == nil {
@@ -86,18 +86,13 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.Co
 
 			for _, nextApp := range nextApps {
 				nextCacheDir := path.Join("/app", nextApp, ".next/cache")
-				nextCache := ctx.Caches.AddCache(fmt.Sprintf("next-%s", nextApp), nextCacheDir)
-				buildCaches = append(buildCaches, nextCache)
+				build.AddCache(ctx.Caches.AddCache(fmt.Sprintf("next-%s", nextApp), nextCacheDir))
 			}
 		}
 
-		build := ctx.NewCommandStep("build")
-
 		build.AddCommands([]plan.Command{
 			plan.NewCopyCommand("."),
-			plan.NewExecCommand(packageManager.RunCmd("build"), plan.ExecOptions{
-				Caches: buildCaches,
-			}),
+			plan.NewExecCommand(packageManager.RunCmd("build")),
 		})
 
 		build.DependsOn = []string{install.DisplayName}
