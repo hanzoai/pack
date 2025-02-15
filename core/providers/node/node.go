@@ -82,7 +82,7 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.Co
 
 		// Add caches for Next.JS apps
 		if nextApps, err := p.getNextApps(ctx); err == nil {
-			ctx.Metadata.SetBool("nextjs", true)
+			ctx.Metadata.SetBool("nextjs", len(nextApps) > 0)
 
 			for _, nextApp := range nextApps {
 				nextCacheDir := path.Join("/app", nextApp, ".next/cache")
