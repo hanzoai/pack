@@ -25,9 +25,10 @@ type GenerateBuildPlanOptions struct {
 }
 
 type BuildResult struct {
-	Plan             *plan.BuildPlan                      `json:"plan,omitempty"`
-	ResolvedPackages map[string]*resolver.ResolvedPackage `json:"resolvedPackages,omitempty"`
-	Metadata         map[string]string                    `json:"metadata,omitempty"`
+	Plan              *plan.BuildPlan                      `json:"plan,omitempty"`
+	ResolvedPackages  map[string]*resolver.ResolvedPackage `json:"resolvedPackages,omitempty"`
+	Metadata          map[string]string                    `json:"metadata,omitempty"`
+	DetectedProviders []string                             `json:"detectedProviders,omitempty"`
 }
 
 func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*BuildResult, error) {
@@ -50,7 +51,7 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	}
 
 	// Figure out what providers to use
-	providersToUse := getProviders(ctx, config)
+	providersToUse, detectedProviderNames := getProviders(ctx, config)
 	providerNames := make([]string, len(providersToUse))
 	for i, provider := range providersToUse {
 		providerNames[i] = provider.Name()
@@ -91,9 +92,10 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	}
 
 	buildResult := &BuildResult{
-		Plan:             buildPlan,
-		ResolvedPackages: resolvedPackages,
-		Metadata:         ctx.Metadata.Properties,
+		Plan:              buildPlan,
+		ResolvedPackages:  resolvedPackages,
+		Metadata:          ctx.Metadata.Properties,
+		DetectedProviders: detectedProviderNames,
 	}
 
 	return buildResult, nil
@@ -205,40 +207,43 @@ func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config
 	return config
 }
 
-func getProviders(ctx *generate.GenerateContext, config *config.Config) []providers.Provider {
+func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]providers.Provider, []string) {
 	var providersToUse []providers.Provider
 
 	allProviders := providers.GetLanguageProviders()
+	detectedProviders := []string{}
 
-	// If there are no providers manually specified in the config,
-	// use the first provider that is detected
-	if config.Providers == nil {
-		for _, provider := range allProviders {
-			matched, err := provider.Detect(ctx)
-			if err != nil {
-				log.Warnf("Failed to detect provider `%s`: %s", provider.Name(), err.Error())
-				continue
-			}
-
-			if matched {
-				providersToUse = append(providersToUse, provider)
-				break
-			}
-		}
-
-		return providersToUse
-	}
-
-	// Otherwise, use the providers specified in the config
-	for _, providerName := range *config.Providers {
-		provider := providers.GetProvider(providerName)
-		if provider == nil {
-			log.Warnf("Provider `%s` not found", providerName)
+	// Even if there are providers manually specified, we want to detect to see what type of app this is
+	for _, provider := range allProviders {
+		matched, err := provider.Detect(ctx)
+		if err != nil {
+			log.Warnf("Failed to detect provider `%s`: %s", provider.Name(), err.Error())
 			continue
 		}
 
-		providersToUse = append(providersToUse, provider)
+		if matched {
+			detectedProviders = append(detectedProviders, provider.Name())
+
+			// If there are no providers manually specified in the config,
+			if config.Providers == nil {
+				providersToUse = append(providersToUse, provider)
+			}
+
+			break
+		}
 	}
 
-	return providersToUse
+	if config.Providers != nil {
+		for _, providerName := range *config.Providers {
+			provider := providers.GetProvider(providerName)
+			if provider == nil {
+				log.Warnf("Provider `%s` not found", providerName)
+				continue
+			}
+
+			providersToUse = append(providersToUse, provider)
+		}
+	}
+
+	return providersToUse, detectedProviders
 }
