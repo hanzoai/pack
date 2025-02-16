@@ -132,7 +132,6 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 			return nil, nil, fmt.Errorf("failed to build step: %w", err)
 		}
 
-		c.AddCommonCachesToStep(step)
 		buildPlan.AddStep(*step)
 	}
 
@@ -248,12 +247,6 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	}
 
 	return nil
-}
-
-func (c *GenerateContext) AddCommonCachesToStep(step *plan.Step) {
-	rootCache := c.Caches.AddCache("root", "/root/.cache")
-
-	step.Caches = append(step.Caches, rootCache)
 }
 
 func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {
