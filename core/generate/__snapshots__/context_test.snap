@@ -10,10 +10,6 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
-  },
-  "root": {
-   "directory": "/root/.cache",
-   "type": "shared"
   }
  },
  "secrets": [
@@ -33,8 +29,7 @@
    },
    "caches": [
     "apt",
-    "apt-lists",
-    "root"
+    "apt-lists"
    ],
    "commands": [
     {
@@ -75,8 +70,7 @@
   {
    "caches": [
     "apt",
-    "apt-lists",
-    "root"
+    "apt-lists"
    ],
    "commands": [
     {
@@ -88,9 +82,6 @@
    "useSecrets": false
   },
   {
-   "caches": [
-    "root"
-   ],
    "commands": [
     {
      "cmd": "npm install"
@@ -105,9 +96,6 @@
    ]
   },
   {
-   "caches": [
-    "root"
-   ],
    "commands": [
     {
      "cmd": "sh -c 'echo building'",
@@ -123,8 +111,7 @@
   {
    "caches": [
     "apt",
-    "apt-lists",
-    "root"
+    "apt-lists"
    ],
    "commands": [
     {
