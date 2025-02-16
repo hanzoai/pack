@@ -49,7 +49,3 @@ func (node *StepNode) getPathList() []string {
 	pathList = append(pathList, node.OutputEnv.PathList...)
 	return pathList
 }
-
-func (node *StepNode) appendPath(path string) {
-	node.OutputEnv.AddPath(path)
-}

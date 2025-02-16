@@ -132,6 +132,7 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 			return nil, nil, fmt.Errorf("failed to build step: %w", err)
 		}
 
+		c.AddCommonCachesToStep(step)
 		buildPlan.AddStep(*step)
 	}
 
@@ -158,12 +159,13 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	}
 
 	// Apt package config
+	aptStepName := ""
 	if len(config.AptPackages) > 0 {
 		aptStep := c.NewAptStepBuilder("config")
+		aptStepName = aptStep.Name()
 		aptStep.Packages = config.AptPackages
 
-		// The apt step should run first
-		// miseStep.DependsOn = append(miseStep.DependsOn, aptStep.DisplayName)
+		// We install the apt packages again in the mise step since they may be required for install mise packages
 		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, config.AptPackages...)
 	}
 
@@ -190,6 +192,10 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 			commandStepBuilder.DependsOn = configStep.DependsOn
 		}
 
+		if aptStepName != "" {
+			commandStepBuilder.DependsOn = append(commandStepBuilder.DependsOn, aptStepName)
+		}
+
 		if configStep.Commands != nil {
 			commandStepBuilder.Commands = configStep.Commands
 		}
@@ -203,6 +209,14 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 
 		if configStep.UseSecrets != nil {
 			commandStepBuilder.UseSecrets = *configStep.UseSecrets
+		}
+
+		if len(configStep.Caches) > 0 {
+			commandStepBuilder.Caches = configStep.Caches
+		}
+
+		if configStep.Variables != nil {
+			commandStepBuilder.AddEnvVars(configStep.Variables)
 		}
 	}
 
@@ -236,12 +250,17 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	return nil
 }
 
+func (c *GenerateContext) AddCommonCachesToStep(step *plan.Step) {
+	rootCache := c.Caches.AddCache("root", "/root/.cache")
+
+	step.Caches = append(step.Caches, rootCache)
+}
+
 func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {
 	pkgs = utils.RemoveDuplicates(pkgs)
 	sort.Strings(pkgs)
 
 	return plan.NewExecCommand("sh -c 'apt-get update && apt-get install -y "+strings.Join(pkgs, " ")+"'", plan.ExecOptions{
 		CustomName: "install apt packages: " + strings.Join(pkgs, " "),
-		Caches:     o.Caches.GetAptCaches(),
 	})
 }

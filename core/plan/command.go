@@ -12,26 +12,18 @@ type Command interface {
 }
 
 type ExecOptions struct {
-	Caches     []string
 	CustomName string
 }
 
 // ExecCommand represents a shell command to be executed during the build
 type ExecCommand struct {
-	Cmd        string   `json:"cmd" jsonschema:"description=The shell command to execute (e.g. 'go build' or 'npm install')"`
-	Caches     []string `json:"caches,omitempty" jsonschema:"description=Optional list of cache key references that will be available during this command execution. The cache must be defined in the top level 'caches' config"`
-	CustomName string   `json:"customName,omitempty" jsonschema:"description=Optional custom name to display for this command in build output"`
+	Cmd        string `json:"cmd" jsonschema:"description=The shell command to execute (e.g. 'go build' or 'npm install')"`
+	CustomName string `json:"customName,omitempty" jsonschema:"description=Optional custom name to display for this command in build output"`
 }
 
 // PathCommand represents adding a directory to the global PATH environment variable
 type PathCommand struct {
 	Path string `json:"path" jsonschema:"description=Directory path to add to the global PATH environment variable. This path will be available to all subsequent commands in the build"`
-}
-
-// VariableCommand represents setting an environment variable for the build
-type VariableCommand struct {
-	Name  string `json:"name" jsonschema:"description=Name of the environment variable to set (e.g. 'NODE_ENV')"`
-	Value string `json:"value" jsonschema:"description=Value to set for the environment variable (e.g. 'production')"`
 }
 
 // CopyCommand represents copying files or directories during the build
@@ -54,17 +46,15 @@ type FileCommand struct {
 	CustomName string      `json:"customName,omitempty" jsonschema:"description=Optional custom name to display for this file operation"`
 }
 
-func (e ExecCommand) CommandType() string     { return "exec" }
-func (g PathCommand) CommandType() string     { return "globalPath" }
-func (v VariableCommand) CommandType() string { return "variable" }
-func (c CopyCommand) CommandType() string     { return "copy" }
-func (f FileCommand) CommandType() string     { return "file" }
+func (e ExecCommand) CommandType() string { return "exec" }
+func (g PathCommand) CommandType() string { return "globalPath" }
+func (c CopyCommand) CommandType() string { return "copy" }
+func (f FileCommand) CommandType() string { return "file" }
 
 func NewExecCommand(cmd string, options ...ExecOptions) Command {
 	exec := ExecCommand{Cmd: cmd}
 	if len(options) > 0 {
 		exec.CustomName = options[0].CustomName
-		exec.Caches = options[0].Caches
 	}
 	return exec
 }
@@ -77,11 +67,6 @@ func NewExecShellCommand(cmd string, options ...ExecOptions) Command {
 func NewPathCommand(path string, customName ...string) Command {
 	pathCmd := PathCommand{Path: path}
 	return pathCmd
-}
-
-func NewVariableCommand(name, value string, customName ...string) Command {
-	variableCmd := VariableCommand{Name: name, Value: value}
-	return variableCmd
 }
 
 func NewCopyCommand(src string, dst ...string) Command {
@@ -128,6 +113,7 @@ func UnmarshalJsonCommand(data []byte) (Command, error) {
 		}
 		return cmd, nil
 	}
+
 	if _, ok := rawMap["path"]; ok {
 		if _, ok := rawMap["name"]; ok {
 			var file FileCommand
@@ -142,13 +128,7 @@ func UnmarshalJsonCommand(data []byte) (Command, error) {
 		}
 		return path, nil
 	}
-	if _, ok := rawMap["name"]; ok && rawMap["value"] != nil {
-		var env VariableCommand
-		if err := json.Unmarshal(data, &env); err != nil {
-			return nil, err
-		}
-		return env, nil
-	}
+
 	if _, ok := rawMap["src"]; ok {
 		var copy CopyCommand
 		if err := json.Unmarshal(data, &copy); err != nil {
@@ -165,7 +145,8 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 
 	// If no prefix, treat as exec command
 	if !strings.Contains(str, ":") {
-		return NewExecShellCommand(strings.Trim(str, "\"")), nil
+		cmdToRun := strings.Trim(str, "\"")
+		return NewExecShellCommand(cmdToRun, ExecOptions{CustomName: cmdToRun}), nil
 	}
 
 	parts := strings.SplitN(str, ":", 2)
@@ -189,12 +170,6 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 		return NewExecShellCommand(payload, ExecOptions{CustomName: customName}), nil
 	case "PATH":
 		return NewPathCommand(payload), nil
-	case "ENV":
-		envParts := strings.SplitN(payload, "=", 2)
-		if len(envParts) != 2 {
-			return nil, fmt.Errorf("invalid ENV format: %s", payload)
-		}
-		return NewVariableCommand(envParts[0], envParts[1]), nil
 	case "COPY":
 		copyParts := strings.Fields(payload)
 		if len(copyParts) != 2 {
@@ -210,5 +185,9 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 	}
 
 	// fallback to exec command type
-	return NewExecShellCommand(strings.Trim(str, "\""), ExecOptions{CustomName: customName}), nil
+	cmdToRun := strings.Trim(str, "\"")
+	if customName == "" {
+		customName = cmdToRun
+	}
+	return NewExecShellCommand(cmdToRun, ExecOptions{CustomName: customName}), nil
 }

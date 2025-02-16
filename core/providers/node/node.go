@@ -73,39 +73,33 @@ func (p *NodeProvider) start(ctx *generate.GenerateContext, packageJson *Package
 
 func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.CommandStepBuilder, packageJson *PackageJson) (*generate.CommandStepBuilder, error) {
 	packageManager := p.getPackageManager(ctx.App)
+	build := ctx.NewCommandStep("build")
+	build.DependsOn = []string{install.DisplayName}
+	build.AddEnvVars(map[string]string{"HELLO": "world"})
+
 	_, ok := packageJson.Scripts["build"]
 	if ok {
-		buildCaches := []string{}
-
-		// Generic node_modules cache
-		buildCaches = append(buildCaches, ctx.Caches.AddCache("node-modules", "/app/node_modules/.cache"))
-
-		// Add caches for Next.JS apps
-		if nextApps, err := p.getNextApps(ctx); err == nil {
-			ctx.Metadata.SetBool("nextjs", len(nextApps) > 0)
-
-			for _, nextApp := range nextApps {
-				nextCacheDir := path.Join("/app", nextApp, ".next/cache")
-				nextCache := ctx.Caches.AddCache(fmt.Sprintf("next-%s", nextApp), nextCacheDir)
-				buildCaches = append(buildCaches, nextCache)
-			}
-		}
-
-		build := ctx.NewCommandStep("build")
-
 		build.AddCommands([]plan.Command{
 			plan.NewCopyCommand("."),
-			plan.NewExecCommand(packageManager.RunCmd("build"), plan.ExecOptions{
-				Caches: buildCaches,
-			}),
+			plan.NewExecCommand(packageManager.RunCmd("build")),
 		})
 
-		build.DependsOn = []string{install.DisplayName}
-
-		return build, nil
 	}
 
-	return nil, nil
+	// Generic node_modules cache
+	build.AddCache(ctx.Caches.AddCache("node-modules", "/app/node_modules/.cache"))
+
+	// Add caches for Next.JS apps
+	if nextApps, err := p.getNextApps(ctx); err == nil {
+		ctx.Metadata.SetBool("nextjs", len(nextApps) > 0)
+
+		for _, nextApp := range nextApps {
+			nextCacheDir := path.Join("/app", nextApp, ".next/cache")
+			build.AddCache(ctx.Caches.AddCache(fmt.Sprintf("next-%s", nextApp), nextCacheDir))
+		}
+	}
+
+	return build, nil
 }
 
 func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder, packageJson *PackageJson) (*generate.CommandStepBuilder, error) {

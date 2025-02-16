@@ -17,8 +17,8 @@ func TestCommandMarshalUnmarshal(t *testing.T) {
 		// Exec
 		{
 			name:            "exec command without custom name",
-			command:         NewExecShellCommand("echo hello"),
-			expectedJSON:    `{"cmd":"sh -c 'echo hello'"}`,
+			command:         NewExecShellCommand("echo hello", ExecOptions{CustomName: "echo hello"}),
+			expectedJSON:    `{"cmd":"sh -c 'echo hello'","customName":"echo hello"}`,
 			unmarshalString: "echo hello",
 		},
 		{
@@ -27,12 +27,6 @@ func TestCommandMarshalUnmarshal(t *testing.T) {
 			expectedJSON:    `{"cmd":"sh -c 'echo hello'","customName":"Say Hello"}`,
 			unmarshalString: "RUN#Say Hello:echo hello",
 		},
-		{
-			name:            "exec command with cache key",
-			command:         ExecCommand{Cmd: "npm install", Caches: []string{"v1", "v2"}},
-			expectedJSON:    `{"cmd":"npm install","caches":["v1","v2"]}`,
-			unmarshalString: "",
-		},
 
 		// Path
 		{
@@ -40,14 +34,6 @@ func TestCommandMarshalUnmarshal(t *testing.T) {
 			command:         NewPathCommand("/usr/local/bin"),
 			expectedJSON:    `{"path":"/usr/local/bin"}`,
 			unmarshalString: "PATH:/usr/local/bin",
-		},
-
-		// Variable
-		{
-			name:            "variable command",
-			command:         NewVariableCommand("KEY", "value"),
-			expectedJSON:    `{"name":"KEY","value":"value"}`,
-			unmarshalString: "ENV:KEY=value",
 		},
 
 		// Copy

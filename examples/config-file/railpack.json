@@ -7,10 +7,13 @@
   "aptPackages": ["neofetch"],
   "steps": {
     "build": {
-      "commands": ["neofetch"]
+      "commands": ["neofetch"],
+      "variables": {
+        "HELLO": "world"
+      }
     }
   },
   "start": {
-    "cmd": "neofetch"
+    "cmd": "neofetch $HELLO"
   }
 }

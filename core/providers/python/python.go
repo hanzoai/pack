@@ -81,11 +81,10 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 	install.DependsOn = append(install.DependsOn, setup.DisplayName)
 
 	if hasRequirements {
+		install.AddCache(ctx.Caches.AddCache("pip", PIP_CACHE_DIR))
 		install.AddCommands([]plan.Command{
 			plan.NewCopyCommand("requirements.txt"),
-			plan.NewExecCommand("pip install -r requirements.txt", plan.ExecOptions{
-				Caches: []string{ctx.Caches.AddCache("pip", PIP_CACHE_DIR)},
-			}),
+			plan.NewExecCommand("pip install -r requirements.txt"),
 		})
 	} else if hasPyproject && hasPoetry {
 		install.AddCommands([]plan.Command{
@@ -98,9 +97,9 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 	} else if hasPyproject && hasPdm {
 		// TODO: Fix this. PDM is not working because the packages are installed into a venv
 		// that is not available to python at runtime
+		install.AddEnvVars(map[string]string{"PDM_CHECK_UPDATE": "false"})
 		install.AddCommands([]plan.Command{
 			plan.NewExecCommand("pipx install pdm"),
-			plan.NewVariableCommand("PDM_CHECK_UPDATE", "false"),
 			plan.NewCopyCommand("pyproject.toml"),
 			plan.NewCopyCommand("pdm.lock"),
 			plan.NewCopyCommand("."),
@@ -108,10 +107,13 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 			plan.NewPathCommand("/app/.venv/bin"),
 		})
 	} else if hasPyproject && hasUv {
+		install.AddEnvVars(map[string]string{
+			"UV_COMPILE_BYTECODE": "1",
+			"UV_LINK_MODE":        "copy",
+			"UV_CACHE_DIR":        UV_CACHE_DIR,
+		})
+
 		install.AddCommands([]plan.Command{
-			plan.NewVariableCommand("UV_COMPILE_BYTECODE", "1"),
-			plan.NewVariableCommand("UV_LINK_MODE", "copy"),
-			plan.NewVariableCommand("UV_CACHE_DIR", UV_CACHE_DIR),
 			plan.NewExecCommand("pipx install uv"),
 			plan.NewCopyCommand("pyproject.toml"),
 			plan.NewCopyCommand("uv.lock"),
