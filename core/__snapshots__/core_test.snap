@@ -17,7 +17,7 @@
   }
  },
  "start": {
-  "cmd": "neofetch",
+  "cmd": "neofetch $HELLO",
   "outputs": [
    "."
   ]
@@ -28,6 +28,8 @@
     "mise.toml": "[mise.toml]"
    },
    "caches": [
+    "apt",
+    "apt-lists",
     "root"
    ],
    "commands": [
@@ -137,13 +139,18 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c 'neofetch'"
+     "cmd": "sh -c 'neofetch'",
+     "customName": "neofetch"
     }
    ],
    "dependsOn": [
-    "packages:mise"
+    "packages:mise",
+    "packages:apt:config"
    ],
-   "name": "build"
+   "name": "build",
+   "variables": {
+    "HELLO": "world"
+   }
   }
  ]
 }
@@ -1500,14 +1507,16 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c '{ \"name\": \"NOT_SECRET\", \"value\": \"not secret\" }'"
+     "cmd": "sh -c '{ \"name\": \"NOT_SECRET\", \"value\": \"not secret\" }'",
+     "customName": "{ \"name\": \"NOT_SECRET\", \"value\": \"not secret\" }"
     },
     {
      "dest": ".",
      "src": "."
     },
     {
-     "cmd": "sh -c './run.sh'"
+     "cmd": "sh -c './run.sh'",
+     "customName": "./run.sh"
     }
    ],
    "dependsOn": [
@@ -1525,7 +1534,8 @@
      "src": "."
     },
     {
-     "cmd": "sh -c './run.sh true'"
+     "cmd": "sh -c './run.sh true'",
+     "customName": "./run.sh true"
     }
    ],
    "dependsOn": [
@@ -1540,14 +1550,16 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c '{ \"name\": \"NOT_SECRET\", \"value\": \"not secret\" }'"
+     "cmd": "sh -c '{ \"name\": \"NOT_SECRET\", \"value\": \"not secret\" }'",
+     "customName": "{ \"name\": \"NOT_SECRET\", \"value\": \"not secret\" }"
     },
     {
      "dest": ".",
      "src": "."
     },
     {
-     "cmd": "sh -c './run.sh'"
+     "cmd": "sh -c './run.sh'",
+     "customName": "./run.sh"
     }
    ],
    "dependsOn": [

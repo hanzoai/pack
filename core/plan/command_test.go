@@ -17,8 +17,8 @@ func TestCommandMarshalUnmarshal(t *testing.T) {
 		// Exec
 		{
 			name:            "exec command without custom name",
-			command:         NewExecShellCommand("echo hello"),
-			expectedJSON:    `{"cmd":"sh -c 'echo hello'"}`,
+			command:         NewExecShellCommand("echo hello", ExecOptions{CustomName: "echo hello"}),
+			expectedJSON:    `{"cmd":"sh -c 'echo hello'","customName":"echo hello"}`,
 			unmarshalString: "echo hello",
 		},
 		{

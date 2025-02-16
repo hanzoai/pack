@@ -30,7 +30,11 @@ func TestMergeConfigSmall(t *testing.T) {
 				"dependsOn": ["packages"],
 				"commands": [
 					"echo first"
-				]
+				],
+				"variables": {
+					"HELLO": "world"
+				},
+				"caches": ["pip"]
 			}
 		},
 		"start": {
@@ -48,7 +52,11 @@ func TestMergeConfigSmall(t *testing.T) {
 			"bun": "latest"
 		},
 		"steps": {
-			"install": {}
+			"install": {
+				"variables": {
+					"another": "boop"
+				}
+			}
 		},
 		"start": {
 			"variables": {
@@ -71,7 +79,12 @@ func TestMergeConfigSmall(t *testing.T) {
 				"dependsOn": ["packages"],
 				"commands": [
 					"echo first"
-				]
+				],
+				"variables": {
+					"HELLO": "world",
+					"another": "boop"
+				},
+				"caches": ["pip"]
 			}
 		},
 		"start": {

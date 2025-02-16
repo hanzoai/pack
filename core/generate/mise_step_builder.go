@@ -114,6 +114,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		step.AddCommands([]plan.Command{
 			options.NewAptInstallCommand(b.SupportingAptPackages),
 		})
+		step.Caches = options.Caches.GetAptCaches()
 	}
 
 	// Setup mise commands

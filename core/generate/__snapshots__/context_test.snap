@@ -32,6 +32,8 @@
     "mise.toml": "[tools]\n  [tools.go]\n    version = \"1.23.5\"\n  [tools.node]\n    version = \"20.18.2\"\n  [tools.python]\n    version = \"3.13.1\"\n"
    },
    "caches": [
+    "apt",
+    "apt-lists",
     "root"
    ],
    "commands": [
@@ -108,11 +110,13 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c 'echo building'"
+     "cmd": "sh -c 'echo building'",
+     "customName": "echo building"
     }
    ],
    "dependsOn": [
-    "install"
+    "install",
+    "packages:apt:config"
    ],
    "name": "build"
   },

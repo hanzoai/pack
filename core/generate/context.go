@@ -159,12 +159,13 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	}
 
 	// Apt package config
+	aptStepName := ""
 	if len(config.AptPackages) > 0 {
 		aptStep := c.NewAptStepBuilder("config")
+		aptStepName = aptStep.Name()
 		aptStep.Packages = config.AptPackages
 
-		// The apt step should run first
-		// miseStep.DependsOn = append(miseStep.DependsOn, aptStep.DisplayName)
+		// We install the apt packages again in the mise step since they may be required for install mise packages
 		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, config.AptPackages...)
 	}
 
@@ -189,6 +190,10 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 		// Overwrite the step with values from the config if they exist
 		if len(configStep.DependsOn) > 0 {
 			commandStepBuilder.DependsOn = configStep.DependsOn
+		}
+
+		if aptStepName != "" {
+			commandStepBuilder.DependsOn = append(commandStepBuilder.DependsOn, aptStepName)
 		}
 
 		if configStep.Commands != nil {
