@@ -12,14 +12,12 @@ type Command interface {
 }
 
 type ExecOptions struct {
-	// Caches     []string
 	CustomName string
 }
 
 // ExecCommand represents a shell command to be executed during the build
 type ExecCommand struct {
-	Cmd string `json:"cmd" jsonschema:"description=The shell command to execute (e.g. 'go build' or 'npm install')"`
-	// Caches     []string `json:"caches,omitempty" jsonschema:"description=Optional list of cache key references that will be available during this command execution. The cache must be defined in the top level 'caches' config"`
+	Cmd        string `json:"cmd" jsonschema:"description=The shell command to execute (e.g. 'go build' or 'npm install')"`
 	CustomName string `json:"customName,omitempty" jsonschema:"description=Optional custom name to display for this command in build output"`
 }
 
@@ -57,7 +55,6 @@ func NewExecCommand(cmd string, options ...ExecOptions) Command {
 	exec := ExecCommand{Cmd: cmd}
 	if len(options) > 0 {
 		exec.CustomName = options[0].CustomName
-		// exec.Caches = options[0].Caches
 	}
 	return exec
 }
