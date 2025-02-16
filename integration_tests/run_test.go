@@ -28,6 +28,85 @@ type TestCase struct {
 	Envs           map[string]string `json:"envs"`
 }
 
+func TestExamplesIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	examplesDir := filepath.Join(filepath.Dir(wd), "examples")
+	entries, err := os.ReadDir(examplesDir)
+	require.NoError(t, err)
+
+	for _, entry := range entries {
+		entry := entry // capture for parallel execution
+		if !entry.IsDir() {
+			continue
+		}
+
+		testConfigPath := filepath.Join(examplesDir, entry.Name(), "test.json")
+		if _, err := os.Stat(testConfigPath); os.IsNotExist(err) {
+			continue
+		}
+
+		testConfigBytes, err := os.ReadFile(testConfigPath)
+		require.NoError(t, err)
+
+		var testCases []TestCase
+		err = json.Unmarshal(testConfigBytes, &testCases)
+		require.NoError(t, err)
+
+		for i, testCase := range testCases {
+			testCase := testCase // capture for parallel execution
+			i := i
+
+			testName := fmt.Sprintf("%s/case-%d", entry.Name(), i)
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
+
+				examplePath := filepath.Join(examplesDir, entry.Name())
+				userApp, err := app.NewApp(examplePath)
+				if err != nil {
+					t.Fatalf("failed to create app: %v", err)
+				}
+
+				env := app.NewEnvironment(&testCase.Envs)
+				buildResult, err := core.GenerateBuildPlan(userApp, env, &core.GenerateBuildPlanOptions{})
+				if err != nil {
+					t.Fatalf("failed to generate build plan: %v", err)
+				}
+				if buildResult == nil {
+					t.Fatal("build result is nil")
+				}
+
+				imageName := fmt.Sprintf("railpack-test-%s-%s",
+					strings.ToLower(strings.ReplaceAll(testName, "/", "-")),
+					strings.ToLower(uuid.New().String()))
+
+				if err := buildkit.BuildWithBuildkitClient(examplePath, buildResult.Plan, buildkit.BuildWithBuildkitClientOptions{
+					ImageName:   imageName,
+					ImportCache: *buildkitCacheImport,
+					ExportCache: *buildkitCacheExport,
+				}); err != nil {
+					t.Fatalf("failed to build image: %v", err)
+				}
+
+				if err := runContainerWithTimeout(t, imageName, testCase.ExpectedOutput); err != nil {
+					t.Fatal(err)
+				}
+			})
+		}
+	}
+}
+
+func cmdDoneChan(cmd *exec.Cmd) chan error {
+	ch := make(chan error, 1)
+	go func() { ch <- cmd.Wait() }()
+	return ch
+}
+
 func runContainerWithTimeout(t *testing.T, imageName, expectedOutput string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -99,84 +178,5 @@ func runContainerWithTimeout(t *testing.T, imageName, expectedOutput string) err
 		}
 		require.Contains(t, output.String(), expectedOutput, "container output did not contain expected string")
 		return nil
-	}
-}
-
-func cmdDoneChan(cmd *exec.Cmd) chan error {
-	ch := make(chan error, 1)
-	go func() { ch <- cmd.Wait() }()
-	return ch
-}
-
-func TestExamplesIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-
-	examplesDir := filepath.Join(filepath.Dir(wd), "examples")
-	entries, err := os.ReadDir(examplesDir)
-	require.NoError(t, err)
-
-	for _, entry := range entries {
-		entry := entry // capture for parallel execution
-		if !entry.IsDir() {
-			continue
-		}
-
-		testConfigPath := filepath.Join(examplesDir, entry.Name(), "test.json")
-		if _, err := os.Stat(testConfigPath); os.IsNotExist(err) {
-			continue
-		}
-
-		testConfigBytes, err := os.ReadFile(testConfigPath)
-		require.NoError(t, err)
-
-		var testCases []TestCase
-		err = json.Unmarshal(testConfigBytes, &testCases)
-		require.NoError(t, err)
-
-		for i, testCase := range testCases {
-			testCase := testCase // capture for parallel execution
-			i := i
-
-			testName := fmt.Sprintf("%s/case-%d", entry.Name(), i)
-			t.Run(testName, func(t *testing.T) {
-				t.Parallel()
-
-				examplePath := filepath.Join(examplesDir, entry.Name())
-				userApp, err := app.NewApp(examplePath)
-				if err != nil {
-					t.Fatalf("failed to create app: %v", err)
-				}
-
-				env := app.NewEnvironment(&testCase.Envs)
-				buildResult, err := core.GenerateBuildPlan(userApp, env, &core.GenerateBuildPlanOptions{})
-				if err != nil {
-					t.Fatalf("failed to generate build plan: %v", err)
-				}
-				if buildResult == nil {
-					t.Fatal("build result is nil")
-				}
-
-				imageName := fmt.Sprintf("railpack-test-%s-%s",
-					strings.ToLower(strings.ReplaceAll(testName, "/", "-")),
-					strings.ToLower(uuid.New().String()))
-
-				if err := buildkit.BuildWithBuildkitClient(examplePath, buildResult.Plan, buildkit.BuildWithBuildkitClientOptions{
-					ImageName:   imageName,
-					ImportCache: *buildkitCacheImport,
-					ExportCache: *buildkitCacheExport,
-				}); err != nil {
-					t.Fatalf("failed to build image: %v", err)
-				}
-
-				if err := runContainerWithTimeout(t, imageName, testCase.ExpectedOutput); err != nil {
-					t.Fatal(err)
-				}
-			})
-		}
 	}
 }
