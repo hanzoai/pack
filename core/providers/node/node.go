@@ -133,12 +133,7 @@ func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate
 
 	// We only want to invalidate the install step when these secrets change, not all of them
 	install.Secrets = &[]string{}
-	install.UseSecretsWithPrefix("NODE")
-	install.UseSecretsWithPrefix("NPM")
-	install.UseSecretsWithPrefix("BUN")
-	install.UseSecretsWithPrefix("PNPM")
-	install.UseSecretsWithPrefix("YARN")
-	install.UseSecrets([]string{"CI"})
+	install.UseSecretsWithPrefixes([]string{"NODE", "NPM", "BUN", "PNPM", "YARN", "CI"})
 
 	pkgManager.installDependencies(ctx, packageJson, install)
 

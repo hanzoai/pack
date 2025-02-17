@@ -139,6 +139,9 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 		}
 	}
 
+	install.Secrets = &[]string{}
+	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP", "PIPX", "PIPENV", "UV", "POETRY", "PDM"})
+
 	aptStep := ctx.NewAptStepBuilder("python-system-deps")
 	aptStep.Packages = []string{"pkg-config"}
 	install.DependsOn = append(install.DependsOn, aptStep.DisplayName)

@@ -78,6 +78,12 @@ func (b *CommandStepBuilder) AddPaths(paths []string) {
 	b.AddCommands(commands)
 }
 
+func (b *CommandStepBuilder) UseSecretsWithPrefixes(prefixes []string) {
+	for _, prefix := range prefixes {
+		b.UseSecretsWithPrefix(prefix)
+	}
+}
+
 func (b *CommandStepBuilder) UseSecretsWithPrefix(prefix string) {
 	secrets := b.env.GetSecretsWithPrefix(prefix)
 	fmt.Printf("secrets: %v\n", secrets)
