@@ -430,7 +430,9 @@ func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunO
 	} else {
 		// If not all secrets are included, we want to compute the hash of only the used secrets
 		secretsWithDollar := make([]string, len(node.Step.Secrets))
-		for i, secret := range node.Step.Secrets {
+		secrets := slices.Clone(node.Step.Secrets)
+		slices.Sort(secrets)
+		for i, secret := range secrets {
 			secretsWithDollar[i] = "$" + secret
 		}
 		secretsString := strings.Join(secretsWithDollar, " ")
