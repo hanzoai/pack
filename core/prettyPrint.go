@@ -130,7 +130,12 @@ func FormatBuildResult(br *BuildResult, options ...PrintOptions) string {
 				output.WriteString("\n")
 
 				for _, cmd := range commands {
-					output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(cmd.Cmd)))
+					cmdText := cmd.Cmd
+					if cmd.CustomName != "" {
+						cmdText = cmd.CustomName
+					}
+
+					output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(cmdText)))
 					output.WriteString("\n")
 				}
 			}
