@@ -1,0 +1,9 @@
+[
+  {
+    "expectedOutput": "Kernel"
+  },
+  {
+    "expectedOutput": "hello",
+    "configFile": "railpack.other.json"
+  }
+]

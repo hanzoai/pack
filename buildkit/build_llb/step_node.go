@@ -18,27 +18,22 @@ type StepNode struct {
 	OutputEnv BuildEnvironment
 }
 
-// GetName implements graph.Node
 func (n *StepNode) GetName() string {
 	return n.Step.Name
 }
 
-// GetParents implements graph.Node
 func (n *StepNode) GetParents() []graph.Node {
 	return n.parents
 }
 
-// GetChildren implements graph.Node
-func (n *StepNode) GetChildren() []graph.Node {
-	return n.children
-}
-
-// SetParents implements graph.Node
 func (n *StepNode) SetParents(parents []graph.Node) {
 	n.parents = parents
 }
 
-// SetChildren implements graph.Node
+func (n *StepNode) GetChildren() []graph.Node {
+	return n.children
+}
+
 func (n *StepNode) SetChildren(children []graph.Node) {
 	n.children = children
 }

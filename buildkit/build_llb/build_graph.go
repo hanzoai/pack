@@ -45,6 +45,7 @@ func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *Build
 			Processed: false,
 			OutputEnv: NewGraphEnvironment(),
 		}
+
 		g.graph.AddNode(node)
 	}
 

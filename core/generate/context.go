@@ -187,6 +187,7 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 		}
 
 		// Overwrite the step with values from the config if they exist
+
 		if len(configStep.DependsOn) > 0 {
 			commandStepBuilder.DependsOn = configStep.DependsOn
 		}
