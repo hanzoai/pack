@@ -342,18 +342,6 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 		}
 	}
 
-	// if node.Step.UseSecrets == nil || *node.Step.UseSecrets { // default to using secrets
-	// 	for _, secret := range g.Plan.Secrets {
-	// 		opts = append(opts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
-	// 	}
-
-	// 	// If there is a secrets hash, add a mount to invalidate the cache if the secrets hash changes
-	// 	if g.SecretsHash != "" {
-	// 		opts = append(opts, llb.AddMount("/cache-invalidate",
-	// 			llb.Scratch().File(llb.Mkfile("secrets-hash", 0644, []byte(g.SecretsHash)), llb.WithCustomName("invalidate cache on secrets hash change"))))
-	// 	}
-	// }
-
 	if len(node.Step.Caches) > 0 {
 		cacheOpts, err := g.getCacheMountOptions(node.Step.Caches)
 		if err != nil {
