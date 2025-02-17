@@ -107,6 +107,8 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 		"**/.npmrc",        // NPM config
 		"**/.node-version", // Node version file
 		"**/.nvmrc",        // NVM config
+		"patches",          // PNPM patches
+		".pnpm-patches",
 	}
 
 	var allFiles []string
@@ -116,6 +118,12 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 			continue
 		}
 		allFiles = append(allFiles, files...)
+
+		dirs, err := app.FindDirectories(pattern)
+		if err != nil {
+			continue
+		}
+		allFiles = append(allFiles, dirs...)
 	}
 
 	return allFiles
