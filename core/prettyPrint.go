@@ -179,13 +179,13 @@ func getStepsToPrint(br *BuildResult) []*plan.Step {
 	return execSteps
 }
 
-func getCommandsToPrint(commands *[]plan.Command) []plan.ExecCommand {
+func getCommandsToPrint(commands []plan.Command) []plan.ExecCommand {
 	if commands == nil {
 		return []plan.ExecCommand{}
 	}
 
 	execCommands := []plan.ExecCommand{}
-	for _, cmd := range *commands {
+	for _, cmd := range commands {
 		if execCmd, ok := cmd.(plan.ExecCommand); ok {
 			execCommands = append(execCommands, execCmd)
 		}

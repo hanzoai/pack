@@ -139,7 +139,7 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 		}
 	}
 
-	install.Secrets = &[]string{}
+	install.Secrets = []string{}
 	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP", "PIPX", "PIPENV", "UV", "POETRY", "PDM"})
 
 	aptStep := ctx.NewAptStepBuilder("python-system-deps")

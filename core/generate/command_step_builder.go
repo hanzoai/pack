@@ -1,7 +1,6 @@
 package generate
 
 import (
-	"fmt"
 	"maps"
 
 	a "github.com/railwayapp/railpack/core/app"
@@ -12,12 +11,12 @@ import (
 type CommandStepBuilder struct {
 	DisplayName string
 	DependsOn   []string
-	Commands    *[]plan.Command
-	Outputs     *[]string
+	Commands    []plan.Command
+	Outputs     []string
 	Assets      map[string]string
 	Variables   map[string]string
 	Caches      []string
-	Secrets     *[]string
+	Secrets     []string
 	app         *a.App
 	env         *a.Environment
 }
@@ -26,11 +25,11 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 	step := &CommandStepBuilder{
 		DisplayName: c.GetStepName(name),
 		DependsOn:   []string{MisePackageStepName},
-		Commands:    &[]plan.Command{},
+		Commands:    []plan.Command{},
 		Assets:      map[string]string{},
 		Variables:   map[string]string{},
 		Caches:      []string{},
-		Secrets:     &[]string{"*"},
+		Secrets:     []string{"*"},
 		app:         c.App,
 		env:         c.Env,
 	}
@@ -53,17 +52,14 @@ func (b *CommandStepBuilder) AddCache(name string) {
 }
 
 func (b *CommandStepBuilder) AddCommand(command plan.Command) {
-	if b.Commands == nil {
-		b.Commands = &[]plan.Command{}
-	}
-	*b.Commands = append(*b.Commands, command)
+	b.AddCommands([]plan.Command{command})
 }
 
 func (b *CommandStepBuilder) AddCommands(commands []plan.Command) {
 	if b.Commands == nil {
-		b.Commands = &[]plan.Command{}
+		b.Commands = []plan.Command{}
 	}
-	*b.Commands = append(*b.Commands, commands...)
+	b.Commands = append(b.Commands, commands...)
 }
 
 func (b *CommandStepBuilder) AddEnvVars(envVars map[string]string) {
@@ -86,13 +82,12 @@ func (b *CommandStepBuilder) UseSecretsWithPrefixes(prefixes []string) {
 
 func (b *CommandStepBuilder) UseSecretsWithPrefix(prefix string) {
 	secrets := b.env.GetSecretsWithPrefix(prefix)
-	fmt.Printf("secrets: %v\n", secrets)
-	*b.Secrets = append(*b.Secrets, secrets...)
+	b.Secrets = append(b.Secrets, secrets...)
 }
 
 func (b *CommandStepBuilder) UseSecrets(secrets []string) {
 	if b.env.GetVariable("CI") != "" {
-		*b.Secrets = append(*b.Secrets, secrets...)
+		b.Secrets = append(b.Secrets, secrets...)
 	}
 }
 

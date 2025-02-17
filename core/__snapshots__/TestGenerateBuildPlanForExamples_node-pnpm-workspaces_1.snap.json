@@ -77,7 +77,6 @@
    "caches": [
     "node-modules"
    ],
-   "commands": [],
    "dependsOn": [
     "setup"
    ],

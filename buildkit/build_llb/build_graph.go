@@ -237,8 +237,8 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 	}
 
 	// Process the step commands
-	if node.Step.Commands != nil {
-		for _, cmd := range *node.Step.Commands {
+	if len(node.Step.Commands) > 0 {
+		for _, cmd := range node.Step.Commands {
 			var err error
 			state, err = g.convertCommandToLLB(node, cmd, state, node.Step)
 			if err != nil {
@@ -247,10 +247,10 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 		}
 	}
 
-	if node.Step.Outputs != nil {
+	if len(node.Step.Outputs) > 0 {
 		result := llb.Scratch()
 
-		for _, output := range *node.Step.Outputs {
+		for _, output := range node.Step.Outputs {
 			result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
 				CreateDestPath:      true,
 				AllowWildcard:       true,
@@ -329,7 +329,7 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 		opts = append(opts, llb.WithCustomName(cmd.CustomName))
 	}
 
-	if node.Step.Secrets != nil && len(*node.Step.Secrets) > 0 {
+	if len(node.Step.Secrets) > 0 {
 		secretOpts := []llb.RunOption{}
 		for _, secret := range g.Plan.Secrets {
 			secretOpts = append(secretOpts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
@@ -417,7 +417,7 @@ func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunO
 
 	// If all secrets are included, we can just copy the secrets hash file to the new state
 	includesAllSecrets := false
-	for _, secret := range *node.Step.Secrets {
+	for _, secret := range node.Step.Secrets {
 		if secret == "*" {
 			includesAllSecrets = true
 			break
@@ -430,8 +430,8 @@ func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunO
 	} else {
 		// If not all secrets are included, we want to compute the hash of only the used secrets
 
-		secretsWithDollar := make([]string, len(*node.Step.Secrets))
-		for i, secret := range *node.Step.Secrets {
+		secretsWithDollar := make([]string, len(node.Step.Secrets))
+		for i, secret := range node.Step.Secrets {
 			secretsWithDollar[i] = "$" + secret
 		}
 		secretsString := strings.Join(secretsWithDollar, " ")

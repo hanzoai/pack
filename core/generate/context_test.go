@@ -27,7 +27,7 @@ func (p *TestProvider) Plan(ctx *GenerateContext) error {
 	// commands
 	installStep := ctx.NewCommandStep("install")
 	installStep.AddCommand(plan.NewExecCommand("npm install", plan.ExecOptions{}))
-	installStep.Outputs = &[]string{"node_modules"}
+	installStep.Outputs = []string{"node_modules"}
 	installStep.DependsOn = []string{aptStep.Name()}
 
 	buildStep := ctx.NewCommandStep("build")

@@ -44,7 +44,7 @@ func (b *AptStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step.Caches = options.Caches.GetAptCaches()
 
 	// Does not use any secrets
-	step.Secrets = &[]string{}
+	step.Secrets = []string{}
 
 	return step, nil
 }

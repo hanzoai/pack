@@ -105,7 +105,6 @@
    "caches": [
     "node-modules"
    ],
-   "commands": [],
    "dependsOn": [
     "install"
    ],

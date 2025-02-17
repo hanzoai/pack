@@ -83,10 +83,8 @@ func (e *Environment) IsConfigVariableTruthy(name string) bool {
 
 // GetSecretsWithPrefix returns all secrets that have the given prefix
 func (e *Environment) GetSecretsWithPrefix(prefix string) []string {
-	fmt.Printf("Getting secrets with prefix: %s\n", prefix)
 	secrets := []string{}
 	for secretName := range e.Variables {
-		fmt.Printf("secret: %s\n", secretName)
 		if strings.HasPrefix(secretName, prefix) {
 			secrets = append(secrets, secretName)
 		}
