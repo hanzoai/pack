@@ -52,8 +52,8 @@
     "/root/.local/state/mise",
     "/app/.python-version"
    ],
+   "secrets": [],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false,
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -72,6 +72,9 @@
     "packages:mise"
    ],
    "name": "setup",
+   "secrets": [
+    "*"
+   ],
    "variables": {
     "PIP_CACHE_DIR": "/opt/pip-cache",
     "PIP_DEFAULT_TIMEOUT": "100",
@@ -100,7 +103,8 @@
     "setup",
     "packages:apt:python-system-deps"
    ],
-   "name": "install"
+   "name": "install",
+   "secrets": []
   },
   {
    "caches": [
@@ -114,7 +118,7 @@
     }
    ],
    "name": "packages:apt:python-system-deps",
-   "useSecrets": false
+   "secrets": []
   }
  ]
 }
