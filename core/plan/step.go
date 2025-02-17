@@ -17,7 +17,10 @@ type Step struct {
 	Commands *[]Command `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
 
 	// Whether the commands executed in this step should have access to secrets
-	UseSecrets *bool `json:"useSecrets,omitempty" jsonschema:"description=Whether the commands executed in this step should have access to secrets"`
+	// UseSecrets *bool `json:"useSecrets,omitempty" jsonschema:"description=Whether the commands executed in this step should have access to secrets"`
+
+	// The secrets that this step uses
+	Secrets *[]string `json:"secrets,omitempty" jsonschema:"description=The secrets that this step uses"`
 
 	// Paths that this step outputs. Only these paths will be available to the next step
 	Outputs *[]string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
@@ -42,6 +45,7 @@ func NewStep(name string) *Step {
 		Name:      name,
 		Assets:    make(map[string]string),
 		Variables: make(map[string]string),
+		Secrets:   &[]string{"*"}, // default to using all secrets
 	}
 }
 

@@ -15,7 +15,7 @@ type CommandStepBuilder struct {
 	Assets      map[string]string
 	Variables   map[string]string
 	Caches      []string
-	UseSecrets  bool
+	Secrets     *[]string
 }
 
 func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
@@ -26,7 +26,7 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 		Assets:      map[string]string{},
 		Variables:   map[string]string{},
 		Caches:      []string{},
-		UseSecrets:  true,
+		Secrets:     &[]string{"*"},
 	}
 
 	c.Steps = append(c.Steps, step)
@@ -85,10 +85,7 @@ func (b *CommandStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error
 	step.Assets = b.Assets
 	step.Caches = b.Caches
 	step.Variables = b.Variables
-
-	if !b.UseSecrets {
-		step.UseSecrets = &b.UseSecrets
-	}
+	step.Secrets = b.Secrets
 
 	return step, nil
 }

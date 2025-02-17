@@ -323,17 +323,30 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 		opts = append(opts, llb.WithCustomName(cmd.CustomName))
 	}
 
-	if node.Step.UseSecrets == nil || *node.Step.UseSecrets { // default to using secrets
+	if node.Step.Secrets != nil && len(*node.Step.Secrets) > 0 {
+		secretOpts := []llb.RunOption{}
 		for _, secret := range g.Plan.Secrets {
-			opts = append(opts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
+			secretOpts = append(secretOpts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
 		}
+		opts = append(opts, secretOpts...)
 
-		// If there is a secrets hash, add a mount to invalidate the cache if the secrets hash changes
 		if g.SecretsHash != "" {
-			opts = append(opts, llb.AddMount("/cache-invalidate",
-				llb.Scratch().File(llb.Mkfile("secrets-hash", 0644, []byte(g.SecretsHash)), llb.WithCustomName("invalidate cache on secrets hash change"))))
+			secretOpts = g.getSecretMountOptions(node, secretOpts)
+			opts = append(opts, secretOpts...)
 		}
 	}
+
+	// if node.Step.UseSecrets == nil || *node.Step.UseSecrets { // default to using secrets
+	// 	for _, secret := range g.Plan.Secrets {
+	// 		opts = append(opts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
+	// 	}
+
+	// 	// If there is a secrets hash, add a mount to invalidate the cache if the secrets hash changes
+	// 	if g.SecretsHash != "" {
+	// 		opts = append(opts, llb.AddMount("/cache-invalidate",
+	// 			llb.Scratch().File(llb.Mkfile("secrets-hash", 0644, []byte(g.SecretsHash)), llb.WithCustomName("invalidate cache on secrets hash change"))))
+	// 	}
+	// }
 
 	if len(node.Step.Caches) > 0 {
 		cacheOpts, err := g.getCacheMountOptions(node.Step.Caches)
@@ -400,6 +413,48 @@ func (g *BuildGraph) convertFileCommandToLLB(cmd plan.FileCommand, state llb.Sta
 	}
 
 	return s, nil
+}
+
+func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunOption) []llb.RunOption {
+	opts := []llb.RunOption{}
+
+	// Create a file that contains the secrets hash. Any layer that depends on this file will be invalidated when the secrets hash changes
+	secretsState := llb.Image("alpine:latest").File(llb.Mkfile("/secrets-hash", 0644, []byte(g.SecretsHash)), llb.WithCustomName("invalidate cache on secrets hash change"))
+
+	// If all secrets are included, we can just copy the secrets hash file to the new state
+	includesAllSecrets := false
+	for _, secret := range *node.Step.Secrets {
+		if secret == "*" {
+			includesAllSecrets = true
+			break
+		}
+	}
+
+	if includesAllSecrets {
+		secretsState = llb.Scratch().File(llb.Copy(secretsState, "/secrets-hash", "/secrets-hash"))
+		opts = append(opts, llb.AddMount("/secrets-hash", secretsState))
+	} else {
+		// If not all secrets are included, we want to compute the hash of only the used secrets
+
+		secretsWithDollar := make([]string, len(*node.Step.Secrets))
+		for i, secret := range *node.Step.Secrets {
+			secretsWithDollar[i] = "$" + secret
+		}
+		secretsString := strings.Join(secretsWithDollar, " ")
+
+		// Hash all the secrets into a single file
+		usedSecretOpts := []llb.RunOption{llb.Shlexf("sh -c 'echo \"%s\" | sha256sum > /used-secrets-hash'", secretsString), llb.WithCustomName("hash used secrets")}
+		usedSecretOpts = append(usedSecretOpts, secretOpts...) // we need to mount the secrets so they can be used in the shell command
+		secretsState = secretsState.Run(usedSecretOpts...).Root()
+
+		// Copy just the used secrets hash file to a new FS that will be mounted to the step state
+		secretsState = llb.Scratch().File(llb.Copy(secretsState, "/used-secrets-hash", "/used-secrets-hash"))
+
+		// Add the secrets state as a mount to the step state
+		opts = append(opts, llb.AddMount("/secrets-hash", secretsState))
+	}
+
+	return opts
 }
 
 // getCacheMountOptions returns the llb.RunOption slice for the given cache keys

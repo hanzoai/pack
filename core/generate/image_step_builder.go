@@ -50,7 +50,7 @@ func (b *ImageStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) 
 
 	step.StartingImage = b.ResolveStepImage(options)
 	step.Outputs = b.Outputs
-	step.UseSecrets = &[]bool{false}[0]
+	step.Secrets = &[]string{}
 
 	return step, nil
 }
