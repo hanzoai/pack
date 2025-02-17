@@ -81,6 +81,7 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 		fmt.Sprintf("MISE_CACHE_DIR=%s", cacheDir),
 		fmt.Sprintf("MISE_DATA_DIR=%s", dataDir),
 		"MISE_HTTP_TIMEOUT=120",
+		"MISE_FETCH_REMOTE_VERSIONS_TIMEOUT=120",
 		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
 	)
 
