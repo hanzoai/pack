@@ -267,9 +267,7 @@ func (p *NodeProvider) filterPackageJson(ctx *generate.GenerateContext, filterFu
 		}
 
 		if filterFunc(&packageJson) {
-			fmt.Printf("file: %s\n", file)
 			dirPath := strings.TrimSuffix(file, "package.json")
-			fmt.Printf("dirPath: %s\n", dirPath)
 			filteredPaths = append(filteredPaths, dirPath)
 		}
 	}

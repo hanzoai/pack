@@ -30,6 +30,10 @@ func commonPlanFlags() []cli.Flag {
 			Name:  "start-cmd",
 			Usage: "start command to use",
 		},
+		&cli.StringFlag{
+			Name:  "config-file",
+			Usage: "path to config file to use",
+		},
 	}
 }
 
@@ -60,6 +64,7 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 		BuildCommand:     cmd.String("build-cmd"),
 		StartCommand:     cmd.String("start-cmd"),
 		PreviousVersions: previousVersions,
+		ConfigFilePath:   cmd.String("config-file"),
 	}
 
 	buildResult, err := core.GenerateBuildPlan(app, env, generateOptions)

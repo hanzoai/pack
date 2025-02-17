@@ -24,11 +24,9 @@ type MiseStepBuilder struct {
 	MisePackages          []*resolver.PackageRef
 	SupportingMiseFiles   []string
 	Assets                map[string]string
-	// DependsOn             []string
-	Outputs *[]string
-
-	app *a.App
-	env *a.Environment
+	Outputs               *[]string
+	app                   *a.App
+	env                   *a.Environment
 }
 
 func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
@@ -38,10 +36,9 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 		MisePackages:          []*resolver.PackageRef{},
 		SupportingAptPackages: []string{},
 		Assets:                map[string]string{},
-		// DependsOn:             []string{},
-		Outputs: &[]string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
-		app:     c.App,
-		env:     c.Env,
+		Outputs:               &[]string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
+		app:                   c.App,
+		env:                   c.Env,
 	}
 
 	c.Steps = append(c.Steps, step)
@@ -80,10 +77,6 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		return step, nil
 	}
 
-	// step.DependsOn = b.DependsOn
-
-	// miseCache := options.Caches.AddCache("mise", "/mise/cache")
-
 	step.StartingImage = BuilderBaseImage
 
 	// Setup mise
@@ -97,6 +90,10 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		"MISE_SHIMS_DIR":    "/mise/shims",
 		"MISE_INSTALLS_DIR": "/mise/installs",
 	})
+
+	if verbose := b.env.GetVariable("MISE_VERBOSE"); verbose != "" {
+		step.Variables["MISE_VERBOSE"] = verbose
+	}
 
 	// Add user mise config files if they exist
 	supportingMiseConfigFiles := b.GetSupportingMiseConfigFiles(b.app.Source)

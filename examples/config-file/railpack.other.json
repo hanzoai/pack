@@ -1,0 +1,13 @@
+{
+  "$schema": "../../test/schema.json",
+  "providers": [],
+  "aptPackages": ["cowsay"],
+  "steps": {
+    "build": {
+      "commands": [{ "path": "/usr/games" }, "cowsay hello"]
+    }
+  },
+  "start": {
+    "cmd": "cowsay hello"
+  }
+}

@@ -26,6 +26,7 @@ var buildkitCacheExport = flag.String("buildkit-cache-export", "", "BuildKit cac
 type TestCase struct {
 	ExpectedOutput string            `json:"expectedOutput"`
 	Envs           map[string]string `json:"envs"`
+	ConfigFilePath string            `json:"configFile"`
 }
 
 func TestExamplesIntegration(t *testing.T) {
@@ -73,7 +74,9 @@ func TestExamplesIntegration(t *testing.T) {
 				}
 
 				env := app.NewEnvironment(&testCase.Envs)
-				buildResult, err := core.GenerateBuildPlan(userApp, env, &core.GenerateBuildPlanOptions{})
+				buildResult, err := core.GenerateBuildPlan(userApp, env, &core.GenerateBuildPlanOptions{
+					ConfigFilePath: testCase.ConfigFilePath,
+				})
 				if err != nil {
 					t.Fatalf("failed to generate build plan: %v", err)
 				}

@@ -22,6 +22,7 @@ type GenerateBuildPlanOptions struct {
 	BuildCommand     string
 	StartCommand     string
 	PreviousVersions map[string]string
+	ConfigFilePath   string
 }
 
 type BuildResult struct {
@@ -107,7 +108,7 @@ func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOpt
 
 	envConfig := GenerateConfigFromEnvironment(app, env)
 
-	fileConfig, err := GenerateConfigFromFile(app, env)
+	fileConfig, err := GenerateConfigFromFile(app, env, options)
 	if err != nil {
 		return nil, err
 	}
@@ -118,13 +119,21 @@ func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOpt
 }
 
 // GenerateConfigFromFile generates a config from the config file
-func GenerateConfigFromFile(app *app.App, env *app.Environment) (*config.Config, error) {
+func GenerateConfigFromFile(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*config.Config, error) {
 	configFileName := defaultConfigFileName
+	if options.ConfigFilePath != "" {
+		configFileName = options.ConfigFilePath
+	}
+
 	if envConfigFileName, _ := env.GetConfigVariable("CONFIG_FILE"); envConfigFileName != "" {
 		configFileName = envConfigFileName
 	}
 
 	if !app.HasMatch(configFileName) {
+		if configFileName != defaultConfigFileName {
+			log.Debugf("Config file `%s` not found", configFileName)
+		}
+
 		return config.EmptyConfig(), nil
 	}
 
