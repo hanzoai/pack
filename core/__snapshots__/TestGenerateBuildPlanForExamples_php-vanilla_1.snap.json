@@ -1,0 +1,78 @@
+{
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
+ "caches": {
+  "apt": {
+   "directory": "/var/cache/apt",
+   "type": "locked"
+  },
+  "apt-lists": {
+   "directory": "/var/lib/apt/lists",
+   "type": "locked"
+  }
+ },
+ "start": {
+  "cmd": "bash /start-nginx.sh",
+  "outputs": [
+   "."
+  ]
+ },
+ "steps": [
+  {
+   "name": "packages:image",
+   "startingImage": "php:8.4.3-fpm",
+   "useSecrets": false
+  },
+  {
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
+   "commands": [
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y git nginx unzip zip'",
+     "customName": "install apt packages: git nginx unzip zip"
+    }
+   ],
+   "dependsOn": [
+    "packages:image"
+   ],
+   "name": "packages:apt:nginx",
+   "useSecrets": false
+  },
+  {
+   "assets": {
+    "nginx.conf": "worker_processes 5;\ndaemon off;\n\nworker_rlimit_nofile 8192;\n\nevents {\n  worker_connections  4096;\n}\n\nhttp {\n    include    /etc/nginx/mime.types;\n    index    index.html index.htm index.php;\n\n    default_type application/octet-stream;\n    log_format   main '$remote_addr - $remote_user [$time_local]  $status '\n        '\"$request\" $body_bytes_sent \"$http_referer\" '\n        '\"$http_user_agent\" \"$http_x_forwarded_for\"';\n\n    access_log /dev/stdout;\n    error_log /dev/stdout;\n    sendfile     on;\n    tcp_nopush   on;\n    server_names_hash_bucket_size 128; # this seems to be required for some vhosts\n\n    server {\n        listen 0.0.0.0:80;\n        listen [::]:80;\n\n        server_name localhost;\n\n        \n            root /app;\n        \n     \n        add_header X-Frame-Options \"SAMEORIGIN\";\n        add_header X-Content-Type-Options \"nosniff\";\n     \n        index index.php;\n     \n        charset utf-8;\n     \n        \n        \n        \n     \n        location = /favicon.ico { access_log off; log_not_found off; }\n        location = /robots.txt  { access_log off; log_not_found off; }\n     \n        \n     \n        location ~ \\.php$ {\n            fastcgi_pass 127.0.0.1:9000;\n            fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;\n            include /etc/nginx/fastcgi_params;\n            include /etc/nginx/fastcgi.conf;\n        }\n     \n        location ~ /\\.(?!well-known).* {\n            deny all;\n        }\n    }\n}\n",
+    "php-fpm.conf": "[www]\nlisten = 127.0.0.1:9000\nuser = nobody\npm = dynamic\npm.max_children = 50\npm.min_spare_servers = 4\npm.max_spare_servers = 32\npm.start_servers = 18\nclear_env = no\ncatch_workers_output = yes\n",
+    "start-nginx.sh": "#!/bin/bash\n\nset -e\n\nPORT=${PORT:-80}\n\n# Set the port in the nginx config\nsed -i \"s/80/$PORT/g\" /etc/nginx/railpack.conf\n\n# Set the storage permissions for Laravel\nif [ \"$IS_LARAVEL\" = \"true\" ]; then\n    chmod -R ugo+rw /app/storage\nfi\n\necho \"Starting Nginx on port $PORT\"\n\n# Start php-fpm and nginx\nphp-fpm --fpm-config /etc/php-fpm.conf \u0026 nginx -c /etc/nginx/railpack.conf\n"
+   },
+   "commands": [
+    {
+     "customName": "create nginx config",
+     "name": "nginx.conf",
+     "path": "/etc/nginx/railpack.conf"
+    },
+    {
+     "cmd": "nginx -t -c /etc/nginx/railpack.conf"
+    },
+    {
+     "customName": "create php-fpm config",
+     "name": "php-fpm.conf",
+     "path": "/etc/php-fpm.conf"
+    },
+    {
+     "customName": "create start nginx script",
+     "mode": 493,
+     "name": "start-nginx.sh",
+     "path": "/start-nginx.sh"
+    }
+   ],
+   "dependsOn": [
+    "packages:apt:nginx"
+   ],
+   "name": "nginx:setup"
+  },
+  {
+   "name": "packages:mise"
+  }
+ ]
+}

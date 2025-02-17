@@ -1,0 +1,129 @@
+{
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
+ "caches": {
+  "next-": {
+   "directory": "/app/.next/cache",
+   "type": "shared"
+  },
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
+  },
+  "npm-install": {
+   "directory": "/root/.npm",
+   "type": "shared"
+  }
+ },
+ "start": {
+  "cmd": "npm run start",
+  "outputs": [
+   "."
+  ],
+  "variables": {
+   "CI": "true",
+   "NODE_ENV": "production",
+   "NPM_CONFIG_PRODUCTION": "false",
+   "YARN_PRODUCTION": "false"
+  }
+ },
+ "steps": [
+  {
+   "assets": {
+    "mise.toml": "[mise.toml]"
+   },
+   "commands": [
+    {
+     "path": "/mise/shims"
+    },
+    {
+     "customName": "create mise config",
+     "name": "mise.toml",
+     "path": "/etc/mise/config.toml"
+    },
+    {
+     "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
+     "customName": "install mise packages: node, npm"
+    }
+   ],
+   "name": "packages:mise",
+   "outputs": [
+    "/mise/shims",
+    "/mise/installs",
+    "/usr/local/bin/mise",
+    "/etc/mise/config.toml",
+    "/root/.local/state/mise"
+   ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
+  },
+  {
+   "commands": [
+    {
+     "path": "/app/node_modules/.bin"
+    }
+   ],
+   "dependsOn": [
+    "packages:mise"
+   ],
+   "name": "setup",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "YARN_PRODUCTION": "false"
+   }
+  },
+  {
+   "caches": [
+    "npm-install"
+   ],
+   "commands": [
+    {
+     "dest": "package.json",
+     "src": "package.json"
+    },
+    {
+     "dest": "package-lock.json",
+     "src": "package-lock.json"
+    },
+    {
+     "cmd": "npm ci"
+    }
+   ],
+   "dependsOn": [
+    "packages:mise",
+    "setup"
+   ],
+   "name": "install"
+  },
+  {
+   "caches": [
+    "node-modules",
+    "next-"
+   ],
+   "commands": [
+    {
+     "dest": ".",
+     "src": "."
+    },
+    {
+     "cmd": "npm run build"
+    }
+   ],
+   "dependsOn": [
+    "install"
+   ],
+   "name": "build",
+   "variables": {
+    "HELLO": "world"
+   }
+  }
+ ]
+}

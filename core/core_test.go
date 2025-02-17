@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMain(m *testing.M) {
+	v := m.Run()
+	snaps.Clean(m, snaps.CleanOpts{Sort: true})
+	os.Exit(v)
+}
+
 func TestGenerateBuildPlanForExamples(t *testing.T) {
 	wd, err := os.Getwd()
 	require.NoError(t, err)
@@ -47,7 +53,7 @@ func TestGenerateBuildPlanForExamples(t *testing.T) {
 				}
 			}
 
-			snaps.MatchJSON(t, plan)
+			snaps.MatchStandaloneJSON(t, plan)
 		})
 	}
 }

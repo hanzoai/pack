@@ -1,0 +1,98 @@
+{
+ "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
+ "caches": {
+  "go-build": {
+   "directory": "/root/.cache/go-build",
+   "type": "shared"
+  }
+ },
+ "start": {
+  "baseImage": "alpine:latest",
+  "cmd": "./out",
+  "outputs": [
+   "out"
+  ]
+ },
+ "steps": [
+  {
+   "assets": {
+    "mise.toml": "[mise.toml]"
+   },
+   "commands": [
+    {
+     "path": "/mise/shims"
+    },
+    {
+     "customName": "create mise config",
+     "name": "mise.toml",
+     "path": "/etc/mise/config.toml"
+    },
+    {
+     "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
+     "customName": "install mise packages: go"
+    }
+   ],
+   "name": "packages:mise",
+   "outputs": [
+    "/mise/shims",
+    "/mise/installs",
+    "/usr/local/bin/mise",
+    "/etc/mise/config.toml",
+    "/root/.local/state/mise"
+   ],
+   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
+   "useSecrets": false,
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
+  },
+  {
+   "caches": [
+    "go-build"
+   ],
+   "commands": [
+    {
+     "dest": "go.mod",
+     "src": "go.mod"
+    },
+    {
+     "dest": "go.sum",
+     "src": "go.sum"
+    },
+    {
+     "cmd": "go mod download"
+    }
+   ],
+   "dependsOn": [
+    "packages:mise"
+   ],
+   "name": "install",
+   "variables": {
+    "CGO_ENABLED": "0"
+   }
+  },
+  {
+   "caches": [
+    "go-build"
+   ],
+   "commands": [
+    {
+     "dest": ".",
+     "src": "."
+    },
+    {
+     "cmd": "go build -o out"
+    }
+   ],
+   "dependsOn": [
+    "packages:mise",
+    "install"
+   ],
+   "name": "build"
+  }
+ ]
+}
