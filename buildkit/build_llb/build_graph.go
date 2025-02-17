@@ -415,7 +415,6 @@ func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunO
 	// Create a file that contains the secrets hash. Any layer that depends on this file will be invalidated when the secrets hash changes
 	secretsState := llb.Image("alpine:latest").File(llb.Mkfile("/secrets-hash", 0644, []byte(g.SecretsHash)), llb.WithCustomName("invalidate cache on secrets hash change"))
 
-	// If all secrets are included, we can just copy the secrets hash file to the new state
 	includesAllSecrets := false
 	for _, secret := range node.Step.Secrets {
 		if secret == "*" {
@@ -424,12 +423,12 @@ func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunO
 		}
 	}
 
+	// If all secrets are included, we can just copy the secrets hash file to the new state
 	if includesAllSecrets {
 		secretsState = llb.Scratch().File(llb.Copy(secretsState, "/secrets-hash", "/secrets-hash"))
 		opts = append(opts, llb.AddMount("/secrets-hash", secretsState))
 	} else {
 		// If not all secrets are included, we want to compute the hash of only the used secrets
-
 		secretsWithDollar := make([]string, len(node.Step.Secrets))
 		for i, secret := range node.Step.Secrets {
 			secretsWithDollar[i] = "$" + secret
