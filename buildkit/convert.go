@@ -2,6 +2,8 @@ package buildkit
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/moby/buildkit/client/llb"
@@ -15,6 +17,7 @@ type ConvertPlanOptions struct {
 	BuildPlatform BuildPlatform
 	SecretsHash   string
 	CacheKey      string
+	SessionID     string
 }
 
 const (
@@ -28,7 +31,9 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 
 	cacheStore := build_llb.NewBuildKitCacheStore(opts.CacheKey)
 
-	graph, err := build_llb.NewBuildGraph(plan, &state, cacheStore, opts.SecretsHash, &platform)
+	localState := llb.Local("context", llb.SharedKeyHint("local"), llb.SessionID(opts.SessionID))
+
+	graph, err := build_llb.NewBuildGraph(plan, &state, &localState, cacheStore, opts.SecretsHash, &platform)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -124,7 +129,8 @@ func getImageEnv(graphOutput *build_llb.BuildGraphOutput, plan *p.BuildPlan) []s
 	envMap["PATH"] = pathString
 
 	envVars := make([]string, 0, len(envMap))
-	for k, v := range envMap {
+	for _, k := range slices.Sorted(maps.Keys(envMap)) {
+		v := envMap[k]
 		envVars = append(envVars, fmt.Sprintf("%s=%s", k, v))
 	}
 

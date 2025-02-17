@@ -2,8 +2,10 @@ package build_llb
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/moby/buildkit/client/llb"
@@ -20,6 +22,7 @@ type BuildGraph struct {
 	SecretsHash string
 	Plan        *plan.BuildPlan
 	Platform    *specs.Platform
+	LocalState  *llb.State
 }
 
 type BuildGraphOutput struct {
@@ -27,7 +30,7 @@ type BuildGraphOutput struct {
 	GraphEnv BuildEnvironment
 }
 
-func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
+func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, localState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
 	g := &BuildGraph{
 		graph:       graph.NewGraph(),
 		BaseState:   baseState,
@@ -35,6 +38,7 @@ func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *Build
 		SecretsHash: secretsHash,
 		Plan:        plan,
 		Platform:    platform,
+		LocalState:  localState,
 	}
 
 	// Create a node for each step
@@ -279,13 +283,15 @@ func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *StepNode) (
 	}
 
 	// Add all the variables coming from the parent nodes
-	for k, v := range node.InputEnv.EnvVars {
+	for _, k := range slices.Sorted(maps.Keys(node.InputEnv.EnvVars)) {
+		v := node.InputEnv.EnvVars[k]
 		state = state.AddEnv(k, v)
 		node.OutputEnv.AddEnvVar(k, v)
 	}
 
 	// Add all the variables coming from the step
-	for k, v := range node.Step.Variables {
+	for _, k := range slices.Sorted(maps.Keys(node.Step.Variables)) {
+		v := node.Step.Variables[k]
 		state = state.AddEnv(k, v)
 		node.OutputEnv.AddEnvVar(k, v)
 	}
@@ -324,16 +330,16 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 	}
 
 	if node.Step.Secrets != nil && len(*node.Step.Secrets) > 0 {
-		secretOpts := []llb.RunOption{}
-		for _, secret := range g.Plan.Secrets {
-			secretOpts = append(secretOpts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
-		}
-		opts = append(opts, secretOpts...)
+		// secretOpts := []llb.RunOption{}
+		// for _, secret := range g.Plan.Secrets {
+		// 	secretOpts = append(secretOpts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
+		// }
+		// opts = append(opts, secretOpts...)
 
-		if g.SecretsHash != "" {
-			secretOpts = g.getSecretMountOptions(node, secretOpts)
-			opts = append(opts, secretOpts...)
-		}
+		// if g.SecretsHash != "" {
+		// 	secretOpts = g.getSecretMountOptions(node, secretOpts)
+		// 	opts = append(opts, secretOpts...)
+		// }
 	}
 
 	// if node.Step.UseSecrets == nil || *node.Step.UseSecrets { // default to using secrets
@@ -372,7 +378,7 @@ func (g *BuildGraph) convertPathCommandToLLB(node *StepNode, cmd plan.PathComman
 
 // convertCopyCommandToLLB converts a copy command to an LLB state
 func (g *BuildGraph) convertCopyCommandToLLB(cmd plan.CopyCommand, state llb.State) (llb.State, error) {
-	src := llb.Local("context")
+	src := *g.LocalState
 	if cmd.Image != "" {
 		src = llb.Image(cmd.Image, llb.Platform(*g.Platform))
 	}
