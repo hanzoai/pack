@@ -1,8 +1,10 @@
 package generate
 
 import (
+	"fmt"
 	"maps"
 
+	a "github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/utils"
 )
@@ -16,6 +18,8 @@ type CommandStepBuilder struct {
 	Variables   map[string]string
 	Caches      []string
 	Secrets     *[]string
+	app         *a.App
+	env         *a.Environment
 }
 
 func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
@@ -27,6 +31,8 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 		Variables:   map[string]string{},
 		Caches:      []string{},
 		Secrets:     &[]string{"*"},
+		app:         c.App,
+		env:         c.Env,
 	}
 
 	c.Steps = append(c.Steps, step)
@@ -70,6 +76,18 @@ func (b *CommandStepBuilder) AddPaths(paths []string) {
 		commands = append(commands, plan.NewPathCommand(path))
 	}
 	b.AddCommands(commands)
+}
+
+func (b *CommandStepBuilder) UseSecretsWithPrefix(prefix string) {
+	secrets := b.env.GetSecretsWithPrefix(prefix)
+	fmt.Printf("secrets: %v\n", secrets)
+	*b.Secrets = append(*b.Secrets, secrets...)
+}
+
+func (b *CommandStepBuilder) UseSecrets(secrets []string) {
+	if b.env.GetVariable("CI") != "" {
+		*b.Secrets = append(*b.Secrets, secrets...)
+	}
 }
 
 func (b *CommandStepBuilder) Name() string {

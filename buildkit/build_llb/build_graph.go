@@ -330,16 +330,16 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 	}
 
 	if node.Step.Secrets != nil && len(*node.Step.Secrets) > 0 {
-		// secretOpts := []llb.RunOption{}
-		// for _, secret := range g.Plan.Secrets {
-		// 	secretOpts = append(secretOpts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
-		// }
-		// opts = append(opts, secretOpts...)
+		secretOpts := []llb.RunOption{}
+		for _, secret := range g.Plan.Secrets {
+			secretOpts = append(secretOpts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
+		}
+		opts = append(opts, secretOpts...)
 
-		// if g.SecretsHash != "" {
-		// 	secretOpts = g.getSecretMountOptions(node, secretOpts)
-		// 	opts = append(opts, secretOpts...)
-		// }
+		if g.SecretsHash != "" {
+			secretOpts = g.getSecretMountOptions(node, secretOpts)
+			opts = append(opts, secretOpts...)
+		}
 	}
 
 	// if node.Step.UseSecrets == nil || *node.Step.UseSecrets { // default to using secrets
