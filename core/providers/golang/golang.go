@@ -112,11 +112,13 @@ func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.M
 
 	install := ctx.NewCommandStep("install")
 	install.AddCache(p.goBuildCache(ctx))
-	install.AddCommands([]plan.Command{
-		plan.NewCopyCommand("go.mod"),
-		plan.NewCopyCommand("go.sum"),
-		plan.NewExecCommand("go mod download"),
-	})
+	install.AddCommand(plan.NewCopyCommand("go.mod"))
+
+	if ctx.App.HasMatch("go.sum") {
+		install.AddCommand(plan.NewCopyCommand("go.sum"))
+	}
+
+	install.AddCommand(plan.NewExecCommand("go mod download"))
 
 	// If CGO is enabled, we need to install the gcc packages
 	if p.hasCGOEnabled(ctx) {
