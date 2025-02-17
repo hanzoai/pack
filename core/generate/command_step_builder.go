@@ -3,6 +3,7 @@ package generate
 import (
 	"maps"
 
+	a "github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/utils"
 )
@@ -10,23 +11,27 @@ import (
 type CommandStepBuilder struct {
 	DisplayName string
 	DependsOn   []string
-	Commands    *[]plan.Command
-	Outputs     *[]string
+	Commands    []plan.Command
+	Outputs     []string
 	Assets      map[string]string
 	Variables   map[string]string
 	Caches      []string
-	UseSecrets  bool
+	Secrets     []string
+	app         *a.App
+	env         *a.Environment
 }
 
 func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 	step := &CommandStepBuilder{
 		DisplayName: c.GetStepName(name),
 		DependsOn:   []string{MisePackageStepName},
-		Commands:    &[]plan.Command{},
+		Commands:    []plan.Command{},
 		Assets:      map[string]string{},
 		Variables:   map[string]string{},
 		Caches:      []string{},
-		UseSecrets:  true,
+		Secrets:     []string{"*"},
+		app:         c.App,
+		env:         c.Env,
 	}
 
 	c.Steps = append(c.Steps, step)
@@ -47,17 +52,14 @@ func (b *CommandStepBuilder) AddCache(name string) {
 }
 
 func (b *CommandStepBuilder) AddCommand(command plan.Command) {
-	if b.Commands == nil {
-		b.Commands = &[]plan.Command{}
-	}
-	*b.Commands = append(*b.Commands, command)
+	b.AddCommands([]plan.Command{command})
 }
 
 func (b *CommandStepBuilder) AddCommands(commands []plan.Command) {
 	if b.Commands == nil {
-		b.Commands = &[]plan.Command{}
+		b.Commands = []plan.Command{}
 	}
-	*b.Commands = append(*b.Commands, commands...)
+	b.Commands = append(b.Commands, commands...)
 }
 
 func (b *CommandStepBuilder) AddEnvVars(envVars map[string]string) {
@@ -70,6 +72,23 @@ func (b *CommandStepBuilder) AddPaths(paths []string) {
 		commands = append(commands, plan.NewPathCommand(path))
 	}
 	b.AddCommands(commands)
+}
+
+func (b *CommandStepBuilder) UseSecretsWithPrefixes(prefixes []string) {
+	for _, prefix := range prefixes {
+		b.UseSecretsWithPrefix(prefix)
+	}
+}
+
+func (b *CommandStepBuilder) UseSecretsWithPrefix(prefix string) {
+	secrets := b.env.GetSecretsWithPrefix(prefix)
+	b.Secrets = append(b.Secrets, secrets...)
+}
+
+func (b *CommandStepBuilder) UseSecrets(secrets []string) {
+	if b.env.GetVariable("CI") != "" {
+		b.Secrets = append(b.Secrets, secrets...)
+	}
 }
 
 func (b *CommandStepBuilder) Name() string {
@@ -85,10 +104,7 @@ func (b *CommandStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error
 	step.Assets = b.Assets
 	step.Caches = b.Caches
 	step.Variables = b.Variables
-
-	if !b.UseSecrets {
-		step.UseSecrets = &b.UseSecrets
-	}
+	step.Secrets = b.Secrets
 
 	return step, nil
 }

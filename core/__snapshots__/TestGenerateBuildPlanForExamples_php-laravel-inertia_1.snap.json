@@ -31,8 +31,8 @@
  "steps": [
   {
    "name": "packages:image",
-   "startingImage": "php:8.2.27-fpm",
-   "useSecrets": false
+   "secrets": [],
+   "startingImage": "php:8.2.27-fpm"
   },
   {
    "caches": [
@@ -49,7 +49,7 @@
     "packages:image"
    ],
    "name": "packages:apt:nginx",
-   "useSecrets": false
+   "secrets": []
   },
   {
    "caches": [
@@ -73,6 +73,9 @@
     "packages:apt:nginx"
    ],
    "name": "install",
+   "secrets": [
+    "*"
+   ],
    "variables": {
     "COMPOSER_CACHE_DIR": "/opt/cache/composer"
    }
@@ -103,8 +106,8 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "secrets": [],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false,
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -123,6 +126,7 @@
     "packages:mise"
    ],
    "name": "setup:node",
+   "secrets": [],
    "variables": {
     "CI": "true",
     "NODE_ENV": "production",
@@ -151,7 +155,8 @@
     "packages:mise",
     "setup:node"
    ],
-   "name": "install:node"
+   "name": "install:node",
+   "secrets": []
   },
   {
    "caches": [
@@ -173,9 +178,9 @@
    "outputs": [
     "/app"
    ],
-   "variables": {
-    "HELLO": "world"
-   }
+   "secrets": [
+    "*"
+   ]
   },
   {
    "assets": {
@@ -208,6 +213,9 @@
     "packages:apt:nginx"
    ],
    "name": "nginx:setup",
+   "secrets": [
+    "*"
+   ],
    "variables": {
     "IS_LARAVEL": "true"
    }

@@ -92,11 +92,12 @@ func TestExamplesIntegration(t *testing.T) {
 					ImageName:   imageName,
 					ImportCache: *buildkitCacheImport,
 					ExportCache: *buildkitCacheExport,
+					Secrets:     testCase.Envs,
 				}); err != nil {
 					t.Fatalf("failed to build image: %v", err)
 				}
 
-				if err := runContainerWithTimeout(t, imageName, testCase.ExpectedOutput); err != nil {
+				if err := runContainerWithTimeout(t, imageName, testCase.ExpectedOutput, testCase.Envs); err != nil {
 					t.Fatal(err)
 				}
 			})
@@ -110,13 +111,21 @@ func cmdDoneChan(cmd *exec.Cmd) chan error {
 	return ch
 }
 
-func runContainerWithTimeout(t *testing.T, imageName, expectedOutput string) error {
+func runContainerWithTimeout(t *testing.T, imageName, expectedOutput string, envs map[string]string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
 	// Generate a unique container name so we can reference it later for cleanup
 	containerName := fmt.Sprintf("railpack-test-%s", uuid.New().String())
-	cmd := exec.CommandContext(ctx, "docker", "run", "--rm", "--name", containerName, imageName)
+
+	// Build docker run command with environment variables
+	args := []string{"run", "--rm", "--name", containerName}
+	for key, value := range envs {
+		args = append(args, "-e", fmt.Sprintf("%s=%s", key, value))
+	}
+	args = append(args, imageName)
+
+	cmd := exec.CommandContext(ctx, "docker", args...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create stdout pipe: %v", err)

@@ -66,6 +66,7 @@ func Build(ctx context.Context, c client.Client) (*client.Result, error) {
 		BuildPlatform: buildPlatform,
 		SecretsHash:   secretsHash,
 		CacheKey:      cacheKey,
+		SessionID:     c.BuildOpts().SessionID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error converting plan to LLB: %w", err)

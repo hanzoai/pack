@@ -14,13 +14,13 @@ type Step struct {
 	DependsOn []string `json:"dependsOn,omitempty" jsonschema:"description=The steps that this step depends on. The step will only run after all the steps in DependsOn have run"`
 
 	// The commands to run in this step
-	Commands *[]Command `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
+	Commands []Command `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
 
-	// Whether the commands executed in this step should have access to secrets
-	UseSecrets *bool `json:"useSecrets,omitempty" jsonschema:"description=Whether the commands executed in this step should have access to secrets"`
+	// The secrets that this step uses
+	Secrets []string `json:"secrets" jsonschema:"description=The secrets that this step uses"`
 
 	// Paths that this step outputs. Only these paths will be available to the next step
-	Outputs *[]string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
+	Outputs []string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
 
 	// The assets available to this step. The key is the name of the asset that is referenced in a file command
 	Assets map[string]string `json:"assets,omitempty" jsonschema:"description=The assets available to this step. The key is the name of the asset that is referenced in a file command"`
@@ -42,6 +42,7 @@ func NewStep(name string) *Step {
 		Name:      name,
 		Assets:    make(map[string]string),
 		Variables: make(map[string]string),
+		Secrets:   []string{"*"}, // default to using all secrets
 	}
 }
 
@@ -51,9 +52,9 @@ func (s *Step) DependOn(name string) {
 
 func (s *Step) AddCommands(commands []Command) {
 	if s.Commands == nil {
-		s.Commands = &[]Command{}
+		s.Commands = []Command{}
 	}
-	*s.Commands = append(*s.Commands, commands...)
+	s.Commands = append(s.Commands, commands...)
 }
 
 func (s *Step) UnmarshalJSON(data []byte) error {
@@ -70,13 +71,13 @@ func (s *Step) UnmarshalJSON(data []byte) error {
 	}
 
 	if aux.Commands != nil {
-		s.Commands = &[]Command{}
+		s.Commands = []Command{}
 		for _, rawCmd := range *aux.Commands {
 			cmd, err := UnmarshalCommand(rawCmd)
 			if err != nil {
 				return err
 			}
-			*s.Commands = append(*s.Commands, cmd)
+			s.Commands = append(s.Commands, cmd)
 		}
 	}
 

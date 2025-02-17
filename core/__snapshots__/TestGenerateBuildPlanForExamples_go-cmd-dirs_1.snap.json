@@ -43,8 +43,8 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "secrets": [],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false,
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -74,6 +74,9 @@
     "packages:mise"
    ],
    "name": "install",
+   "secrets": [
+    "*"
+   ],
    "variables": {
     "CGO_ENABLED": "0"
    }
@@ -95,7 +98,10 @@
     "packages:mise",
     "install"
    ],
-   "name": "build"
+   "name": "build",
+   "secrets": [
+    "*"
+   ]
   }
  ]
 }

@@ -19,8 +19,8 @@
  "steps": [
   {
    "name": "packages:image",
-   "startingImage": "php:8.4.3-fpm",
-   "useSecrets": false
+   "secrets": [],
+   "startingImage": "php:8.4.3-fpm"
   },
   {
    "caches": [
@@ -37,7 +37,7 @@
     "packages:image"
    ],
    "name": "packages:apt:nginx",
-   "useSecrets": false
+   "secrets": []
   },
   {
    "assets": {
@@ -69,10 +69,16 @@
    "dependsOn": [
     "packages:apt:nginx"
    ],
-   "name": "nginx:setup"
+   "name": "nginx:setup",
+   "secrets": [
+    "*"
+   ]
   },
   {
-   "name": "packages:mise"
+   "name": "packages:mise",
+   "secrets": [
+    "*"
+   ]
   }
  ]
 }

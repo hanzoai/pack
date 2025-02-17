@@ -57,8 +57,8 @@
     "/etc/mise/config.toml",
     "/root/.local/state/mise"
    ],
+   "secrets": [],
    "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "useSecrets": false,
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -79,7 +79,7 @@
     }
    ],
    "name": "packages:apt:test",
-   "useSecrets": false
+   "secrets": []
   },
   {
    "commands": [
@@ -93,6 +93,9 @@
    "name": "install",
    "outputs": [
     "node_modules"
+   ],
+   "secrets": [
+    "*"
    ]
   },
   {
@@ -106,7 +109,10 @@
     "install",
     "packages:apt:config"
    ],
-   "name": "build"
+   "name": "build",
+   "secrets": [
+    "*"
+   ]
   },
   {
    "caches": [
@@ -120,7 +126,7 @@
     }
    ],
    "name": "packages:apt:config",
-   "useSecrets": false
+   "secrets": []
   }
  ]
 }

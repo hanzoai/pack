@@ -2,8 +2,10 @@ package build_llb
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/moby/buildkit/client/llb"
@@ -20,6 +22,7 @@ type BuildGraph struct {
 	SecretsHash string
 	Plan        *plan.BuildPlan
 	Platform    *specs.Platform
+	LocalState  *llb.State
 }
 
 type BuildGraphOutput struct {
@@ -27,7 +30,7 @@ type BuildGraphOutput struct {
 	GraphEnv BuildEnvironment
 }
 
-func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
+func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, localState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
 	g := &BuildGraph{
 		graph:       graph.NewGraph(),
 		BaseState:   baseState,
@@ -35,6 +38,7 @@ func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, cacheStore *Build
 		SecretsHash: secretsHash,
 		Plan:        plan,
 		Platform:    platform,
+		LocalState:  localState,
 	}
 
 	// Create a node for each step
@@ -233,8 +237,8 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 	}
 
 	// Process the step commands
-	if node.Step.Commands != nil {
-		for _, cmd := range *node.Step.Commands {
+	if len(node.Step.Commands) > 0 {
+		for _, cmd := range node.Step.Commands {
 			var err error
 			state, err = g.convertCommandToLLB(node, cmd, state, node.Step)
 			if err != nil {
@@ -243,10 +247,10 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 		}
 	}
 
-	if node.Step.Outputs != nil {
+	if len(node.Step.Outputs) > 0 {
 		result := llb.Scratch()
 
-		for _, output := range *node.Step.Outputs {
+		for _, output := range node.Step.Outputs {
 			result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
 				CreateDestPath:      true,
 				AllowWildcard:       true,
@@ -279,13 +283,15 @@ func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *StepNode) (
 	}
 
 	// Add all the variables coming from the parent nodes
-	for k, v := range node.InputEnv.EnvVars {
+	for _, k := range slices.Sorted(maps.Keys(node.InputEnv.EnvVars)) {
+		v := node.InputEnv.EnvVars[k]
 		state = state.AddEnv(k, v)
 		node.OutputEnv.AddEnvVar(k, v)
 	}
 
 	// Add all the variables coming from the step
-	for k, v := range node.Step.Variables {
+	for _, k := range slices.Sorted(maps.Keys(node.Step.Variables)) {
+		v := node.Step.Variables[k]
 		state = state.AddEnv(k, v)
 		node.OutputEnv.AddEnvVar(k, v)
 	}
@@ -323,15 +329,16 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 		opts = append(opts, llb.WithCustomName(cmd.CustomName))
 	}
 
-	if node.Step.UseSecrets == nil || *node.Step.UseSecrets { // default to using secrets
+	if len(node.Step.Secrets) > 0 {
+		secretOpts := []llb.RunOption{}
 		for _, secret := range g.Plan.Secrets {
-			opts = append(opts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
+			secretOpts = append(secretOpts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
 		}
+		opts = append(opts, secretOpts...)
 
-		// If there is a secrets hash, add a mount to invalidate the cache if the secrets hash changes
 		if g.SecretsHash != "" {
-			opts = append(opts, llb.AddMount("/cache-invalidate",
-				llb.Scratch().File(llb.Mkfile("secrets-hash", 0644, []byte(g.SecretsHash)), llb.WithCustomName("invalidate cache on secrets hash change"))))
+			secretOpts = g.getSecretMountOptions(node, secretOpts)
+			opts = append(opts, secretOpts...)
 		}
 	}
 
@@ -359,7 +366,7 @@ func (g *BuildGraph) convertPathCommandToLLB(node *StepNode, cmd plan.PathComman
 
 // convertCopyCommandToLLB converts a copy command to an LLB state
 func (g *BuildGraph) convertCopyCommandToLLB(cmd plan.CopyCommand, state llb.State) (llb.State, error) {
-	src := llb.Local("context")
+	src := *g.LocalState
 	if cmd.Image != "" {
 		src = llb.Image(cmd.Image, llb.Platform(*g.Platform))
 	}
@@ -400,6 +407,48 @@ func (g *BuildGraph) convertFileCommandToLLB(cmd plan.FileCommand, state llb.Sta
 	}
 
 	return s, nil
+}
+
+func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunOption) []llb.RunOption {
+	opts := []llb.RunOption{}
+
+	// Create a file that contains the secrets hash. Any layer that depends on this file will be invalidated when the secrets hash changes
+	secretsState := llb.Image("alpine:latest").File(llb.Mkfile("/secrets-hash", 0644, []byte(g.SecretsHash)), llb.WithCustomName("invalidate cache on secrets hash change"))
+
+	// If all secrets are included, we can just copy the secrets hash file to the new state
+	includesAllSecrets := false
+	for _, secret := range node.Step.Secrets {
+		if secret == "*" {
+			includesAllSecrets = true
+			break
+		}
+	}
+
+	if includesAllSecrets {
+		secretsState = llb.Scratch().File(llb.Copy(secretsState, "/secrets-hash", "/secrets-hash"))
+		opts = append(opts, llb.AddMount("/secrets-hash", secretsState))
+	} else {
+		// If not all secrets are included, we want to compute the hash of only the used secrets
+
+		secretsWithDollar := make([]string, len(node.Step.Secrets))
+		for i, secret := range node.Step.Secrets {
+			secretsWithDollar[i] = "$" + secret
+		}
+		secretsString := strings.Join(secretsWithDollar, " ")
+
+		// Hash all the secrets into a single file
+		usedSecretOpts := []llb.RunOption{llb.Shlexf("sh -c 'echo \"%s\" | sha256sum > /used-secrets-hash'", secretsString), llb.WithCustomName("hash used secrets")}
+		usedSecretOpts = append(usedSecretOpts, secretOpts...) // we need to mount the secrets so they can be used in the shell command
+		secretsState = secretsState.Run(usedSecretOpts...).Root()
+
+		// Copy just the used secrets hash file to a new FS that will be mounted to the step state
+		secretsState = llb.Scratch().File(llb.Copy(secretsState, "/used-secrets-hash", "/used-secrets-hash"))
+
+		// Add the secrets state as a mount to the step state
+		opts = append(opts, llb.AddMount("/secrets-hash", secretsState))
+	}
+
+	return opts
 }
 
 // getCacheMountOptions returns the llb.RunOption slice for the given cache keys

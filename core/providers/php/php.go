@@ -77,7 +77,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		}
 
 		// Only copy the changes to the app, not the entire rest of the file system
-		nodeBuild.Outputs = &[]string{"/app"}
+		nodeBuild.Outputs = []string{"/app"}
 
 		ctx.ExitSubContext()
 	}

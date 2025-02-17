@@ -207,9 +207,13 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 			commandStepBuilder.Assets[k] = v
 		}
 
-		if configStep.UseSecrets != nil {
-			commandStepBuilder.UseSecrets = *configStep.UseSecrets
+		if configStep.Secrets != nil {
+			commandStepBuilder.Secrets = configStep.Secrets
 		}
+
+		// if configStep.UseSecrets != nil {
+		// 	commandStepBuilder.UseSecrets = *configStep.UseSecrets
+		// }
 
 		if len(configStep.Caches) > 0 {
 			commandStepBuilder.Caches = configStep.Caches

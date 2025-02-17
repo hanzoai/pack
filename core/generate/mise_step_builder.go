@@ -24,7 +24,7 @@ type MiseStepBuilder struct {
 	MisePackages          []*resolver.PackageRef
 	SupportingMiseFiles   []string
 	Assets                map[string]string
-	Outputs               *[]string
+	Outputs               []string
 	app                   *a.App
 	env                   *a.Environment
 }
@@ -36,7 +36,7 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 		MisePackages:          []*resolver.PackageRef{},
 		SupportingAptPackages: []string{},
 		Assets:                map[string]string{},
-		Outputs:               &[]string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
+		Outputs:               []string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
 		app:                   c.App,
 		env:                   c.Env,
 	}
@@ -103,7 +103,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		})
 
 		// We want to make sure the file is copied into the next step
-		*b.Outputs = append(*b.Outputs, "/app/"+file)
+		b.Outputs = append(b.Outputs, "/app/"+file)
 	}
 
 	// Setup apt commands
@@ -149,7 +149,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 
 	step.Assets = b.Assets
 	step.Outputs = b.Outputs
-	step.UseSecrets = &[]bool{false}[0]
+	step.Secrets = []string{}
 
 	return step, nil
 }

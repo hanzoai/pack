@@ -75,7 +75,6 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.Co
 	packageManager := p.getPackageManager(ctx.App)
 	build := ctx.NewCommandStep("build")
 	build.DependsOn = []string{install.DisplayName}
-	build.AddEnvVars(map[string]string{"HELLO": "world"})
 
 	_, ok := packageJson.Scripts["build"]
 	if ok {
@@ -124,12 +123,17 @@ func (p *NodeProvider) Install(ctx *generate.GenerateContext, packages *generate
 		})
 		corepackStepName = corepackStep.DisplayName
 		corepackStep.DependsOn = append(corepackStep.DependsOn, setup.DisplayName)
+		corepackStep.Secrets = []string{} // Don't include any secrets in this step
 	}
 
 	pkgManager := p.getPackageManager(ctx.App)
 
 	install := ctx.NewCommandStep("install")
 	install.DependsOn = append(install.DependsOn, []string{packages.DisplayName, setup.DisplayName}...)
+
+	// We only want to invalidate the install step when these secrets change, not all of them
+	install.Secrets = []string{}
+	install.UseSecretsWithPrefixes([]string{"NODE", "NPM", "BUN", "PNPM", "YARN", "CI"})
 
 	pkgManager.installDependencies(ctx, packageJson, install)
 
@@ -144,6 +148,7 @@ func (p *NodeProvider) Setup(ctx *generate.GenerateContext) (*generate.CommandSt
 	setup := ctx.NewCommandStep("setup")
 	setup.AddEnvVars(p.GetNodeEnvVars(ctx))
 	setup.AddPaths([]string{"/app/node_modules/.bin"})
+	setup.Secrets = []string{}
 
 	return setup, nil
 }
