@@ -155,7 +155,7 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 
 	if installCmdVar, _ := env.GetConfigVariable("INSTALL_CMD"); installCmdVar != "" {
 		installStep := config.GetOrCreateStep("install")
-		installStep.Commands = []plan.Command{plan.NewExecCommand(installCmdVar)}
+		installStep.Commands = []plan.Command{plan.NewExecShellCommand(installCmdVar, plan.ExecOptions{CustomName: installCmdVar})}
 		installStep.DependsOn = append(installStep.DependsOn, "packages")
 	}
 
@@ -164,7 +164,7 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 		buildStep.Commands = []plan.Command{
 			// We want to run the build command with all the files in the current directory
 			plan.NewCopyCommand("."),
-			plan.NewExecCommand(buildCmdVar),
+			plan.NewExecShellCommand(buildCmdVar, plan.ExecOptions{CustomName: buildCmdVar}),
 		}
 		buildStep.DependsOn = append(buildStep.DependsOn, "install")
 	}
@@ -204,7 +204,7 @@ func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config
 		buildStep := config.GetOrCreateStep("build")
 		buildStep.Commands = []plan.Command{
 			plan.NewCopyCommand("."),
-			plan.NewExecCommand(options.BuildCommand),
+			plan.NewExecShellCommand(options.BuildCommand, plan.ExecOptions{CustomName: options.BuildCommand}),
 		}
 		buildStep.DependsOn = append(buildStep.DependsOn, "install")
 	}
