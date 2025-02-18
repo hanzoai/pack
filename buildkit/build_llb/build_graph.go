@@ -139,74 +139,27 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 // mergeNodes merges the states of the given nodes into a single state
 // This essentially creates a scratch file system and then copies the contents of each node's state into it
 func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
-	if len(nodes) == 0 {
-		return llb.Scratch()
+	stateNames := []string{}
+	for _, node := range nodes {
+		stateNames = append(stateNames, node.Step.Name)
 	}
 
-	if len(nodes) == 1 {
-		return *nodes[0].State
+	states := []llb.State{}
+	for _, node := range nodes {
+		states = append(states, *node.State)
 	}
 
-	// Create a base state with the first node
-	result := *nodes[0].State
-
-	// Selectively copy from subsequent nodes to minimize duplication
-	for i := 1; i < len(nodes); i++ {
-		// Use diff-based copy to only add files that don't exist or have changed
-		result = result.File(llb.Copy(*nodes[i].State, "/", "/", &llb.CopyInfo{
+	result := llb.Scratch()
+	for i, state := range states {
+		result = result.File(llb.Copy(state, "/", "/", &llb.CopyInfo{
 			CreateDestPath: true,
 			FollowSymlinks: true,
 			AllowWildcard:  true,
-		}), llb.WithCustomNamef("copy from %s", nodes[i].Step.Name))
+		}), llb.WithCustomNamef("copy from %s", stateNames[i]))
 	}
 
 	return result
-
-	// if len(nodes) == 1 {
-	// 	return *nodes[0].State
-	// }
-
-	// // Prepare merged states directly for llb.Merge
-	// mergeStates := make([]llb.State, len(nodes))
-	// mergeLabels := make([]string, len(nodes))
-
-	// for i, node := range nodes {
-	// 	mergeStates[i] = *node.State
-	// 	mergeLabels[i] = node.Step.Name
-	// }
-
-	// // Construct metadata for debugging/tracing
-	// nodesInfo := strings.Join(mergeLabels, ", ")
-
-	// // Use llb.Merge directly instead of sequential copies
-	// result := llb.Merge(mergeStates,
-	// 	llb.WithCustomNamef("merge nodes: %s", nodesInfo))
-
-	// return result
 }
-
-// func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
-// 	stateNames := []string{}
-// 	for _, node := range nodes {
-// 		stateNames = append(stateNames, node.Step.Name)
-// 	}
-
-// 	states := []llb.State{}
-// 	for _, node := range nodes {
-// 		states = append(states, *node.State)
-// 	}
-
-// 	result := llb.Scratch()
-// 	for i, state := range states {
-// 		result = result.File(llb.Copy(state, "/", "/", &llb.CopyInfo{
-// 			CreateDestPath: true,
-// 			FollowSymlinks: true,
-// 			AllowWildcard:  true,
-// 		}), llb.WithCustomNamef("copy from %s", stateNames[i]))
-// 	}
-
-// 	return result
-// }
 
 // processNode processes a node and its parents to determine the state to build upon
 func (g *BuildGraph) processNode(node *StepNode) error {
