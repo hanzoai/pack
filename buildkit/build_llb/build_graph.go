@@ -16,13 +16,15 @@ import (
 )
 
 type BuildGraph struct {
-	graph       *graph.Graph
-	BaseState   *llb.State
-	CacheStore  *BuildKitCacheStore
-	SecretsHash string
-	Plan        *plan.BuildPlan
-	Platform    *specs.Platform
-	LocalState  *llb.State
+	graph      *graph.Graph
+	BaseState  *llb.State
+	CacheStore *BuildKitCacheStore
+	Plan       *plan.BuildPlan
+	Platform   *specs.Platform
+	LocalState *llb.State
+
+	secretsFile     *llb.State
+	usedSecretsBase *llb.State
 }
 
 type BuildGraphOutput struct {
@@ -31,14 +33,24 @@ type BuildGraphOutput struct {
 }
 
 func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, localState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
+
+	var secretsFile *llb.State
+	if secretsHash != "" {
+		st := llb.Scratch().File(llb.Mkfile("/secrets-hash", 0644, []byte(secretsHash)), llb.WithCustomName("[railpack] secrets hash"))
+		secretsFile = &st
+	}
+	usedSecretsBase := llb.Image("alpine:latest", llb.WithCustomName("[railpack] loading secrets"))
+
 	g := &BuildGraph{
-		graph:       graph.NewGraph(),
-		BaseState:   baseState,
-		CacheStore:  cacheStore,
-		SecretsHash: secretsHash,
-		Plan:        plan,
-		Platform:    platform,
-		LocalState:  localState,
+		graph:      graph.NewGraph(),
+		BaseState:  baseState,
+		CacheStore: cacheStore,
+		Plan:       plan,
+		Platform:   platform,
+		LocalState: localState,
+
+		secretsFile:     secretsFile,
+		usedSecretsBase: &usedSecretsBase,
 	}
 
 	// Create a node for each step
@@ -336,7 +348,7 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 		}
 		opts = append(opts, secretOpts...)
 
-		if g.SecretsHash != "" {
+		if g.secretsFile != nil {
 			secretOpts = g.getSecretMountOptions(node, secretOpts)
 			opts = append(opts, secretOpts...)
 		}
@@ -412,9 +424,6 @@ func (g *BuildGraph) convertFileCommandToLLB(cmd plan.FileCommand, state llb.Sta
 func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunOption) []llb.RunOption {
 	opts := []llb.RunOption{}
 
-	// Create a file that contains the secrets hash. Any layer that depends on this file will be invalidated when the secrets hash changes
-	secretsState := llb.Image("alpine:latest").File(llb.Mkfile("/secrets-hash", 0644, []byte(g.SecretsHash)), llb.WithCustomName("invalidate cache on secrets hash change"))
-
 	includesAllSecrets := false
 	for _, secret := range node.Step.Secrets {
 		if secret == "*" {
@@ -425,8 +434,7 @@ func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunO
 
 	// If all secrets are included, we can just copy the secrets hash file to the new state
 	if includesAllSecrets {
-		secretsState = llb.Scratch().File(llb.Copy(secretsState, "/secrets-hash", "/secrets-hash"))
-		opts = append(opts, llb.AddMount("/secrets-hash", secretsState))
+		opts = append(opts, llb.AddMount("/secrets-hash", *g.secretsFile))
 	} else {
 		// If not all secrets are included, we want to compute the hash of only the used secrets
 		secretsWithDollar := make([]string, len(node.Step.Secrets))
@@ -437,16 +445,19 @@ func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunO
 		}
 		secretsString := strings.Join(secretsWithDollar, " ")
 
+		stateWithHashFile := *g.usedSecretsBase
+		stateWithHashFile = stateWithHashFile.File(llb.Copy(*g.secretsFile, "/secrets-hash", "/secrets-hash"), llb.WithCustomName("[railpack] copy secrets hash"))
+
 		// Hash all the secrets into a single file
-		usedSecretOpts := []llb.RunOption{llb.Shlexf("sh -c 'echo \"%s\" | sha256sum > /used-secrets-hash'", secretsString), llb.WithCustomName("hash used secrets")}
+		usedSecretOpts := []llb.RunOption{llb.Shlexf("sh -c 'echo \"%s\" | sha256sum > /used-secrets-hash'", secretsString), llb.WithCustomName("[railpack] hash used secrets")}
 		usedSecretOpts = append(usedSecretOpts, secretOpts...) // we need to mount the secrets so they can be used in the shell command
-		secretsState = secretsState.Run(usedSecretOpts...).Root()
+		usedSecretsState := stateWithHashFile.Run(usedSecretOpts...).Root()
 
 		// Copy just the used secrets hash file to a new FS that will be mounted to the step state
-		secretsState = llb.Scratch().File(llb.Copy(secretsState, "/used-secrets-hash", "/used-secrets-hash"))
+		usedSecretsState = llb.Scratch().File(llb.Copy(usedSecretsState, "/used-secrets-hash", "/used-secrets-hash"), llb.WithCustomName("[railpack] copy used secrets hash"))
 
-		// Add the secrets state as a mount to the step state
-		opts = append(opts, llb.AddMount("/secrets-hash", secretsState))
+		// Add the used secrets hash file as a mount to the step state
+		opts = append(opts, llb.AddMount("/used-secrets-hash", usedSecretsState))
 	}
 
 	return opts
