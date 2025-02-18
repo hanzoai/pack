@@ -80,10 +80,11 @@ func (p PackageManager) InstallDeps(ctx *generate.GenerateContext, install *gene
 		install.AddCache(ctx.Caches.AddCache("pnpm-install", "/root/.local/share/pnpm/store/v3"))
 	case PackageManagerBun:
 		install.AddCommand(plan.NewExecCommand("bun install --frozen-lockfile"))
+		// TODO: We should also cache this for the build step
 		install.AddCache(ctx.Caches.AddCache("bun-install", "/root/.bun/install/cache"))
 	case PackageManagerYarn1:
 		install.AddCommand(plan.NewExecCommand("yarn install --frozen-lockfile"))
-		install.AddCache(ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn"))
+		install.AddCache(ctx.Caches.AddCacheWithType("yarn-install", "/usr/local/share/.cache/yarn", plan.CacheTypeLocked))
 	case PackageManagerYarn2:
 		install.AddCommand(plan.NewExecCommand("yarn install --check-cache"))
 		install.AddCache(ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn"))

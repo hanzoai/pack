@@ -22,8 +22,13 @@ func NewCacheContext() *CacheContext {
 }
 
 func (c *CacheContext) AddCache(name string, directory string) string {
+	return c.AddCacheWithType(name, directory, plan.CacheTypeShared)
+}
+
+func (c *CacheContext) AddCacheWithType(name string, directory string, cacheType string) string {
 	sanitizedName := sanitizeCacheName(name)
 	c.Caches[sanitizedName] = plan.NewCache(directory)
+	c.Caches[sanitizedName].Type = cacheType
 	return sanitizedName
 }
 
