@@ -33,7 +33,6 @@ type BuildGraphOutput struct {
 }
 
 func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, localState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
-
 	var secretsFile *llb.State
 	if secretsHash != "" {
 		st := llb.Scratch().File(llb.Mkfile("/secrets-hash", 0644, []byte(secretsHash)), llb.WithCustomName("[railpack] secrets hash"))
@@ -140,27 +139,51 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 // mergeNodes merges the states of the given nodes into a single state
 // This essentially creates a scratch file system and then copies the contents of each node's state into it
 func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
-	stateNames := []string{}
-	for _, node := range nodes {
-		stateNames = append(stateNames, node.Step.Name)
+	if len(nodes) == 1 {
+		return *nodes[0].State
 	}
 
-	states := []llb.State{}
-	for _, node := range nodes {
-		states = append(states, *node.State)
+	// Prepare merged states directly for llb.Merge
+	mergeStates := make([]llb.State, len(nodes))
+	mergeLabels := make([]string, len(nodes))
+
+	for i, node := range nodes {
+		mergeStates[i] = *node.State
+		mergeLabels[i] = node.Step.Name
 	}
 
-	result := llb.Scratch()
-	for i, state := range states {
-		result = result.File(llb.Copy(state, "/", "/", &llb.CopyInfo{
-			CreateDestPath: true,
-			FollowSymlinks: true,
-			AllowWildcard:  true,
-		}), llb.WithCustomNamef("copy from %s", stateNames[i]))
-	}
+	// Construct metadata for debugging/tracing
+	nodesInfo := strings.Join(mergeLabels, ", ")
+
+	// Use llb.Merge directly instead of sequential copies
+	result := llb.Merge(mergeStates,
+		llb.WithCustomNamef("merge nodes: %s", nodesInfo))
 
 	return result
 }
+
+// func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
+// 	stateNames := []string{}
+// 	for _, node := range nodes {
+// 		stateNames = append(stateNames, node.Step.Name)
+// 	}
+
+// 	states := []llb.State{}
+// 	for _, node := range nodes {
+// 		states = append(states, *node.State)
+// 	}
+
+// 	result := llb.Scratch()
+// 	for i, state := range states {
+// 		result = result.File(llb.Copy(state, "/", "/", &llb.CopyInfo{
+// 			CreateDestPath: true,
+// 			FollowSymlinks: true,
+// 			AllowWildcard:  true,
+// 		}), llb.WithCustomNamef("copy from %s", stateNames[i]))
+// 	}
+
+// 	return result
+// }
 
 // processNode processes a node and its parents to determine the state to build upon
 func (g *BuildGraph) processNode(node *StepNode) error {
@@ -193,6 +216,7 @@ func (g *BuildGraph) processNode(node *StepNode) error {
 	var currentState *llb.State
 	currentGraphEnv := NewGraphEnvironment()
 
+	// Merge the output envs of all the parent nodes
 	for _, parent := range node.GetParents() {
 		parentNode := parent.(*StepNode)
 		currentGraphEnv.Merge(parentNode.OutputEnv)
@@ -200,29 +224,46 @@ func (g *BuildGraph) processNode(node *StepNode) error {
 
 	if len(node.GetParents()) == 0 {
 		currentState = g.BaseState
-	} else if len(node.GetParents()) == 1 {
-		// If only one parent, use its state directly
-		parentNode := node.GetParents()[0].(*StepNode)
-		currentState = parentNode.State
 	} else {
-		// If multiple parents, merge their states
 		parentNodes := make([]*StepNode, len(node.GetParents()))
-		mergeStepNames := make([]string, len(node.GetParents()))
-
 		for i, parent := range node.GetParents() {
 			parentNode := parent.(*StepNode)
+
 			if parentNode.State == nil {
-				return fmt.Errorf("Parent %s of %s has nil state",
+				return fmt.Errorf("parent %s of %s has nil state",
 					parentNode.Step.Name, node.Step.Name)
 			}
 
 			parentNodes[i] = parentNode
-			mergeStepNames[i] = parentNode.Step.Name
 		}
 
 		merged := g.mergeNodes(parentNodes)
 		currentState = &merged
 	}
+
+	// if len(node.GetParents()) == 0 {
+	// 	currentState = g.BaseState
+	// } else if len(node.GetParents()) == 1 {
+	// 	// If only one parent, use its state directly
+	// 	parentNode := node.GetParents()[0].(*StepNode)
+	// 	currentState = parentNode.State
+	// } else {
+	// 	// If multiple parents, merge their states
+	// 	parentNodes := make([]*StepNode, len(node.GetParents()))
+
+	// 	for i, parent := range node.GetParents() {
+	// 		parentNode := parent.(*StepNode)
+	// 		if parentNode.State == nil {
+	// 			return fmt.Errorf("parent %s of %s has nil state",
+	// 				parentNode.Step.Name, node.Step.Name)
+	// 		}
+
+	// 		parentNodes[i] = parentNode
+	// 	}
+
+	// 	merged := g.mergeNodes(parentNodes)
+	// 	currentState = &merged
+	// }
 
 	node.InputEnv = currentGraphEnv
 
@@ -260,25 +301,39 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 	}
 
 	if len(node.Step.Outputs) > 0 {
-		result := llb.Scratch()
 
-		for _, output := range node.Step.Outputs {
-			result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
-				CreateDestPath:      true,
-				AllowWildcard:       true,
-				AllowEmptyWildcard:  true,
-				CopyDirContentsOnly: false,
-				FollowSymlinks:      true,
-			}))
+		if len(node.Step.Outputs) == 1 {
+			// Special case for a single output - avoid creating intermediate state
+			output := node.Step.Outputs[0]
+			state = baseState.File(llb.Copy(state, output, output, &llb.CopyInfo{
+				CreateDestPath:     true,
+				AllowWildcard:      true,
+				AllowEmptyWildcard: true,
+				FollowSymlinks:     true,
+			}), llb.WithCustomNamef("filter output: %s", output))
+		} else {
+			// Multiple outputs - use llb.Merge to combine them efficiently
+			outputStates := make([]llb.State, len(node.Step.Outputs))
+
+			for i, output := range node.Step.Outputs {
+				outputStates[i] = llb.Scratch().File(llb.Copy(state, output, output, &llb.CopyInfo{
+					CreateDestPath:     true,
+					AllowWildcard:      true,
+					AllowEmptyWildcard: true,
+					FollowSymlinks:     true,
+				}), llb.WithCustomNamef("output path: %s", output))
+			}
+
+			// Merge all outputs in a single operation
+			result := llb.Merge(outputStates, llb.WithCustomNamef("combined outputs: %s", node.Step.Name))
+
+			// Merge with base state
+			state = baseState.File(llb.Copy(result, "/", "/", &llb.CopyInfo{
+				CreateDestPath: true,
+				FollowSymlinks: true,
+				AllowWildcard:  true,
+			}), llb.WithCustomNamef("merge outputs: %s", node.Step.Name))
 		}
-
-		merged := baseState.File(llb.Copy(result, "/", "/", &llb.CopyInfo{
-			CreateDestPath: true,
-			FollowSymlinks: true,
-			AllowWildcard:  true,
-		}))
-
-		state = merged
 	}
 
 	return &state, nil
