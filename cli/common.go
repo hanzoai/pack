@@ -19,8 +19,8 @@ func commonPlanFlags() []cli.Flag {
 			Usage: "environment variables to set",
 		},
 		&cli.StringSliceFlag{
-			Name:  "previous-versions",
-			Usage: "versions of packages used for previous builds",
+			Name:  "previous",
+			Usage: "versions of packages used for previous builds (e.g. 'package@version')",
 		},
 		&cli.StringFlag{
 			Name:  "build-cmd",
