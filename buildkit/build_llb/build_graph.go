@@ -16,13 +16,15 @@ import (
 )
 
 type BuildGraph struct {
-	graph       *graph.Graph
-	BaseState   *llb.State
-	CacheStore  *BuildKitCacheStore
-	SecretsHash string
-	Plan        *plan.BuildPlan
-	Platform    *specs.Platform
-	LocalState  *llb.State
+	graph      *graph.Graph
+	BaseState  *llb.State
+	CacheStore *BuildKitCacheStore
+	Plan       *plan.BuildPlan
+	Platform   *specs.Platform
+	LocalState *llb.State
+
+	secretsFile     *llb.State
+	usedSecretsBase *llb.State
 }
 
 type BuildGraphOutput struct {
@@ -31,14 +33,23 @@ type BuildGraphOutput struct {
 }
 
 func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, localState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
+	var secretsFile *llb.State
+	if secretsHash != "" {
+		st := llb.Scratch().File(llb.Mkfile("/secrets-hash", 0644, []byte(secretsHash)), llb.WithCustomName("[railpack] secrets hash"))
+		secretsFile = &st
+	}
+	usedSecretsBase := llb.Image("alpine:latest", llb.WithCustomName("[railpack] loading secrets"))
+
 	g := &BuildGraph{
-		graph:       graph.NewGraph(),
-		BaseState:   baseState,
-		CacheStore:  cacheStore,
-		SecretsHash: secretsHash,
-		Plan:        plan,
-		Platform:    platform,
-		LocalState:  localState,
+		graph:      graph.NewGraph(),
+		BaseState:  baseState,
+		CacheStore: cacheStore,
+		Plan:       plan,
+		Platform:   platform,
+		LocalState: localState,
+
+		secretsFile:     secretsFile,
+		usedSecretsBase: &usedSecretsBase,
 	}
 
 	// Create a node for each step
@@ -128,13 +139,16 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 // mergeNodes merges the states of the given nodes into a single state
 // This essentially creates a scratch file system and then copies the contents of each node's state into it
 func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
-	stateNames := []string{}
-	for _, node := range nodes {
-		stateNames = append(stateNames, node.Step.Name)
-	}
+	// Sort nodes by step name for deterministic ordering
+	sortedNodes := slices.Clone(nodes)
+	slices.SortFunc(sortedNodes, func(a, b *StepNode) int {
+		return strings.Compare(a.Step.Name, b.Step.Name)
+	})
 
+	stateNames := []string{}
 	states := []llb.State{}
-	for _, node := range nodes {
+	for _, node := range sortedNodes {
+		stateNames = append(stateNames, node.Step.Name)
 		states = append(states, *node.State)
 	}
 
@@ -181,6 +195,7 @@ func (g *BuildGraph) processNode(node *StepNode) error {
 	var currentState *llb.State
 	currentGraphEnv := NewGraphEnvironment()
 
+	// Merge the output envs of all the parent nodes
 	for _, parent := range node.GetParents() {
 		parentNode := parent.(*StepNode)
 		currentGraphEnv.Merge(parentNode.OutputEnv)
@@ -188,24 +203,17 @@ func (g *BuildGraph) processNode(node *StepNode) error {
 
 	if len(node.GetParents()) == 0 {
 		currentState = g.BaseState
-	} else if len(node.GetParents()) == 1 {
-		// If only one parent, use its state directly
-		parentNode := node.GetParents()[0].(*StepNode)
-		currentState = parentNode.State
 	} else {
-		// If multiple parents, merge their states
 		parentNodes := make([]*StepNode, len(node.GetParents()))
-		mergeStepNames := make([]string, len(node.GetParents()))
-
 		for i, parent := range node.GetParents() {
 			parentNode := parent.(*StepNode)
+
 			if parentNode.State == nil {
-				return fmt.Errorf("Parent %s of %s has nil state",
+				return fmt.Errorf("parent %s of %s has nil state",
 					parentNode.Step.Name, node.Step.Name)
 			}
 
 			parentNodes[i] = parentNode
-			mergeStepNames[i] = parentNode.Step.Name
 		}
 
 		merged := g.mergeNodes(parentNodes)
@@ -248,25 +256,25 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 	}
 
 	if len(node.Step.Outputs) > 0 {
+		// For multiple outputs, copy them sequentially to maintain efficiency
 		result := llb.Scratch()
 
+		// Copy each output path individually
 		for _, output := range node.Step.Outputs {
 			result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
-				CreateDestPath:      true,
-				AllowWildcard:       true,
-				AllowEmptyWildcard:  true,
-				CopyDirContentsOnly: false,
-				FollowSymlinks:      true,
-			}))
+				CreateDestPath:     true,
+				AllowWildcard:      true,
+				AllowEmptyWildcard: true,
+				FollowSymlinks:     true,
+			}), llb.WithCustomNamef("copying %s", output))
 		}
 
-		merged := baseState.File(llb.Copy(result, "/", "/", &llb.CopyInfo{
+		// Apply to base state
+		state = baseState.File(llb.Copy(result, "/", "/", &llb.CopyInfo{
 			CreateDestPath: true,
 			FollowSymlinks: true,
 			AllowWildcard:  true,
-		}))
-
-		state = merged
+		}), llb.WithCustomNamef("combined outputs: %s", node.Step.Name))
 	}
 
 	return &state, nil
@@ -275,34 +283,35 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 // Adds the input environment to the base state of the node
 // This includes things like the environment variables and accumulated paths
 func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *StepNode) (llb.State, error) {
-	state := baseState
+	envVars := make(map[string]string)
 
-	// If a custom image is specified, we build off that instead of the parent's state
+	// Collect all environment variables first
+	for k, v := range node.InputEnv.EnvVars {
+		envVars[k] = v
+		node.OutputEnv.AddEnvVar(k, v)
+	}
+	for k, v := range node.Step.Variables {
+		envVars[k] = v
+		node.OutputEnv.AddEnvVar(k, v)
+	}
+
+	var state llb.State
 	if node.Step.StartingImage != "" {
 		state = llb.Image(node.Step.StartingImage, llb.Platform(*g.Platform)).Dir("/app")
+	} else {
+		state = baseState
 	}
 
-	// Add all the variables coming from the parent nodes
-	for _, k := range slices.Sorted(maps.Keys(node.InputEnv.EnvVars)) {
-		v := node.InputEnv.EnvVars[k]
-		state = state.AddEnv(k, v)
-		node.OutputEnv.AddEnvVar(k, v)
+	for _, k := range slices.Sorted(maps.Keys(envVars)) {
+		state = state.AddEnv(k, envVars[k])
 	}
 
-	// Add all the variables coming from the step
-	for _, k := range slices.Sorted(maps.Keys(node.Step.Variables)) {
-		v := node.Step.Variables[k]
-		state = state.AddEnv(k, v)
-		node.OutputEnv.AddEnvVar(k, v)
-	}
-
-	// Add all the paths coming from the parent nodes
-	for _, path := range node.InputEnv.PathList {
-		newState, err := g.convertCommandToLLB(node, plan.PathCommand{Path: path}, state, node.Step)
-		if err != nil {
-			return state, err
+	if len(node.InputEnv.PathList) > 0 {
+		pathString := strings.Join(node.InputEnv.PathList, ":")
+		state = state.AddEnvf("PATH", "%s:%s", pathString, system.DefaultPathEnvUnix)
+		for _, path := range node.InputEnv.PathList {
+			node.OutputEnv.AddPath(path)
 		}
-		state = newState
 	}
 
 	return state, nil
@@ -336,7 +345,7 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 		}
 		opts = append(opts, secretOpts...)
 
-		if g.SecretsHash != "" {
+		if g.secretsFile != nil {
 			secretOpts = g.getSecretMountOptions(node, secretOpts)
 			opts = append(opts, secretOpts...)
 		}
@@ -366,16 +375,19 @@ func (g *BuildGraph) convertPathCommandToLLB(node *StepNode, cmd plan.PathComman
 
 // convertCopyCommandToLLB converts a copy command to an LLB state
 func (g *BuildGraph) convertCopyCommandToLLB(cmd plan.CopyCommand, state llb.State) (llb.State, error) {
-	src := *g.LocalState
+	var src llb.State
 	if cmd.Image != "" {
 		src = llb.Image(cmd.Image, llb.Platform(*g.Platform))
+	} else {
+		src = *g.LocalState
 	}
 
 	s := state.File(llb.Copy(src, cmd.Src, cmd.Dest, &llb.CopyInfo{
 		CreateDestPath:      true,
 		FollowSymlinks:      true,
 		CopyDirContentsOnly: false,
-		AllowWildcard:       false,
+		AllowWildcard:       true,
+		AllowEmptyWildcard:  true,
 	}))
 
 	return s, nil
@@ -412,41 +424,35 @@ func (g *BuildGraph) convertFileCommandToLLB(cmd plan.FileCommand, state llb.Sta
 func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunOption) []llb.RunOption {
 	opts := []llb.RunOption{}
 
-	// Create a file that contains the secrets hash. Any layer that depends on this file will be invalidated when the secrets hash changes
-	secretsState := llb.Image("alpine:latest").File(llb.Mkfile("/secrets-hash", 0644, []byte(g.SecretsHash)), llb.WithCustomName("invalidate cache on secrets hash change"))
-
-	includesAllSecrets := false
-	for _, secret := range node.Step.Secrets {
-		if secret == "*" {
-			includesAllSecrets = true
-			break
-		}
+	if len(node.Step.Secrets) == 0 || g.secretsFile == nil {
+		return secretOpts
 	}
 
 	// If all secrets are included, we can just copy the secrets hash file to the new state
-	if includesAllSecrets {
-		secretsState = llb.Scratch().File(llb.Copy(secretsState, "/secrets-hash", "/secrets-hash"))
-		opts = append(opts, llb.AddMount("/secrets-hash", secretsState))
+	if slices.Contains(node.Step.Secrets, "*") {
+		opts = append(opts, llb.AddMount("/secrets-hash", *g.secretsFile))
 	} else {
 		// If not all secrets are included, we want to compute the hash of only the used secrets
-		secretsWithDollar := make([]string, len(node.Step.Secrets))
 		secrets := slices.Clone(node.Step.Secrets)
 		slices.Sort(secrets)
-		for i, secret := range secrets {
-			secretsWithDollar[i] = "$" + secret
-		}
-		secretsString := strings.Join(secretsWithDollar, " ")
+		secretsString := "$" + strings.Join(secrets, " $")
 
 		// Hash all the secrets into a single file
-		usedSecretOpts := []llb.RunOption{llb.Shlexf("sh -c 'echo \"%s\" | sha256sum > /used-secrets-hash'", secretsString), llb.WithCustomName("hash used secrets")}
-		usedSecretOpts = append(usedSecretOpts, secretOpts...) // we need to mount the secrets so they can be used in the shell command
-		secretsState = secretsState.Run(usedSecretOpts...).Root()
+		hashCommand := fmt.Sprintf("sh -c 'echo \"%s\" | sha256sum > /used-secrets-hash'", secretsString)
 
-		// Copy just the used secrets hash file to a new FS that will be mounted to the step state
-		secretsState = llb.Scratch().File(llb.Copy(secretsState, "/used-secrets-hash", "/used-secrets-hash"))
+		usedSecretsState := g.usedSecretsBase.
+			File(llb.Copy(*g.secretsFile, "/secrets-hash", "/secrets-hash"),
+				llb.WithCustomName("[railpack] copy secrets hash")).
+			Run(append([]llb.RunOption{
+				llb.Shlex(hashCommand),
+				llb.WithCustomName("[railpack] hash used secrets")},
+				secretOpts...)...).Root()
 
-		// Add the secrets state as a mount to the step state
-		opts = append(opts, llb.AddMount("/secrets-hash", secretsState))
+		usedSecretsHash := llb.Scratch().File(
+			llb.Copy(usedSecretsState, "/used-secrets-hash", "/used-secrets-hash"),
+			llb.WithCustomName("[railpack] copy used secrets hash"))
+
+		opts = append(secretOpts, llb.AddMount("/used-secrets-hash", usedSecretsHash))
 	}
 
 	return opts

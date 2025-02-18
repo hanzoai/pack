@@ -29,8 +29,6 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 
 	state := getBaseState(plan, platform)
 
-	cacheStore := build_llb.NewBuildKitCacheStore(opts.CacheKey)
-
 	localState := llb.Local("context",
 		llb.SharedKeyHint("local"),
 		llb.SessionID(opts.SessionID),
@@ -38,6 +36,7 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 		llb.FollowPaths([]string{"."}),
 	)
 
+	cacheStore := build_llb.NewBuildKitCacheStore(opts.CacheKey)
 	graph, err := build_llb.NewBuildGraph(plan, &state, &localState, cacheStore, opts.SecretsHash, &platform)
 	if err != nil {
 		return nil, nil, err
@@ -49,9 +48,9 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 	}
 
 	state = *graphOutput.State
-	imageEnv := getImageEnv(graphOutput, plan)
-
 	state = getStartState(state, localState, plan, platform)
+
+	imageEnv := getImageEnv(graphOutput, plan)
 
 	startCommand := plan.Start.Command
 	if plan.Start.Command == "" {
@@ -78,37 +77,37 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 }
 
 func getStartState(buildState llb.State, localState llb.State, plan *p.BuildPlan, platform specs.Platform) llb.State {
-	startState := buildState
-	startState.Dir(WorkingDir)
+	// If there is no custom start image, we just copy over the outputs from the local state
+	if plan.Start.BaseImage == "" {
+		startState := buildState.Dir(WorkingDir)
 
-	if plan.Start.BaseImage != "" {
-		// This is all the user code + any modifications made by the providers
-		mergedState := startState.File(llb.Copy(localState, ".", ".", &llb.CopyInfo{
+		for _, path := range plan.Start.Outputs {
+			startState = startState.File(llb.Copy(localState, path, path, &llb.CopyInfo{
+				CreateDestPath:      true,
+				FollowSymlinks:      true,
+				CopyDirContentsOnly: true,
+			}))
+		}
+
+		return startState
+	}
+
+	startState := llb.Image(plan.Start.BaseImage, llb.Platform(platform)).Dir(WorkingDir)
+
+	// This is all the user code + any modifications made by the providers
+	mergedState := buildState.File(llb.Copy(localState, ".", ".", &llb.CopyInfo{
+		CreateDestPath:      true,
+		FollowSymlinks:      true,
+		CopyDirContentsOnly: true,
+	}))
+
+	// Copy over necessary files to the start image
+	for _, path := range plan.Start.Outputs {
+		startState = startState.File(llb.Copy(mergedState, path, path, &llb.CopyInfo{
 			CreateDestPath:      true,
 			FollowSymlinks:      true,
 			CopyDirContentsOnly: true,
 		}))
-
-		// The base image to start from
-		startState = llb.Image(plan.Start.BaseImage, llb.Platform(platform)).Dir(WorkingDir)
-
-		// Copy over necessary files to the start image
-		for _, path := range plan.Start.Outputs {
-			startState = startState.File(llb.Copy(mergedState, path, path, &llb.CopyInfo{
-				CreateDestPath:      true,
-				FollowSymlinks:      true,
-				CopyDirContentsOnly: true,
-			}))
-		}
-	} else {
-		// If there is no custom start image, we will just copy over any additional files from the local context
-		for _, path := range plan.Start.Outputs {
-			startState = startState.Dir(WorkingDir).File(llb.Copy(localState, path, path, &llb.CopyInfo{
-				CreateDestPath:      true,
-				FollowSymlinks:      true,
-				CopyDirContentsOnly: true,
-			}))
-		}
 	}
 
 	return startState
@@ -119,16 +118,12 @@ func getImageEnv(graphOutput *build_llb.BuildGraphOutput, plan *p.BuildPlan) []s
 	paths = append(paths, graphOutput.GraphEnv.PathList...)
 	paths = append(paths, plan.Start.Paths...)
 	paths = append(paths, system.DefaultPathEnvUnix)
+	slices.Sort(paths)
 	pathString := strings.Join(paths, ":")
 
-	envMap := make(map[string]string)
-	for k, v := range graphOutput.GraphEnv.EnvVars {
-		envMap[k] = v
-	}
-
-	for k, v := range plan.Start.Variables {
-		envMap[k] = v
-	}
+	envMap := make(map[string]string, len(graphOutput.GraphEnv.EnvVars)+len(plan.Start.Variables)+1)
+	maps.Copy(envMap, graphOutput.GraphEnv.EnvVars)
+	maps.Copy(envMap, plan.Start.Variables)
 
 	envMap["PATH"] = pathString
 
@@ -146,9 +141,7 @@ func getBaseState(plan *p.BuildPlan, platform specs.Platform) llb.State {
 		llb.Platform(platform),
 	)
 
-	state = state.AddEnv("DEBIAN_FRONTEND", "noninteractive")
-	// state = state.Run(llb.Shlex("sh -c 'apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*'")).Root()
-	state = state.Dir(WorkingDir)
+	state = state.AddEnv("DEBIAN_FRONTEND", "noninteractive").Dir(WorkingDir)
 
 	return state
 }
