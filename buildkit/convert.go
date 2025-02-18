@@ -80,15 +80,15 @@ func getStartState(buildState llb.State, localState llb.State, plan *p.BuildPlan
 	// If there is no custom start image, we just copy over the outputs from the local state
 	if plan.Start.BaseImage == "" {
 		startState := buildState.Dir(WorkingDir)
-		if len(plan.Start.Outputs) > 0 {
-			startState = startState.File(llb.Copy(localState, ".", ".", &llb.CopyInfo{
+
+		for _, path := range plan.Start.Outputs {
+			startState = startState.File(llb.Copy(localState, path, path, &llb.CopyInfo{
 				CreateDestPath:      true,
 				FollowSymlinks:      true,
 				CopyDirContentsOnly: true,
-				AllowWildcard:       true,
-				IncludePatterns:     plan.Start.Outputs,
 			}))
 		}
+
 		return startState
 	}
 
