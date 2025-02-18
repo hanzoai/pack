@@ -51,7 +51,7 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 	state = *graphOutput.State
 	imageEnv := getImageEnv(graphOutput, plan)
 
-	state = getStartState(state, plan, platform)
+	state = getStartState(state, localState, plan, platform)
 
 	startCommand := plan.Start.Command
 	if plan.Start.Command == "" {
@@ -77,13 +77,13 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 	return &state, &image, nil
 }
 
-func getStartState(buildState llb.State, plan *p.BuildPlan, platform specs.Platform) llb.State {
+func getStartState(buildState llb.State, localState llb.State, plan *p.BuildPlan, platform specs.Platform) llb.State {
 	startState := buildState
 	startState.Dir(WorkingDir)
 
 	if plan.Start.BaseImage != "" {
 		// This is all the user code + any modifications made by the providers
-		mergedState := startState.File(llb.Copy(llb.Local("context"), ".", ".", &llb.CopyInfo{
+		mergedState := startState.File(llb.Copy(localState, ".", ".", &llb.CopyInfo{
 			CreateDestPath:      true,
 			FollowSymlinks:      true,
 			CopyDirContentsOnly: true,
@@ -102,9 +102,8 @@ func getStartState(buildState llb.State, plan *p.BuildPlan, platform specs.Platf
 		}
 	} else {
 		// If there is no custom start image, we will just copy over any additional files from the local context
-		src := llb.Local("context")
 		for _, path := range plan.Start.Outputs {
-			startState = startState.Dir(WorkingDir).File(llb.Copy(src, path, path, &llb.CopyInfo{
+			startState = startState.Dir(WorkingDir).File(llb.Copy(localState, path, path, &llb.CopyInfo{
 				CreateDestPath:      true,
 				FollowSymlinks:      true,
 				CopyDirContentsOnly: true,
