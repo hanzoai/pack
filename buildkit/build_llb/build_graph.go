@@ -139,27 +139,50 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 // mergeNodes merges the states of the given nodes into a single state
 // This essentially creates a scratch file system and then copies the contents of each node's state into it
 func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
+	if len(nodes) == 0 {
+		return llb.Scratch()
+	}
+
 	if len(nodes) == 1 {
 		return *nodes[0].State
 	}
 
-	// Prepare merged states directly for llb.Merge
-	mergeStates := make([]llb.State, len(nodes))
-	mergeLabels := make([]string, len(nodes))
+	// Create a base state with the first node
+	result := *nodes[0].State
 
-	for i, node := range nodes {
-		mergeStates[i] = *node.State
-		mergeLabels[i] = node.Step.Name
+	// Selectively copy from subsequent nodes to minimize duplication
+	for i := 1; i < len(nodes); i++ {
+		// Use diff-based copy to only add files that don't exist or have changed
+		result = result.File(llb.Copy(*nodes[i].State, "/", "/", &llb.CopyInfo{
+			CreateDestPath: true,
+			FollowSymlinks: true,
+			AllowWildcard:  true,
+		}), llb.WithCustomNamef("copy from %s", nodes[i].Step.Name))
 	}
 
-	// Construct metadata for debugging/tracing
-	nodesInfo := strings.Join(mergeLabels, ", ")
-
-	// Use llb.Merge directly instead of sequential copies
-	result := llb.Merge(mergeStates,
-		llb.WithCustomNamef("merge nodes: %s", nodesInfo))
-
 	return result
+
+	// if len(nodes) == 1 {
+	// 	return *nodes[0].State
+	// }
+
+	// // Prepare merged states directly for llb.Merge
+	// mergeStates := make([]llb.State, len(nodes))
+	// mergeLabels := make([]string, len(nodes))
+
+	// for i, node := range nodes {
+	// 	mergeStates[i] = *node.State
+	// 	mergeLabels[i] = node.Step.Name
+	// }
+
+	// // Construct metadata for debugging/tracing
+	// nodesInfo := strings.Join(mergeLabels, ", ")
+
+	// // Use llb.Merge directly instead of sequential copies
+	// result := llb.Merge(mergeStates,
+	// 	llb.WithCustomNamef("merge nodes: %s", nodesInfo))
+
+	// return result
 }
 
 // func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
@@ -301,7 +324,6 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 	}
 
 	if len(node.Step.Outputs) > 0 {
-
 		if len(node.Step.Outputs) == 1 {
 			// Special case for a single output - avoid creating intermediate state
 			output := node.Step.Outputs[0]
@@ -310,13 +332,14 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 				AllowWildcard:      true,
 				AllowEmptyWildcard: true,
 				FollowSymlinks:     true,
-			}), llb.WithCustomNamef("filter output: %s", output))
+			}), llb.WithCustomNamef("copying %s", output))
 		} else {
-			// Multiple outputs - use llb.Merge to combine them efficiently
-			outputStates := make([]llb.State, len(node.Step.Outputs))
+			// For multiple outputs, copy them sequentially to maintain efficiency
+			result := llb.Scratch()
 
-			for i, output := range node.Step.Outputs {
-				outputStates[i] = llb.Scratch().File(llb.Copy(state, output, output, &llb.CopyInfo{
+			// Copy each output path individually
+			for _, output := range node.Step.Outputs {
+				result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
 					CreateDestPath:     true,
 					AllowWildcard:      true,
 					AllowEmptyWildcard: true,
@@ -324,15 +347,12 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 				}), llb.WithCustomNamef("copying %s", output))
 			}
 
-			// Merge all outputs in a single operation
-			result := llb.Merge(outputStates, llb.WithCustomNamef("combined outputs: %s", node.Step.Name))
-
-			// Merge with base state
+			// Apply to base state
 			state = baseState.File(llb.Copy(result, "/", "/", &llb.CopyInfo{
 				CreateDestPath: true,
 				FollowSymlinks: true,
 				AllowWildcard:  true,
-			}), llb.WithCustomNamef("merge outputs: %s", node.Step.Name))
+			}), llb.WithCustomNamef("combined outputs: %s", node.Step.Name))
 		}
 	}
 
