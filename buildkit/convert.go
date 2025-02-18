@@ -31,7 +31,12 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 
 	cacheStore := build_llb.NewBuildKitCacheStore(opts.CacheKey)
 
-	localState := llb.Local("context", llb.SharedKeyHint("local"), llb.SessionID(opts.SessionID))
+	localState := llb.Local("context",
+		llb.SharedKeyHint("local"),
+		llb.SessionID(opts.SessionID),
+		llb.WithCustomName("loading ."),
+		llb.FollowPaths([]string{"."}),
+	)
 
 	graph, err := build_llb.NewBuildGraph(plan, &state, &localState, cacheStore, opts.SecretsHash, &platform)
 	if err != nil {
