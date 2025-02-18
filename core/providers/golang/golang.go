@@ -3,7 +3,6 @@ package golang
 import (
 	"fmt"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/railwayapp/railpack/core/generate"
@@ -161,10 +160,10 @@ func (p *GoProvider) Packages(ctx *generate.GenerateContext) (*generate.MiseStep
 }
 
 func (p *GoProvider) addMetadata(ctx *generate.GenerateContext) {
-	ctx.Metadata.Set("hasGoMod", strconv.FormatBool(p.isGoMod(ctx)))
-	ctx.Metadata.Set("hasRootGoFiles", strconv.FormatBool(p.hasRootGoFiles(ctx)))
-	ctx.Metadata.Set("hasGin", strconv.FormatBool(p.isGin(ctx)))
-	ctx.Metadata.Set("hasCGOEnabled", strconv.FormatBool(p.hasCGOEnabled(ctx)))
+	ctx.Metadata.SetBool("goMod", p.isGoMod(ctx))
+	ctx.Metadata.SetBool("goRootFile", p.hasRootGoFiles(ctx))
+	ctx.Metadata.SetBool("goGin", p.isGin(ctx))
+	ctx.Metadata.SetBool("goCGO", p.hasCGOEnabled(ctx))
 }
 
 func (p *GoProvider) goBuildCache(ctx *generate.GenerateContext) string {
