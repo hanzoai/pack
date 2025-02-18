@@ -139,13 +139,16 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 // mergeNodes merges the states of the given nodes into a single state
 // This essentially creates a scratch file system and then copies the contents of each node's state into it
 func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
-	stateNames := []string{}
-	for _, node := range nodes {
-		stateNames = append(stateNames, node.Step.Name)
-	}
+	// Sort nodes by step name for deterministic ordering
+	sortedNodes := slices.Clone(nodes)
+	slices.SortFunc(sortedNodes, func(a, b *StepNode) int {
+		return strings.Compare(a.Step.Name, b.Step.Name)
+	})
 
+	stateNames := []string{}
 	states := []llb.State{}
-	for _, node := range nodes {
+	for _, node := range sortedNodes {
+		stateNames = append(stateNames, node.Step.Name)
 		states = append(states, *node.State)
 	}
 
@@ -217,30 +220,6 @@ func (g *BuildGraph) processNode(node *StepNode) error {
 		currentState = &merged
 	}
 
-	// if len(node.GetParents()) == 0 {
-	// 	currentState = g.BaseState
-	// } else if len(node.GetParents()) == 1 {
-	// 	// If only one parent, use its state directly
-	// 	parentNode := node.GetParents()[0].(*StepNode)
-	// 	currentState = parentNode.State
-	// } else {
-	// 	// If multiple parents, merge their states
-	// 	parentNodes := make([]*StepNode, len(node.GetParents()))
-
-	// 	for i, parent := range node.GetParents() {
-	// 		parentNode := parent.(*StepNode)
-	// 		if parentNode.State == nil {
-	// 			return fmt.Errorf("parent %s of %s has nil state",
-	// 				parentNode.Step.Name, node.Step.Name)
-	// 		}
-
-	// 		parentNodes[i] = parentNode
-	// 	}
-
-	// 	merged := g.mergeNodes(parentNodes)
-	// 	currentState = &merged
-	// }
-
 	node.InputEnv = currentGraphEnv
 
 	// Convert this node's step to LLB
@@ -277,36 +256,25 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 	}
 
 	if len(node.Step.Outputs) > 0 {
-		if len(node.Step.Outputs) == 1 {
-			// Special case for a single output - avoid creating intermediate state
-			output := node.Step.Outputs[0]
-			state = baseState.File(llb.Copy(state, output, output, &llb.CopyInfo{
+		// For multiple outputs, copy them sequentially to maintain efficiency
+		result := llb.Scratch()
+
+		// Copy each output path individually
+		for _, output := range node.Step.Outputs {
+			result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
 				CreateDestPath:     true,
 				AllowWildcard:      true,
 				AllowEmptyWildcard: true,
 				FollowSymlinks:     true,
 			}), llb.WithCustomNamef("copying %s", output))
-		} else {
-			// For multiple outputs, copy them sequentially to maintain efficiency
-			result := llb.Scratch()
-
-			// Copy each output path individually
-			for _, output := range node.Step.Outputs {
-				result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
-					CreateDestPath:     true,
-					AllowWildcard:      true,
-					AllowEmptyWildcard: true,
-					FollowSymlinks:     true,
-				}), llb.WithCustomNamef("copying %s", output))
-			}
-
-			// Apply to base state
-			state = baseState.File(llb.Copy(result, "/", "/", &llb.CopyInfo{
-				CreateDestPath: true,
-				FollowSymlinks: true,
-				AllowWildcard:  true,
-			}), llb.WithCustomNamef("combined outputs: %s", node.Step.Name))
 		}
+
+		// Apply to base state
+		state = baseState.File(llb.Copy(result, "/", "/", &llb.CopyInfo{
+			CreateDestPath: true,
+			FollowSymlinks: true,
+			AllowWildcard:  true,
+		}), llb.WithCustomNamef("combined outputs: %s", node.Step.Name))
 	}
 
 	return &state, nil
@@ -347,38 +315,6 @@ func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *StepNode) (
 	}
 
 	return state, nil
-
-	// state := baseState
-
-	// // If a custom image is specified, we build off that instead of the parent's state
-	// if node.Step.StartingImage != "" {
-	// 	state = llb.Image(node.Step.StartingImage, llb.Platform(*g.Platform)).Dir("/app")
-	// }
-
-	// // Add all the variables coming from the parent nodes
-	// for _, k := range slices.Sorted(maps.Keys(node.InputEnv.EnvVars)) {
-	// 	v := node.InputEnv.EnvVars[k]
-	// 	state = state.AddEnv(k, v)
-	// 	node.OutputEnv.AddEnvVar(k, v)
-	// }
-
-	// // Add all the variables coming from the step
-	// for _, k := range slices.Sorted(maps.Keys(node.Step.Variables)) {
-	// 	v := node.Step.Variables[k]
-	// 	state = state.AddEnv(k, v)
-	// 	node.OutputEnv.AddEnvVar(k, v)
-	// }
-
-	// // Add all the paths coming from the parent nodes
-	// for _, path := range node.InputEnv.PathList {
-	// 	newState, err := g.convertCommandToLLB(node, plan.PathCommand{Path: path}, state, node.Step)
-	// 	if err != nil {
-	// 		return state, err
-	// 	}
-	// 	state = newState
-	// }
-
-	// return state, nil
 }
 
 func (g *BuildGraph) convertCommandToLLB(node *StepNode, cmd plan.Command, state llb.State, step *plan.Step) (llb.State, error) {
