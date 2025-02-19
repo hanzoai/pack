@@ -343,6 +343,7 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 	}
 
 	if len(node.Step.Secrets) > 0 {
+		// These options mount all secrets as environments variables
 		secretOpts := []llb.RunOption{}
 		for _, secret := range g.Plan.Secrets {
 			secretOpts = append(secretOpts, llb.AddSecret(secret, llb.SecretID(secret), llb.SecretAsEnv(true), llb.SecretAsEnvName(secret)))
@@ -350,8 +351,9 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 		opts = append(opts, secretOpts...)
 
 		if g.secretsFile != nil {
-			secretOpts = g.getSecretMountOptions(node, secretOpts)
-			opts = append(opts, secretOpts...)
+			// These options mount the secrets hash file to the FS so that we can invalidate the cache if the secrets change
+			secretInvalidationMountOpts := g.getSecretInvalidationMountOptions(node, secretOpts)
+			opts = append(opts, secretInvalidationMountOpts...)
 		}
 	}
 
@@ -425,11 +427,11 @@ func (g *BuildGraph) convertFileCommandToLLB(cmd plan.FileCommand, state llb.Sta
 	return s, nil
 }
 
-func (g *BuildGraph) getSecretMountOptions(node *StepNode, secretOpts []llb.RunOption) []llb.RunOption {
+func (g *BuildGraph) getSecretInvalidationMountOptions(node *StepNode, secretOpts []llb.RunOption) []llb.RunOption {
 	opts := []llb.RunOption{}
 
 	if len(node.Step.Secrets) == 0 || g.secretsFile == nil {
-		return secretOpts
+		return opts
 	}
 
 	// If all secrets are included, we can just copy the secrets hash file to the new state
