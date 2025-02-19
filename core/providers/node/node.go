@@ -192,10 +192,12 @@ func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *Pack
 
 func (p *NodeProvider) GetNodeEnvVars(ctx *generate.GenerateContext) map[string]string {
 	envVars := map[string]string{
-		"NODE_ENV":              "production",
-		"NPM_CONFIG_PRODUCTION": "false",
-		"YARN_PRODUCTION":       "false",
-		"CI":                    "true",
+		"NODE_ENV":                   "production",
+		"NPM_CONFIG_PRODUCTION":      "false",
+		"NPM_CONFIG_UPDATE_NOTIFIER": "false",
+		"NPM_CONFIG_FUND":            "false",
+		"YARN_PRODUCTION":            "false",
+		"CI":                         "true",
 	}
 
 	return envVars
