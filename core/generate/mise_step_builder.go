@@ -25,6 +25,7 @@ type MiseStepBuilder struct {
 	SupportingMiseFiles   []string
 	Assets                map[string]string
 	Outputs               []string
+	Variables             map[string]string
 	app                   *a.App
 	env                   *a.Environment
 }
@@ -37,6 +38,7 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 		SupportingAptPackages: []string{},
 		Assets:                map[string]string{},
 		Outputs:               []string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
+		Variables:             map[string]string{},
 		app:                   c.App,
 		env:                   c.Env,
 	}
@@ -90,6 +92,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		"MISE_SHIMS_DIR":    "/mise/shims",
 		"MISE_INSTALLS_DIR": "/mise/installs",
 	})
+	maps.Copy(step.Variables, b.Variables)
 
 	if verbose := b.env.GetVariable("MISE_VERBOSE"); verbose != "" {
 		step.Variables["MISE_VERBOSE"] = verbose

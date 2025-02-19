@@ -132,24 +132,6 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 
 // GetPackageManagerPackages installs specific versions of package managers by analyzing the users code
 func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder) {
-	// NPM
-	if p == PackageManagerNpm {
-		npm := packages.Default("npm", "latest")
-
-		lockfile, err := ctx.App.ReadFile("package-lock.json")
-		if err != nil {
-			lockfile = ""
-		}
-
-		if strings.Contains(lockfile, "\"lockfileVersion\": 1") {
-			packages.Version(npm, "6", "package-lock.json")
-		} else if strings.Contains(lockfile, "\"lockfileVersion\": 2") {
-			packages.Version(npm, "8", "package-lock.json")
-		} else if strings.Contains(lockfile, "\"lockfileVersion\": 3") {
-			packages.Version(npm, "9", "package-lock.json")
-		}
-	}
-
 	// Pnpm
 	if p == PackageManagerPnpm {
 		pnpm := packages.Default("pnpm", "latest")
