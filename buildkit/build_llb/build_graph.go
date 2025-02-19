@@ -260,12 +260,11 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 	}
 
 	if len(node.Step.Outputs) > 0 {
-		// For multiple outputs, copy them sequentially to maintain efficiency
-		result := llb.Scratch()
+		newState := *baseState
 
-		// Copy each output path individually
+		// Copy the outputs directly to the new state
 		for _, output := range node.Step.Outputs {
-			result = result.File(llb.Copy(state, output, output, &llb.CopyInfo{
+			newState = newState.File(llb.Copy(state, output, output, &llb.CopyInfo{
 				CreateDestPath:     true,
 				AllowWildcard:      true,
 				AllowEmptyWildcard: true,
@@ -273,12 +272,7 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 			}), llb.WithCustomNamef("copying %s", output))
 		}
 
-		// Apply to base state
-		state = baseState.File(llb.Copy(result, "/", "/", &llb.CopyInfo{
-			CreateDestPath: true,
-			FollowSymlinks: true,
-			AllowWildcard:  true,
-		}), llb.WithCustomNamef("combined outputs: %s", node.Step.Name))
+		state = newState
 	}
 
 	return &state, nil
