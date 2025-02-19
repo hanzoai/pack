@@ -37,6 +37,12 @@ func New(cacheDir string) (*Mise, error) {
 
 // GetLatestVersion gets the latest version of a package matching the version constraint
 func (m *Mise) GetLatestVersion(pkg, version string) (string, error) {
+	_, unlock, err := m.createAndLock(pkg)
+	if err != nil {
+		return "", err
+	}
+	defer unlock()
+
 	query := fmt.Sprintf("%s@%s", pkg, strings.TrimSpace(version))
 	output, err := m.runCmd("latest", "--verbose", query)
 	if err != nil {
@@ -55,22 +61,6 @@ func (m *Mise) GetLatestVersion(pkg, version string) (string, error) {
 func (m *Mise) runCmd(args ...string) (string, error) {
 	cacheDir := filepath.Join(m.cacheDir, "cache")
 	dataDir := filepath.Join(m.cacheDir, "data")
-	fileLockPath := filepath.Join(m.cacheDir, "lock")
-
-	// We want to use a file lock to prevent races when using mise in parallel
-	mu, err := filemutex.New(fileLockPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to create mutex: %w", err)
-	}
-
-	if err := mu.Lock(); err != nil {
-		return "", fmt.Errorf("failed to acquire lock: %w", err)
-	}
-	defer func() {
-		if err := mu.Unlock(); err != nil {
-			log.Printf("failed to release lock: %v", err)
-		}
-	}()
 
 	cmd := exec.Command(m.binaryPath, args...)
 	var stdout, stderr bytes.Buffer
@@ -121,4 +111,25 @@ func GenerateMiseToml(packages map[string]string) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+// createAndLock creates a file mutex and locks it, returning the mutex and an unlock function
+func (m *Mise) createAndLock(pkg string) (*filemutex.FileMutex, func(), error) {
+	fileLockPath := filepath.Join(m.cacheDir, fmt.Sprintf("lock-%s", strings.ReplaceAll(pkg, "/", "-")))
+	mu, err := filemutex.New(fileLockPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create mutex: %w", err)
+	}
+
+	if err := mu.Lock(); err != nil {
+		return nil, nil, fmt.Errorf("failed to acquire lock: %w", err)
+	}
+
+	unlock := func() {
+		if err := mu.Unlock(); err != nil {
+			log.Printf("failed to release lock: %v", err)
+		}
+	}
+
+	return mu, unlock, nil
 }
