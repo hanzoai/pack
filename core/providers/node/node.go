@@ -183,6 +183,10 @@ func (p *NodeProvider) Packages(ctx *generate.GenerateContext, packageJson *Pack
 
 	packageManager.GetPackageManagerPackages(ctx, packages)
 
+	if p.usesCorepack(packageJson) {
+		packages.Variables["MISE_NODE_COREPACK"] = "true"
+	}
+
 	return packages, nil
 }
 
