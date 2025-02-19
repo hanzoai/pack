@@ -1,0 +1,14 @@
+{
+  "packages": {
+    "caddy": "latest"
+  },
+  "steps": {
+    "fmt": {
+      "dependsOn": ["build"],
+      "commands": ["caddy fmt --overwrite Caddyfile"]
+    }
+  },
+  "start": {
+    "cmd": "exec caddy run --config Caddyfile --adapter caddyfile 2>&1"
+  }
+}
