@@ -63,6 +63,9 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 				OS:           platform.OS,
 				Architecture: platform.Architecture,
 			},
+			RootFS: specs.RootFS{
+				Type: "layers",
+			},
 		},
 		Variant: platform.Variant,
 		Config: specs.ImageConfig{
