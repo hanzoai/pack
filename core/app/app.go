@@ -10,6 +10,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/bmatcuk/doublestar/v4"
+	"github.com/tailscale/hujson"
 	"gopkg.in/yaml.v2"
 )
 
@@ -122,6 +123,13 @@ func (a *App) ReadJSON(name string, v interface{}) error {
 		return err
 	}
 
+	jsonBytes, err := standardizeJSON([]byte(data))
+	if err != nil {
+		return err
+	}
+
+	data = string(jsonBytes)
+
 	if err := json.Unmarshal([]byte(data), v); err != nil {
 		relativePath, _ := a.stripSourcePath(filepath.Join(a.Source, name))
 		return fmt.Errorf("error reading %s as JSON: %w", relativePath, err)
@@ -177,4 +185,13 @@ func (a *App) stripSourcePath(absPath string) (string, error) {
 		return "", errors.New("failed to parse source path")
 	}
 	return rel, nil
+}
+
+func standardizeJSON(b []byte) ([]byte, error) {
+	ast, err := hujson.Parse(b)
+	if err != nil {
+		return b, err
+	}
+	ast.Standardize()
+	return ast.Pack(), nil
 }
