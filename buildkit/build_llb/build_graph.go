@@ -139,6 +139,10 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 // mergeNodes merges the states of the given nodes into a single state
 // This essentially creates a scratch file system and then copies the contents of each node's state into it
 func (g *BuildGraph) mergeNodes(nodes []*StepNode) llb.State {
+	if len(nodes) == 1 {
+		return *nodes[0].State
+	}
+
 	// Sort nodes by step name for deterministic ordering
 	sortedNodes := slices.Clone(nodes)
 	slices.SortFunc(sortedNodes, func(a, b *StepNode) int {
