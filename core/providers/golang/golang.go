@@ -98,11 +98,11 @@ func (p *GoProvider) Build(ctx *generate.GenerateContext, packages *generate.Mis
 	})
 
 	if packages != nil {
-		build.DependsOn = append(build.DependsOn, packages.DisplayName)
+		// build.DependsOn = append(build.DependsOn, packages.DisplayName)
 	}
 
 	if install != nil {
-		build.DependsOn = append(build.DependsOn, install.DisplayName)
+		// build.DependsOn = append(build.DependsOn, install.DisplayName)
 	}
 
 	return build, nil
@@ -127,12 +127,12 @@ func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.M
 	if p.hasCGOEnabled(ctx) {
 		aptStep := ctx.NewAptStepBuilder("cgo")
 		aptStep.Packages = []string{"gcc", "g++", "libc6-dev"}
-		install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
+		// install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
 	} else {
 		install.AddEnvVars(map[string]string{"CGO_ENABLED": "0"})
 	}
 
-	install.DependsOn = []string{packages.DisplayName}
+	// install.DependsOn = []string{packages.DisplayName}
 
 	return install, nil
 }

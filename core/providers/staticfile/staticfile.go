@@ -50,12 +50,12 @@ func (p *StaticfileProvider) Plan(ctx *generate.GenerateContext) error {
 		return err
 	}
 
-	setupStep, err := p.SetupCaddy(ctx, rootDir)
+	_, err = p.SetupCaddy(ctx, rootDir)
 	if err != nil {
 		return err
 	}
 
-	setupStep.DependsOn = append(setupStep.DependsOn, ctx.GetMiseStepBuilder().DisplayName)
+	// setupStep.DependsOn = append(setupStep.DependsOn, ctx.GetMiseStepBuilder().DisplayName)
 
 	ctx.Start.AddOutputs([]string{"."})
 	ctx.Start.Command = p.CaddyStartCommand(ctx, rootDir)

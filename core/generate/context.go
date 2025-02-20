@@ -36,6 +36,7 @@ type GenerateContext struct {
 
 	BaseImage string
 	Steps     []StepBuilder
+	Deploy    *DeployBuilder
 	Start     StartContext
 
 	Caches  *CacheContext
@@ -62,6 +63,7 @@ func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error
 		BaseImage: DefaultBaseImage,
 		Steps:     make([]StepBuilder, 0),
 		Start:     *NewStartContext(),
+		Deploy:    NewDeployBuilder(),
 		Caches:    NewCacheContext(),
 		Secrets:   []string{},
 		Metadata:  NewMetadata(),
@@ -139,6 +141,8 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 
 	buildPlan.Secrets = utils.RemoveDuplicates(c.Secrets)
 
+	buildPlan.Deploy = *c.Deploy.Build()
+
 	buildPlan.Start.BaseImage = c.Start.BaseImage
 	buildPlan.Start.Command = c.Start.Command
 	buildPlan.Start.Outputs = utils.RemoveDuplicates(c.Start.outputs)
@@ -158,10 +162,10 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	}
 
 	// Apt package config
-	aptStepName := ""
+	// aptStepName := ""
 	if len(config.AptPackages) > 0 {
 		aptStep := c.NewAptStepBuilder("config")
-		aptStepName = aptStep.Name()
+		// aptStepName = aptStep.Name()
 		aptStep.Packages = config.AptPackages
 
 		// We install the apt packages again in the mise step since they may be required for install mise packages
@@ -188,21 +192,21 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 
 		// Overwrite the step with values from the config if they exist
 
-		if len(configStep.DependsOn) > 0 {
-			commandStepBuilder.DependsOn = configStep.DependsOn
-		}
+		// if len(configStep.DependsOn) > 0 {
+		// 	commandStepBuilder.DependsOn = configStep.DependsOn
+		// }
 
-		if aptStepName != "" {
-			commandStepBuilder.DependsOn = append(commandStepBuilder.DependsOn, aptStepName)
-		}
+		// if aptStepName != "" {
+		// 	commandStepBuilder.DependsOn = append(commandStepBuilder.DependsOn, aptStepName)
+		// }
 
 		if configStep.Commands != nil {
 			commandStepBuilder.Commands = configStep.Commands
 		}
 
-		if configStep.Outputs != nil {
-			commandStepBuilder.Outputs = configStep.Outputs
-		}
+		// if configStep.Outputs != nil {
+		// 	commandStepBuilder.Outputs = configStep.Outputs
+		// }
 		for k, v := range configStep.Assets {
 			commandStepBuilder.Assets[k] = v
 		}

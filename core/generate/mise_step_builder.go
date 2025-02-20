@@ -14,7 +14,6 @@ import (
 
 const (
 	MisePackageStepName = "packages:mise"
-	BuilderBaseImage    = "ghcr.io/railwayapp/railpack-builder-base:latest"
 )
 
 type MiseStepBuilder struct {
@@ -24,10 +23,10 @@ type MiseStepBuilder struct {
 	MisePackages          []*resolver.PackageRef
 	SupportingMiseFiles   []string
 	Assets                map[string]string
-	Outputs               []string
-	Variables             map[string]string
-	app                   *a.App
-	env                   *a.Environment
+	// Outputs               []string
+	Variables map[string]string
+	app       *a.App
+	env       *a.Environment
 }
 
 func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
@@ -37,10 +36,10 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 		MisePackages:          []*resolver.PackageRef{},
 		SupportingAptPackages: []string{},
 		Assets:                map[string]string{},
-		Outputs:               []string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
-		Variables:             map[string]string{},
-		app:                   c.App,
-		env:                   c.Env,
+		// Outputs:               []string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
+		Variables: map[string]string{},
+		app:       c.App,
+		env:       c.Env,
 	}
 
 	c.Steps = append(c.Steps, step)
@@ -72,6 +71,10 @@ func (b *MiseStepBuilder) Name() string {
 	return b.DisplayName
 }
 
+func (b *MiseStepBuilder) GetOutputPaths() []string {
+	return []string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"}
+}
+
 func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
 
@@ -79,7 +82,11 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		return step, nil
 	}
 
-	step.StartingImage = BuilderBaseImage
+	// step.StartingImage = BuilderBaseImage
+
+	step.Inputs = []plan.StepInput{
+		plan.NewImageInput(plan.RAILPACK_BUILDER_IMAGE),
+	}
 
 	// Setup mise
 	step.AddCommands([]plan.Command{
@@ -106,7 +113,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		})
 
 		// We want to make sure the file is copied into the next step
-		b.Outputs = append(b.Outputs, "/app/"+file)
+		// b.Outputs = append(b.Outputs, "/app/"+file)
 	}
 
 	// Setup apt commands
@@ -151,7 +158,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	}
 
 	step.Assets = b.Assets
-	step.Outputs = b.Outputs
+	// step.Outputs = b.Outputs
 	step.Secrets = []string{}
 
 	return step, nil

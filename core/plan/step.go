@@ -6,12 +6,60 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
+type StepInput struct {
+	Image   string   `json:"image,omitempty"`
+	Step    string   `json:"step,omitempty"`
+	Include []string `json:"include,omitempty"`
+	Exclude []string `json:"exclude,omitempty"`
+}
+
+type InputOptions struct {
+	Include []string
+	Exclude []string
+}
+
+func NewStepInput(stepName string, options ...InputOptions) StepInput {
+	input := StepInput{
+		Step: stepName,
+	}
+
+	if len(options) > 0 {
+		input.Include = options[0].Include
+		input.Exclude = options[0].Exclude
+	}
+
+	return input
+}
+
+func NewImageInput(image string, options ...InputOptions) StepInput {
+	input := StepInput{
+		Image: image,
+	}
+
+	if len(options) > 0 {
+		input.Include = options[0].Include
+		input.Exclude = options[0].Exclude
+	}
+	return input
+}
+
+func RuntimeImageInput() StepInput {
+	return NewImageInput("ghcr.io/railwayapp/railpack-runtime-base:latest")
+}
+
+func (i *StepInput) String() string {
+	bytes, _ := json.Marshal(i)
+	return string(bytes)
+}
+
 type Step struct {
 	// The name of the step
 	Name string `json:"name,omitempty" jsonschema:"description=The name of the step"`
 
+	Inputs []StepInput `json:"inputs,omitempty" jsonschema:"description=The inputs for this step"`
+
 	// The steps that this step depends on. The step will only run after all the steps in DependsOn have run
-	DependsOn []string `json:"dependsOn,omitempty" jsonschema:"description=The steps that this step depends on. The step will only run after all the steps in DependsOn have run"`
+	// DependsOn []string `json:"dependsOn,omitempty" jsonschema:"description=The steps that this step depends on. The step will only run after all the steps in DependsOn have run"`
 
 	// The commands to run in this step
 	Commands []Command `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
@@ -20,7 +68,7 @@ type Step struct {
 	Secrets []string `json:"secrets" jsonschema:"description=The secrets that this step uses"`
 
 	// Paths that this step outputs. Only these paths will be available to the next step
-	Outputs []string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
+	// Outputs []string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
 
 	// The assets available to this step. The key is the name of the asset that is referenced in a file command
 	Assets map[string]string `json:"assets,omitempty" jsonschema:"description=The assets available to this step. The key is the name of the asset that is referenced in a file command"`
@@ -34,7 +82,7 @@ type Step struct {
 	// The base image that will be used for this step
 	// If empty (default), the base image will be the one from the previous step
 	// Only set this if you don't want to reuse any part of the file system from the previous step
-	StartingImage string `json:"startingImage,omitempty" jsonschema:"description=The base image that will be used for this step. If empty (default), the base image will be the one from the previous step. Only set this if you don't want to reuse any part of the file system from the previous step"`
+	// StartingImage string `json:"startingImage,omitempty" jsonschema:"description=The base image that will be used for this step. If empty (default), the base image will be the one from the previous step. Only set this if you don't want to reuse any part of the file system from the previous step"`
 }
 
 func NewStep(name string) *Step {
@@ -46,9 +94,9 @@ func NewStep(name string) *Step {
 	}
 }
 
-func (s *Step) DependOn(name string) {
-	s.DependsOn = append(s.DependsOn, name)
-}
+// func (s *Step) DependOn(name string) {
+// 	s.DependsOn = append(s.DependsOn, name)
+// }
 
 func (s *Step) AddCommands(commands []Command) {
 	if s.Commands == nil {

@@ -8,7 +8,6 @@ import (
 
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/providers/node"
 	"github.com/stretchr/objx"
 )
 
@@ -32,7 +31,7 @@ func (p *PhpProvider) Initialize(ctx *generate.GenerateContext) error {
 }
 
 func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
-	imageStep, err := p.phpImagePackage(ctx)
+	_, err := p.phpImagePackage(ctx)
 	if err != nil {
 		return err
 	}
@@ -40,7 +39,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	// Install nginx
 	nginxPackages := ctx.NewAptStepBuilder("nginx")
 	nginxPackages.Packages = []string{"nginx", "git", "zip", "unzip"}
-	nginxPackages.DependsOn = []string{imageStep.DisplayName}
+	// nginxPackages.DependsOn = []string{imageStep.DisplayName}
 
 	// Install composer
 	if _, err := p.readComposerJson(ctx); err == nil {
@@ -55,40 +54,41 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 			plan.NewExecCommand("composer install --ignore-platform-reqs"),
 		})
 
-		install.DependsOn = []string{nginxPackages.DisplayName}
+		// install.DependsOn = []string{nginxPackages.DisplayName}
 	}
 
 	// Install node
-	nodeProvider := node.NodeProvider{}
-	isNode := ctx.App.HasMatch("package.json")
-	if packageJson, err := nodeProvider.GetPackageJson(ctx.App); isNode && err == nil && packageJson != nil {
-		ctx.EnterSubContext("node")
+	// nodeProvider := node.NodeProvider{}
+	// isNode := ctx.App.HasMatch("package.json")
+	// if packageJson, err := nodeProvider.GetPackageJson(ctx.App); isNode && err == nil && packageJson != nil {
+	// 	ctx.EnterSubContext("node")
 
-		nodePackages, err := nodeProvider.Packages(ctx, packageJson)
-		if err != nil {
-			return err
-		}
-		// nodePackages.DependsOn = []string{imageStep.DisplayName}
+	// 	nodePackages, err := nodeProvider.InstallMisePackages(ctx)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	// nodePackages.DependsOn = []string{imageStep.DisplayName}
 
-		nodeInstall, err := nodeProvider.Install(ctx, nodePackages, packageJson)
-		if err != nil {
-			return err
-		}
+	// 	nodeInstall, err := nodeProvider.Install(ctx, nodePackages, packageJson)
+	// 	if err != nil {
+	// 		return err
+	// 	}
 
-		nodeBuild, err := nodeProvider.Build(ctx, nodeInstall, packageJson)
-		if err != nil {
-			return err
-		}
+	// 	nodeBuild, err := nodeProvider.Build(ctx, nodeInstall, packageJson)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	fmt.Printf("nodeBuild: %+v\n", nodeBuild)
 
-		// Only copy the changes to the app, not the entire rest of the file system
-		nodeBuild.Outputs = []string{"/app"}
+	// 	// Only copy the changes to the app, not the entire rest of the file system
+	// 	// nodeBuild.Outputs = []string{"/app"}
 
-		ctx.ExitSubContext()
-	}
+	// 	ctx.ExitSubContext()
+	// }
 
 	// Setup nginx
 	nginxSetup := ctx.NewCommandStep("nginx:setup")
-	nginxSetup.DependsOn = []string{nginxPackages.DisplayName}
+	// nginxSetup.DependsOn = []string{nginxPackages.DisplayName}
 
 	nginxSetup.AddCommands([]plan.Command{
 		plan.NewFileCommand("/etc/nginx/railpack.conf", "nginx.conf", plan.FileOptions{CustomName: "create nginx config"}),

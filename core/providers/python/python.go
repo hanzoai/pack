@@ -82,7 +82,7 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 	setup.AddPaths([]string{"/root/.local/bin"})
 
 	install := ctx.NewCommandStep("install")
-	install.DependsOn = append(install.DependsOn, setup.DisplayName)
+	// install.DependsOn = append(install.DependsOn, setup.DisplayName)
 
 	if hasRequirements {
 		install.AddCache(ctx.Caches.AddCache("pip", PIP_CACHE_DIR))
@@ -148,7 +148,7 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 
 	aptStep := ctx.NewAptStepBuilder("python-system-deps")
 	aptStep.Packages = []string{"pkg-config"}
-	install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
+	// install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
 
 	for dep, requiredPkgs := range pythonDepRequirements {
 		if p.usesDep(ctx, dep) {

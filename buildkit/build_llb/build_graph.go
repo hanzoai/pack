@@ -67,21 +67,93 @@ func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, localState *llb.S
 	// Add dependencies to each node
 	for _, node := range g.graph.GetNodes() {
 		llbNode := node.(*StepNode)
-		for _, depName := range llbNode.Step.DependsOn {
-			if depNode, exists := g.graph.GetNode(depName); exists {
+		for _, input := range llbNode.Step.Inputs {
+			// This input does not reference another step
+			if input.Step == "" {
+				continue
+			}
+
+			if depNode, exists := g.graph.GetNode(input.Step); exists {
+				// Create edges between the current node and the dependency node
 				parents := llbNode.GetParents()
 				parents = append(parents, depNode)
 				llbNode.SetParents(parents)
 
 				children := depNode.GetChildren()
-				children = append(children, node)
+				children = append(children, llbNode)
 				depNode.SetChildren(children)
 			}
+
+			// if depNode, exists := g.graph.GetNode(depName); exists {
+			// 	parents := llbNode.GetParents()
+			// 	parents = append(parents, depNode)
+			// 	llbNode.SetParents(parents)
+
+			// 	children := depNode.GetChildren()
+			// 	children = append(children, node)
+			// 	depNode.SetChildren(children)
+			// }
 		}
 	}
 
 	g.graph.ComputeTransitiveDependencies()
+
+	g.graph.PrintGraph()
+
 	return g, nil
+}
+
+func (g *BuildGraph) GetStateForInput(input plan.StepInput, baseState llb.State) llb.State {
+	var state llb.State
+
+	if input.Image != "" {
+		state = llb.Image(input.Image, llb.Platform(*g.Platform))
+	} else if input.Step != "" {
+		if node, exists := g.graph.GetNode(input.Step); exists {
+			nodeState := node.(*StepNode).State
+			if nodeState == nil {
+				return baseState
+			}
+			state = *nodeState
+		}
+	} else {
+		state = baseState
+	}
+
+	return state
+}
+
+func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.StepInput) llb.State {
+	if len(inputs) == 0 {
+		return llb.Scratch()
+	}
+
+	// Get the base state from the first input
+	state := g.GetStateForInput(inputs[0], llb.Scratch())
+	if len(inputs) == 1 {
+		return state
+	}
+
+	// Copy from subsequent inputs into the base state
+	for _, input := range inputs[1:] {
+		fmt.Printf("Combining input: %s\n", input.String())
+		inputState := g.GetStateForInput(input, llb.Scratch())
+
+		// Copy the specified paths (or everything) from this input into our base state
+		if len(input.Include) > 0 {
+			for _, include := range input.Include {
+				state = state.File(llb.Copy(inputState, include, include, &llb.CopyInfo{
+					CreateDestPath:     true,
+					FollowSymlinks:     true,
+					AllowWildcard:      true,
+					AllowEmptyWildcard: true,
+					ExcludePatterns:    input.Exclude,
+				}))
+			}
+		}
+	}
+
+	return state
 }
 
 // GenerateLLB generates the LLB state for the build graph
@@ -100,40 +172,55 @@ func (g *BuildGraph) GenerateLLB() (*BuildGraphOutput, error) {
 		}
 	}
 
-	// Find all leaf nodes and get their states
-	var leafNodes []*StepNode
-	graphEnv := NewGraphEnvironment()
+	// Process deploy state
+	deployState := g.GetFullStateFromInputs(g.Plan.Deploy.Inputs)
 
-	for _, node := range g.graph.GetNodes() {
-		llbNode := node.(*StepNode)
-		if len(llbNode.GetChildren()) == 0 && llbNode.State != nil {
-			leafNodes = append(leafNodes, llbNode)
-			graphEnv.Merge(llbNode.OutputEnv)
+	graphEnv := NewGraphEnvironment()
+	for _, input := range g.Plan.Deploy.Inputs {
+		if node, exists := g.graph.GetNode(input.Step); exists {
+			graphEnv.Merge(node.(*StepNode).OutputEnv)
 		}
 	}
 
-	// If no leaf states, return base state
-	if len(leafNodes) == 0 {
-		return &BuildGraphOutput{
-			State:    g.BaseState,
-			GraphEnv: graphEnv,
-		}, nil
-	}
-
-	// If only one leaf state, return it
-	if len(leafNodes) == 1 {
-		return &BuildGraphOutput{
-			State:    leafNodes[0].State,
-			GraphEnv: graphEnv,
-		}, nil
-	}
-
-	result := g.mergeNodes(leafNodes)
-
 	return &BuildGraphOutput{
-		State:    &result,
+		State:    &deployState,
 		GraphEnv: graphEnv,
 	}, nil
+
+	// Find all leaf nodes and get their states
+	// var leafNodes []*StepNode
+	// graphEnv := NewGraphEnvironment()
+
+	// for _, node := range g.graph.GetNodes() {
+	// 	llbNode := node.(*StepNode)
+	// 	if len(llbNode.GetChildren()) == 0 && llbNode.State != nil {
+	// 		leafNodes = append(leafNodes, llbNode)
+	// 		graphEnv.Merge(llbNode.OutputEnv)
+	// 	}
+	// }
+
+	// // If no leaf states, return base state
+	// if len(leafNodes) == 0 {
+	// 	return &BuildGraphOutput{
+	// 		State:    g.BaseState,
+	// 		GraphEnv: graphEnv,
+	// 	}, nil
+	// }
+
+	// // If only one leaf state, return it
+	// if len(leafNodes) == 1 {
+	// 	return &BuildGraphOutput{
+	// 		State:    leafNodes[0].State,
+	// 		GraphEnv: graphEnv,
+	// 	}, nil
+	// }
+
+	// result := g.mergeNodes(leafNodes)
+
+	// return &BuildGraphOutput{
+	// 	State:    &result,
+	// 	GraphEnv: graphEnv,
+	// }, nil
 }
 
 // mergeNodes merges the states of the given nodes into a single state
@@ -196,7 +283,7 @@ func (g *BuildGraph) processNode(node *StepNode) error {
 	}
 
 	// Determine the state to build upon
-	var currentState *llb.State
+	// var currentState llb.State
 	currentGraphEnv := NewGraphEnvironment()
 
 	// Merge the output envs of all the parent nodes
@@ -205,29 +292,31 @@ func (g *BuildGraph) processNode(node *StepNode) error {
 		currentGraphEnv.Merge(parentNode.OutputEnv)
 	}
 
-	if len(node.GetParents()) == 0 {
-		currentState = g.BaseState
-	} else {
-		parentNodes := make([]*StepNode, len(node.GetParents()))
-		for i, parent := range node.GetParents() {
-			parentNode := parent.(*StepNode)
+	// currentState = g.GetFullStateFromInputs(node.Step.Inputs)
 
-			if parentNode.State == nil {
-				return fmt.Errorf("parent %s of %s has nil state",
-					parentNode.Step.Name, node.Step.Name)
-			}
+	// if len(node.GetParents()) == 0 {
+	// 	currentState = g.BaseState
+	// } else {
+	// 	parentNodes := make([]*StepNode, len(node.GetParents()))
+	// 	for i, parent := range node.GetParents() {
+	// 		parentNode := parent.(*StepNode)
 
-			parentNodes[i] = parentNode
-		}
+	// 		if parentNode.State == nil {
+	// 			return fmt.Errorf("parent %s of %s has nil state",
+	// 				parentNode.Step.Name, node.Step.Name)
+	// 		}
 
-		merged := g.mergeNodes(parentNodes)
-		currentState = &merged
-	}
+	// 		parentNodes[i] = parentNode
+	// 	}
+
+	// 	merged := g.mergeNodes(parentNodes)
+	// 	currentState = &merged
+	// }
 
 	node.InputEnv = currentGraphEnv
 
 	// Convert this node's step to LLB
-	stepState, err := g.convertNodeToLLB(node, currentState)
+	stepState, err := g.convertNodeToLLB(node)
 	if err != nil {
 		return err
 	}
@@ -239,11 +328,8 @@ func (g *BuildGraph) processNode(node *StepNode) error {
 }
 
 // convertNodeToLLB converts a step node to an LLB state
-func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*llb.State, error) {
-	state := *baseState
-	state = state.Dir("/app")
-
-	state, err := g.getNodeStartingState(state, node)
+func (g *BuildGraph) convertNodeToLLB(node *StepNode) (*llb.State, error) {
+	state, err := g.getNodeStartingState(node)
 	if err != nil {
 		return nil, err
 	}
@@ -259,28 +345,30 @@ func (g *BuildGraph) convertNodeToLLB(node *StepNode, baseState *llb.State) (*ll
 		}
 	}
 
-	if len(node.Step.Outputs) > 0 {
-		newState := *baseState
+	// if len(node.Step.Outputs) > 0 {
+	// 	newState := *baseState
 
-		// Copy the outputs directly to the new state
-		for _, output := range node.Step.Outputs {
-			newState = newState.File(llb.Copy(state, output, output, &llb.CopyInfo{
-				CreateDestPath:     true,
-				AllowWildcard:      true,
-				AllowEmptyWildcard: true,
-				FollowSymlinks:     true,
-			}), llb.WithCustomNamef("copying %s", output))
-		}
+	// 	// Copy the outputs directly to the new state
+	// 	for _, output := range node.Step.Outputs {
+	// 		newState = newState.File(llb.Copy(state, output, output, &llb.CopyInfo{
+	// 			CreateDestPath:     true,
+	// 			AllowWildcard:      true,
+	// 			AllowEmptyWildcard: true,
+	// 			FollowSymlinks:     true,
+	// 		}), llb.WithCustomNamef("copying %s", output))
+	// 	}
 
-		state = newState
-	}
+	// 	state = newState
+	// }
 
 	return &state, nil
 }
 
 // Adds the input environment to the base state of the node
 // This includes things like the environment variables and accumulated paths
-func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *StepNode) (llb.State, error) {
+func (g *BuildGraph) getNodeStartingState(node *StepNode) (llb.State, error) {
+	state := g.GetFullStateFromInputs(node.Step.Inputs).Dir("/app")
+
 	envVars := make(map[string]string)
 
 	// Collect all environment variables first
@@ -293,12 +381,13 @@ func (g *BuildGraph) getNodeStartingState(baseState llb.State, node *StepNode) (
 		node.OutputEnv.AddEnvVar(k, v)
 	}
 
-	var state llb.State
-	if node.Step.StartingImage != "" {
-		state = llb.Image(node.Step.StartingImage, llb.Platform(*g.Platform)).Dir("/app")
-	} else {
-		state = baseState
-	}
+	// state := baseState
+	// var state llb.State
+	// if node.Step.StartingImage != "" {
+	// 	state = llb.Image(node.Step.StartingImage, llb.Platform(*g.Platform)).Dir("/app")
+	// } else {
+	// 	state = baseState
+	// }
 
 	for _, k := range slices.Sorted(maps.Keys(envVars)) {
 		state = state.AddEnv(k, envVars[k])

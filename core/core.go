@@ -153,21 +153,21 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 		return config
 	}
 
-	if installCmdVar, _ := env.GetConfigVariable("INSTALL_CMD"); installCmdVar != "" {
-		installStep := config.GetOrCreateStep("install")
-		installStep.Commands = []plan.Command{plan.NewExecShellCommand(installCmdVar, plan.ExecOptions{CustomName: installCmdVar})}
-		installStep.DependsOn = append(installStep.DependsOn, "packages")
-	}
+	// if installCmdVar, _ := env.GetConfigVariable("INSTALL_CMD"); installCmdVar != "" {
+	// 	installStep := config.GetOrCreateStep("install")
+	// 	installStep.Commands = []plan.Command{plan.NewExecShellCommand(installCmdVar, plan.ExecOptions{CustomName: installCmdVar})}
+	// 	installStep.DependsOn = append(installStep.DependsOn, "packages")
+	// }
 
-	if buildCmdVar, _ := env.GetConfigVariable("BUILD_CMD"); buildCmdVar != "" {
-		buildStep := config.GetOrCreateStep("build")
-		buildStep.Commands = []plan.Command{
-			// We want to run the build command with all the files in the current directory
-			plan.NewCopyCommand("."),
-			plan.NewExecShellCommand(buildCmdVar, plan.ExecOptions{CustomName: buildCmdVar}),
-		}
-		buildStep.DependsOn = append(buildStep.DependsOn, "install")
-	}
+	// if buildCmdVar, _ := env.GetConfigVariable("BUILD_CMD"); buildCmdVar != "" {
+	// 	buildStep := config.GetOrCreateStep("build")
+	// 	buildStep.Commands = []plan.Command{
+	// 		// We want to run the build command with all the files in the current directory
+	// 		plan.NewCopyCommand("."),
+	// 		plan.NewExecShellCommand(buildCmdVar, plan.ExecOptions{CustomName: buildCmdVar}),
+	// 	}
+	// 	buildStep.DependsOn = append(buildStep.DependsOn, "install")
+	// }
 
 	if startCmdVar, _ := env.GetConfigVariable("START_CMD"); startCmdVar != "" {
 		config.Start.Command = startCmdVar
@@ -206,7 +206,7 @@ func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config
 			plan.NewCopyCommand("."),
 			plan.NewExecShellCommand(options.BuildCommand, plan.ExecOptions{CustomName: options.BuildCommand}),
 		}
-		buildStep.DependsOn = append(buildStep.DependsOn, "install")
+		// buildStep.DependsOn = append(buildStep.DependsOn, "install")
 	}
 
 	if options.StartCommand != "" {

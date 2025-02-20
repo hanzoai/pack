@@ -5,33 +5,34 @@ import (
 
 	a "github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/utils"
 )
 
 type CommandStepBuilder struct {
 	DisplayName string
-	DependsOn   []string
 	Commands    []plan.Command
-	Outputs     []string
-	Assets      map[string]string
-	Variables   map[string]string
-	Caches      []string
-	Secrets     []string
-	app         *a.App
-	env         *a.Environment
+	// DependsOn   []string
+	// Outputs     []string
+	Inputs    []plan.StepInput
+	Assets    map[string]string
+	Variables map[string]string
+	Caches    []string
+	Secrets   []string
+	app       *a.App
+	env       *a.Environment
 }
 
 func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 	step := &CommandStepBuilder{
 		DisplayName: c.GetStepName(name),
-		DependsOn:   []string{MisePackageStepName},
-		Commands:    []plan.Command{},
-		Assets:      map[string]string{},
-		Variables:   map[string]string{},
-		Caches:      []string{},
-		Secrets:     []string{"*"},
-		app:         c.App,
-		env:         c.Env,
+		// DependsOn:   []string{MisePackageStepName},
+		Inputs:    []plan.StepInput{},
+		Commands:  []plan.Command{},
+		Assets:    map[string]string{},
+		Variables: map[string]string{},
+		Caches:    []string{},
+		Secrets:   []string{"*"},
+		app:       c.App,
+		env:       c.Env,
 	}
 
 	c.Steps = append(c.Steps, step)
@@ -39,9 +40,9 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 	return step
 }
 
-func (b *CommandStepBuilder) DependOn(name string) {
-	b.DependsOn = append(b.DependsOn, name)
-}
+// func (b *CommandStepBuilder) DependOn(name string) {
+// 	b.DependsOn = append(b.DependsOn, name)
+// }
 
 func (b *CommandStepBuilder) AddVariables(variables map[string]string) {
 	maps.Copy(b.Variables, variables)
@@ -98,8 +99,9 @@ func (b *CommandStepBuilder) Name() string {
 func (b *CommandStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
 
-	step.DependsOn = utils.RemoveDuplicates(b.DependsOn)
-	step.Outputs = b.Outputs
+	// step.DependsOn = utils.RemoveDuplicates(b.DependsOn)
+	// step.Outputs = b.Outputs
+	step.Inputs = b.Inputs
 	step.Commands = b.Commands
 	step.Assets = b.Assets
 	step.Caches = b.Caches

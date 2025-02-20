@@ -1,11 +1,23 @@
 package plan
 
+const (
+	RAILPACK_BUILDER_IMAGE = "ghcr.io/railwayapp/railpack-builder-base:latest"
+	RAILPACK_RUNTIME_IMAGE = "ghcr.io/railwayapp/railpack-runtime-base:latest"
+)
+
 type BuildPlan struct {
 	BaseImage string            `json:"baseImage,omitempty"`
 	Steps     []Step            `json:"steps,omitempty"`
 	Start     Start             `json:"start,omitempty"`
 	Caches    map[string]*Cache `json:"caches,omitempty"`
 	Secrets   []string          `json:"secrets,omitempty"`
+	Deploy    Deploy            `json:"deploy,omitempty"`
+}
+
+type Deploy struct {
+	Inputs    []StepInput       `json:"inputs,omitempty"`
+	StartCmd  string            `json:"startCommand,omitempty"`
+	Variables map[string]string `json:"variables,omitempty"`
 }
 
 type Start struct {
