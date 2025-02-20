@@ -53,3 +53,13 @@ func TestAppAbsolutePath(t *testing.T) {
 
 	require.Equal(t, app.Source, absPath)
 }
+
+func TestAppReadJsonWithComments(t *testing.T) {
+	app, err := NewApp("../../examples/config-file")
+	require.NoError(t, err)
+
+	var config map[string]interface{}
+	err = app.ReadJSON("hello.jsonc", &config)
+	require.NoError(t, err)
+	require.Equal(t, config["hello"], "world")
+}
