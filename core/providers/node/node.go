@@ -19,6 +19,7 @@ const (
 
 type NodeProvider struct {
 	packageJson *PackageJson
+	workspace   *Workspace
 }
 
 func (p *NodeProvider) Name() string {
@@ -31,6 +32,13 @@ func (p *NodeProvider) Initialize(ctx *generate.GenerateContext) error {
 		return err
 	}
 	p.packageJson = packageJson
+
+	workspace, err := NewWorkspace(ctx.App)
+	if err != nil {
+		return err
+	}
+	p.workspace = workspace
+
 	return nil
 }
 
