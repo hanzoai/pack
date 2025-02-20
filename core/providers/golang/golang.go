@@ -26,6 +26,10 @@ func (p *GoProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 	return p.isGoMod(ctx) || ctx.App.HasMatch("main.go"), nil
 }
 
+func (p *GoProvider) Initialize(ctx *generate.GenerateContext) error {
+	return nil
+}
+
 func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 	packages, err := p.Packages(ctx)
 	if err != nil {

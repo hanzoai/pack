@@ -28,6 +28,10 @@ func (p *StaticfileProvider) Name() string {
 	return "staticfile"
 }
 
+func (p *StaticfileProvider) Initialize(ctx *generate.GenerateContext) error {
+	return nil
+}
+
 func (p *StaticfileProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 	rootDir, err := p.getRootDir(ctx)
 

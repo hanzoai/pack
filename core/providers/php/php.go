@@ -27,6 +27,10 @@ func (p *PhpProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 		ctx.App.HasMatch("composer.json"), nil
 }
 
+func (p *PhpProvider) Initialize(ctx *generate.GenerateContext) error {
+	return nil
+}
+
 func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	imageStep, err := p.phpImagePackage(ctx)
 	if err != nil {

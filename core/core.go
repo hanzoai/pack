@@ -235,6 +235,10 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 
 			// If there are no providers manually specified in the config,
 			if config.Providers == nil {
+				if err := provider.Initialize(ctx); err != nil {
+					log.Warnf("Failed to initialize provider `%s`: %s", provider.Name(), err.Error())
+					continue
+				}
 				providersToUse = append(providersToUse, provider)
 			}
 
@@ -250,6 +254,10 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 				continue
 			}
 
+			if err := provider.Initialize(ctx); err != nil {
+				log.Warnf("Failed to initialize provider `%s`: %s", providerName, err.Error())
+				continue
+			}
 			providersToUse = append(providersToUse, provider)
 		}
 	}

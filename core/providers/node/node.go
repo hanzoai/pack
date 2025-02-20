@@ -17,10 +17,21 @@ const (
 	DEFAULT_BUN_VERSION  = "latest"
 )
 
-type NodeProvider struct{}
+type NodeProvider struct {
+	packageJson *PackageJson
+}
 
 func (p *NodeProvider) Name() string {
 	return "node"
+}
+
+func (p *NodeProvider) Initialize(ctx *generate.GenerateContext) error {
+	packageJson, err := p.GetPackageJson(ctx.App)
+	if err != nil {
+		return err
+	}
+	p.packageJson = packageJson
+	return nil
 }
 
 func (p *NodeProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
@@ -28,26 +39,25 @@ func (p *NodeProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 }
 
 func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
-	packageJson, err := p.GetPackageJson(ctx.App)
+	if p.packageJson == nil {
+		return fmt.Errorf("package.json not loaded, did you call Initialize?")
+	}
+
+	packages, err := p.Packages(ctx, p.packageJson)
 	if err != nil {
 		return err
 	}
 
-	packages, err := p.Packages(ctx, packageJson)
+	install, err := p.Install(ctx, packages, p.packageJson)
 	if err != nil {
 		return err
 	}
 
-	install, err := p.Install(ctx, packages, packageJson)
-	if err != nil {
+	if _, err := p.Build(ctx, install, p.packageJson); err != nil {
 		return err
 	}
 
-	if _, err := p.Build(ctx, install, packageJson); err != nil {
-		return err
-	}
-
-	if err := p.start(ctx, packageJson); err != nil {
+	if err := p.start(ctx, p.packageJson); err != nil {
 		return err
 	}
 
