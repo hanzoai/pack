@@ -80,9 +80,10 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 
 	p.packageManager.installDependencies(ctx, p.packageJson, install)
 
+	// Prune
 	pruneStep := ctx.NewCommandStep("prune")
 	pruneStep.AddCommands([]plan.Command{
-		plan.NewExecCommand("npm prune --omit=dev"),
+		p.packageManager.PruneCommand(),
 	})
 	pruneStep.Variables["NPM_CONFIG_PRODUCTION"] = "true"
 	pruneStep.Inputs = []plan.StepInput{
@@ -90,12 +91,26 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	}
 	pruneStep.Secrets = []string{}
 
+	// Build
+	build := ctx.NewCommandStep("build")
+	build.Inputs = []plan.StepInput{
+		plan.NewStepInput(install.Name()),
+	}
+	_, ok := p.packageJson.Scripts["build"]
+	if ok {
+		build.AddCommands([]plan.Command{
+			plan.NewCopyCommand("."),
+			plan.NewExecCommand(p.packageManager.RunCmd("build")),
+		})
+	}
+
 	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.StepInput{
 		plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE),
+		plan.NewLocalInput("."),
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 			Include: miseStep.GetOutputPaths(),
 		}),
-		plan.NewStepInput(install.Name(), plan.InputOptions{
+		plan.NewStepInput(build.Name(), plan.InputOptions{
 			Include: []string{"/app"},
 			Exclude: []string{"node_modules"},
 		}),

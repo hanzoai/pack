@@ -108,6 +108,8 @@ func (g *BuildGraph) GetStateForInput(input plan.StepInput, baseState llb.State)
 
 	if input.Image != "" {
 		state = llb.Image(input.Image, llb.Platform(*g.Platform))
+	} else if input.Local {
+		state = *g.LocalState
 	} else if input.Step != "" {
 		if node, exists := g.graph.GetNode(input.Step); exists {
 			nodeState := node.(*StepNode).State
@@ -130,6 +132,7 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.StepInput) llb.State {
 
 	// Get the base state from the first input
 	state := g.GetStateForInput(inputs[0], llb.Scratch())
+	state = state.Dir("/app")
 	if len(inputs) == 1 {
 		return state
 	}

@@ -9,6 +9,7 @@ import (
 type StepInput struct {
 	Image   string   `json:"image,omitempty"`
 	Step    string   `json:"step,omitempty"`
+	Local   bool     `json:"local,omitempty"`
 	Include []string `json:"include,omitempty"`
 	Exclude []string `json:"exclude,omitempty"`
 }
@@ -45,6 +46,13 @@ func NewImageInput(image string, options ...InputOptions) StepInput {
 
 func RuntimeImageInput() StepInput {
 	return NewImageInput("ghcr.io/railwayapp/railpack-runtime-base:latest")
+}
+
+func NewLocalInput(path string) StepInput {
+	return StepInput{
+		Local:   true,
+		Include: []string{path},
+	}
 }
 
 func (i *StepInput) String() string {

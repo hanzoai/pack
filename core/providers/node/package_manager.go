@@ -91,6 +91,22 @@ func (p PackageManager) InstallDeps(ctx *generate.GenerateContext, install *gene
 	}
 }
 
+func (p PackageManager) PruneCommand() plan.Command {
+	switch p {
+	case PackageManagerNpm:
+		return plan.NewExecCommand("npm prune --omit=dev")
+	case PackageManagerPnpm:
+		return plan.NewExecCommand("pnpm prune --prod")
+	case PackageManagerBun:
+		return plan.NewExecShellCommand("rm -rf node_modules && bun install --production")
+	case PackageManagerYarn1:
+		return plan.NewExecCommand("yarn install --production=true")
+	case PackageManagerYarn2:
+		return plan.NewExecCommand("yarn install --production=true")
+	}
+	return nil
+}
+
 // SupportingInstallFiles returns a list of files that are needed to install dependencies
 func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 	patterns := []string{
