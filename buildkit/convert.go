@@ -84,6 +84,10 @@ func getStartState(buildState llb.State, localState llb.State, plan *p.BuildPlan
 	if plan.Start.BaseImage == "" {
 		startState := buildState.Dir(WorkingDir)
 
+		// TODO: This is confusing and needs to change
+		// If baseImage is provided, we are using `outputs` to copy files from the local state
+		// If not provided, we are using `outputs` to copy files from the build state
+		// Confusing and not good
 		for _, path := range plan.Start.Outputs {
 			startState = startState.File(llb.Copy(localState, path, path, &llb.CopyInfo{
 				CreateDestPath:      true,

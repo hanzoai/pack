@@ -1,11 +1,19 @@
 {
+  "$schema": "..//test/schema.json",
   "packages": {
+    "node": "22",
     "caddy": "latest"
   },
   "steps": {
+    "build": {
+      "commands": [{ "src": ".", "dest": "" }, "astro build"]
+    },
     "fmt": {
       "dependsOn": ["build"],
-      "commands": ["caddy fmt --overwrite Caddyfile"]
+      "commands": [
+        { "src": "Caddyfile", "dest": "Caddyfile" },
+        "caddy fmt --overwrite Caddyfile"
+      ]
     }
   },
   "start": {

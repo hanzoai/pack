@@ -23,7 +23,7 @@
 	# health check for railway
 	respond /health 200
 
-	# serve from the 'dist' folder (Vite builds into the 'dist' folder)
+	# serve from the 'dist' folder
 	root * dist
 
 	# enable gzipping responses
