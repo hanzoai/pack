@@ -20,6 +20,10 @@ func (p *PythonProvider) Name() string {
 	return "python"
 }
 
+func (p *PythonProvider) Initialize(ctx *generate.GenerateContext) error {
+	return nil
+}
+
 func (p *PythonProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 	hasPython := ctx.App.HasMatch("main.py") ||
 		p.hasRequirements(ctx) ||

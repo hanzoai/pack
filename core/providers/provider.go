@@ -12,6 +12,7 @@ import (
 type Provider interface {
 	Name() string
 	Detect(ctx *generate.GenerateContext) (bool, error)
+	Initialize(ctx *generate.GenerateContext) error
 	Plan(ctx *generate.GenerateContext) error
 }
 
