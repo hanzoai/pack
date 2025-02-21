@@ -11,29 +11,34 @@ import (
 type CommandStepBuilder struct {
 	DisplayName string
 	Commands    []plan.Command
-	// DependsOn   []string
-	// Outputs     []string
-	Inputs    []plan.StepInput
-	Assets    map[string]string
-	Variables map[string]string
-	Caches    []string
-	Secrets   []string
-	app       *a.App
-	env       *a.Environment
+	Inputs      []plan.Input
+	Assets      map[string]string
+	Variables   map[string]string
+	Caches      []string
+	Secrets     []string
+	app         *a.App
+	env         *a.Environment
 }
 
 func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 	step := &CommandStepBuilder{
 		DisplayName: c.GetStepName(name),
-		// DependsOn:   []string{MisePackageStepName},
-		Inputs:    []plan.StepInput{},
-		Commands:  []plan.Command{},
-		Assets:    map[string]string{},
-		Variables: map[string]string{},
-		Caches:    []string{},
-		Secrets:   []string{"*"},
-		app:       c.App,
-		env:       c.Env,
+		Inputs:      []plan.Input{},
+		Commands:    []plan.Command{},
+		Assets:      map[string]string{},
+		Variables:   map[string]string{},
+		Caches:      []string{},
+		Secrets:     []string{"*"},
+		app:         c.App,
+		env:         c.Env,
+	}
+
+	// Remove any existing step with the same name
+	for i, existingStep := range c.Steps {
+		if existingStep.Name() == step.Name() {
+			c.Steps = append(c.Steps[:i], c.Steps[i+1:]...)
+			break
+		}
 	}
 
 	c.Steps = append(c.Steps, step)
@@ -41,17 +46,13 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 	return step
 }
 
-func (b *CommandStepBuilder) AddInput(input plan.StepInput) {
+func (b *CommandStepBuilder) AddInput(input plan.Input) {
 	b.Inputs = append(b.Inputs, input)
 }
 
-func (b *CommandStepBuilder) AddInputs(inputs []plan.StepInput) {
+func (b *CommandStepBuilder) AddInputs(inputs []plan.Input) {
 	b.Inputs = append(b.Inputs, inputs...)
 }
-
-// func (b *CommandStepBuilder) DependOn(name string) {
-// 	b.DependsOn = append(b.DependsOn, name)
-// }
 
 func (b *CommandStepBuilder) AddVariables(variables map[string]string) {
 	maps.Copy(b.Variables, variables)
@@ -113,8 +114,6 @@ func (b *CommandStepBuilder) Name() string {
 func (b *CommandStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
 
-	// step.DependsOn = utils.RemoveDuplicates(b.DependsOn)
-	// step.Outputs = b.Outputs
 	step.Inputs = b.Inputs
 	step.Commands = b.Commands
 	step.Assets = b.Assets

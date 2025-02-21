@@ -76,12 +76,11 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
 	maps.Copy(ctx.Deploy.Variables, p.GetNodeEnvVars(ctx))
 
-	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.StepInput{
+	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
 		plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE),
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 			Include: miseStep.GetOutputPaths(),
 		}),
-		plan.NewLocalInput("."),
 		plan.NewStepInput(build.Name(), plan.InputOptions{
 			Include: []string{"."},
 			Exclude: []string{"node_modules"},
@@ -89,6 +88,7 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		plan.NewStepInput(prune.Name(), plan.InputOptions{
 			Include: []string{"/app/node_modules"}, // we only wanted the pruned node_modules
 		}),
+		plan.NewLocalInput("."),
 	}...)
 
 	return nil
@@ -130,6 +130,10 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.Comm
 }
 
 func (p *NodeProvider) PruneNodeDeps(ctx *generate.GenerateContext, prune *generate.CommandStepBuilder) {
+	if ctx.Env.IsConfigVariableTruthy("NO_PRUNE") {
+		return
+	}
+
 	prune.Variables["NPM_CONFIG_PRODUCTION"] = "true"
 	prune.Secrets = []string{}
 	p.packageManager.PruneDeps(ctx, prune)

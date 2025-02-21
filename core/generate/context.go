@@ -16,10 +16,6 @@ import (
 	"github.com/railwayapp/railpack/core/utils"
 )
 
-const (
-	DefaultBaseImage = "ghcr.io/railwayapp/railpack-runtime-base:latest"
-)
-
 type BuildStepOptions struct {
 	ResolvedPackages map[string]*resolver.ResolvedPackage
 	Caches           *CacheContext
@@ -37,7 +33,6 @@ type GenerateContext struct {
 	BaseImage string
 	Steps     []StepBuilder
 	Deploy    *DeployBuilder
-	Start     StartContext
 
 	Caches  *CacheContext
 	Secrets []string
@@ -58,16 +53,14 @@ func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error
 	}
 
 	return &GenerateContext{
-		App:       app,
-		Env:       env,
-		BaseImage: DefaultBaseImage,
-		Steps:     make([]StepBuilder, 0),
-		Start:     *NewStartContext(),
-		Deploy:    NewDeployBuilder(),
-		Caches:    NewCacheContext(),
-		Secrets:   []string{},
-		Metadata:  NewMetadata(),
-		Resolver:  resolver,
+		App:      app,
+		Env:      env,
+		Steps:    make([]StepBuilder, 0),
+		Deploy:   NewDeployBuilder(),
+		Caches:   NewCacheContext(),
+		Secrets:  []string{},
+		Metadata: NewMetadata(),
+		Resolver: resolver,
 	}, nil
 }
 
@@ -118,9 +111,7 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 	}
 
 	// Generate the plan based on the context and resolved packages
-
 	buildPlan := plan.NewBuildPlan()
-	buildPlan.BaseImage = c.BaseImage
 
 	buildStepOptions := &BuildStepOptions{
 		ResolvedPackages: resolvedPackages,
@@ -138,16 +129,8 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 	}
 
 	buildPlan.Caches = c.Caches.Caches
-
 	buildPlan.Secrets = utils.RemoveDuplicates(c.Secrets)
-
 	buildPlan.Deploy = *c.Deploy.Build()
-
-	buildPlan.Start.BaseImage = c.Start.BaseImage
-	buildPlan.Start.Command = c.Start.Command
-	buildPlan.Start.Outputs = utils.RemoveDuplicates(c.Start.outputs)
-	buildPlan.Start.Paths = utils.RemoveDuplicates(c.Start.paths)
-	buildPlan.Start.Variables = c.Start.variables
 
 	return buildPlan, resolvedPackages, nil
 }
@@ -237,23 +220,23 @@ func (c *GenerateContext) ApplyConfig(config *config.Config) error {
 	c.Secrets = append(c.Secrets, config.Secrets...)
 
 	// Start config
-	if config.Start.BaseImage != "" {
-		c.Start.BaseImage = config.Start.BaseImage
-	}
+	// if config.Start.BaseImage != "" {
+	// 	c.Start.BaseImage = config.Start.BaseImage
+	// }
 
-	if config.Start.Command != "" {
-		c.Start.Command = config.Start.Command
-	}
+	// if config.Start.Command != "" {
+	// 	c.Start.Command = config.Start.Command
+	// }
 
-	if config.Start.Variables != nil {
-		c.Start.AddEnvVars(config.Start.Variables)
-	}
+	// if config.Start.Variables != nil {
+	// 	c.Start.AddEnvVars(config.Start.Variables)
+	// }
 
-	c.Start.AddPaths(config.Start.Paths)
+	// c.Start.AddPaths(config.Start.Paths)
 
-	if len(config.Start.Outputs) > 0 {
-		c.Start.outputs = config.Start.Outputs
-	}
+	// if len(config.Start.Outputs) > 0 {
+	// 	c.Start.outputs = config.Start.Outputs
+	// }
 
 	return nil
 }

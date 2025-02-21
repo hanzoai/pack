@@ -53,7 +53,7 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 }
 
 func (p *PythonProvider) start(ctx *generate.GenerateContext) error {
-	ctx.Start.AddOutputs([]string{"."})
+	// ctx.Start.AddOutputs([]string{"."})
 
 	var startCommand string
 
@@ -62,14 +62,13 @@ func (p *PythonProvider) start(ctx *generate.GenerateContext) error {
 	}
 
 	if startCommand != "" {
-		ctx.Start.Command = startCommand
+		// ctx.Start.Command = startCommand
 	}
 
 	return nil
 }
 
 func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
-
 	hasRequirements := p.hasRequirements(ctx)
 	hasPyproject := p.hasPyproject(ctx)
 	hasPipfile := p.hasPipfile(ctx)

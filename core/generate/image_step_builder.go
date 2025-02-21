@@ -6,10 +6,9 @@ import (
 )
 
 type ImageStepBuilder struct {
-	DisplayName string
-	Resolver    *resolver.Resolver
-	Packages    []*resolver.PackageRef
-	// Outputs          []string
+	DisplayName      string
+	Resolver         *resolver.Resolver
+	Packages         []*resolver.PackageRef
 	ResolveStepImage func(options *BuildStepOptions) string
 }
 
@@ -49,12 +48,10 @@ func (b *ImageStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) 
 	step := plan.NewStep(b.DisplayName)
 
 	image := b.ResolveStepImage(options)
-	step.Inputs = []plan.StepInput{
+	step.Inputs = []plan.Input{
 		plan.NewImageInput(image),
 	}
 
-	// step.StartingImage = b.ResolveStepImage(options)
-	// step.Outputs = b.Outputs
 	step.Secrets = []string{}
 
 	return step, nil

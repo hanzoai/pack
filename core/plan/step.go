@@ -6,7 +6,7 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-type StepInput struct {
+type Input struct {
 	Image   string   `json:"image,omitempty"`
 	Step    string   `json:"step,omitempty"`
 	Local   bool     `json:"local,omitempty"`
@@ -19,8 +19,8 @@ type InputOptions struct {
 	Exclude []string
 }
 
-func NewStepInput(stepName string, options ...InputOptions) StepInput {
-	input := StepInput{
+func NewStepInput(stepName string, options ...InputOptions) Input {
+	input := Input{
 		Step: stepName,
 	}
 
@@ -32,8 +32,8 @@ func NewStepInput(stepName string, options ...InputOptions) StepInput {
 	return input
 }
 
-func NewImageInput(image string, options ...InputOptions) StepInput {
-	input := StepInput{
+func NewImageInput(image string, options ...InputOptions) Input {
+	input := Input{
 		Image: image,
 	}
 
@@ -44,18 +44,18 @@ func NewImageInput(image string, options ...InputOptions) StepInput {
 	return input
 }
 
-func RuntimeImageInput() StepInput {
+func RuntimeImageInput() Input {
 	return NewImageInput("ghcr.io/railwayapp/railpack-runtime-base:latest")
 }
 
-func NewLocalInput(path string) StepInput {
-	return StepInput{
+func NewLocalInput(path string) Input {
+	return Input{
 		Local:   true,
 		Include: []string{path},
 	}
 }
 
-func (i *StepInput) String() string {
+func (i *Input) String() string {
 	bytes, _ := json.Marshal(i)
 	return string(bytes)
 }
@@ -64,10 +64,7 @@ type Step struct {
 	// The name of the step
 	Name string `json:"name,omitempty" jsonschema:"description=The name of the step"`
 
-	Inputs []StepInput `json:"inputs,omitempty" jsonschema:"description=The inputs for this step"`
-
-	// The steps that this step depends on. The step will only run after all the steps in DependsOn have run
-	// DependsOn []string `json:"dependsOn,omitempty" jsonschema:"description=The steps that this step depends on. The step will only run after all the steps in DependsOn have run"`
+	Inputs []Input `json:"inputs,omitempty" jsonschema:"description=The inputs for this step"`
 
 	// The commands to run in this step
 	Commands []Command `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
@@ -86,11 +83,6 @@ type Step struct {
 
 	// The caches available to all commands in this step. Each cache must refer to a cache at the top level of the plan
 	Caches []string `json:"caches,omitempty" jsonschema:"description=The caches available to all commands in this step. Each cache must refer to a cache at the top level of the plan"`
-
-	// The base image that will be used for this step
-	// If empty (default), the base image will be the one from the previous step
-	// Only set this if you don't want to reuse any part of the file system from the previous step
-	// StartingImage string `json:"startingImage,omitempty" jsonschema:"description=The base image that will be used for this step. If empty (default), the base image will be the one from the previous step. Only set this if you don't want to reuse any part of the file system from the previous step"`
 }
 
 func NewStep(name string) *Step {
@@ -101,10 +93,6 @@ func NewStep(name string) *Step {
 		Secrets:   []string{"*"}, // default to using all secrets
 	}
 }
-
-// func (s *Step) DependOn(name string) {
-// 	s.DependsOn = append(s.DependsOn, name)
-// }
 
 func (s *Step) AddCommands(commands []Command) {
 	if s.Commands == nil {

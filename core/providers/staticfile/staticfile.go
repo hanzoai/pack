@@ -57,8 +57,8 @@ func (p *StaticfileProvider) Plan(ctx *generate.GenerateContext) error {
 
 	// setupStep.DependsOn = append(setupStep.DependsOn, ctx.GetMiseStepBuilder().DisplayName)
 
-	ctx.Start.AddOutputs([]string{"."})
-	ctx.Start.Command = p.CaddyStartCommand(ctx, rootDir)
+	// ctx.Start.AddOutputs([]string{"."})
+	// ctx.Start.Command = p.CaddyStartCommand(ctx, rootDir)
 
 	return nil
 }

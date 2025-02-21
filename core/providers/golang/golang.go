@@ -47,19 +47,19 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 	}
 
 	if build != nil {
-		ctx.Start.Command = fmt.Sprintf("./%s", GO_BINARY_NAME)
+		ctx.Deploy.StartCmd = fmt.Sprintf("./%s", GO_BINARY_NAME)
 
 		if !p.hasCGOEnabled(ctx) {
-			ctx.Start.AddOutputs([]string{GO_BINARY_NAME})
+			// ctx.Deploy.Outputs = []string{GO_BINARY_NAME}
 
-			ctx.Start.BaseImage = START_IMAGE
-			if startImage, _ := ctx.Env.GetConfigVariable("START_IMAGE"); startImage != "" {
-				ctx.Start.BaseImage = startImage
-			}
+			// ctx.Start.BaseImage = START_IMAGE
+			// if startImage, _ := ctx.Env.GetConfigVariable("START_IMAGE"); startImage != "" {
+			// 	ctx.Start.BaseImage = startImage
+			// }
 		}
 
 		if p.isGin(ctx) {
-			ctx.Start.AddEnvVars(map[string]string{"GIN_MODE": "release"})
+			ctx.Deploy.Variables["GIN_MODE"] = "release"
 		}
 	}
 

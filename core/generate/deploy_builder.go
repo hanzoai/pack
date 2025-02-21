@@ -3,14 +3,14 @@ package generate
 import "github.com/railwayapp/railpack/core/plan"
 
 type DeployBuilder struct {
-	Inputs    []plan.StepInput
+	Inputs    []plan.Input
 	StartCmd  string
 	Variables map[string]string
 }
 
 func NewDeployBuilder() *DeployBuilder {
 	return &DeployBuilder{
-		Inputs:    []plan.StepInput{},
+		Inputs:    []plan.Input{},
 		StartCmd:  "",
 		Variables: map[string]string{},
 	}

@@ -27,8 +27,6 @@ const (
 func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *Image, error) {
 	platform := opts.BuildPlatform.ToPlatform()
 
-	state := getBaseState(plan, platform)
-
 	localState := llb.Local("context",
 		llb.SharedKeyHint("local"),
 		llb.SessionID(opts.SessionID),
@@ -37,7 +35,7 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 	)
 
 	cacheStore := build_llb.NewBuildKitCacheStore(opts.CacheKey)
-	graph, err := build_llb.NewBuildGraph(plan, &state, &localState, cacheStore, opts.SecretsHash, &platform)
+	graph, err := build_llb.NewBuildGraph(plan, &localState, cacheStore, opts.SecretsHash, &platform)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -47,13 +45,11 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 		return nil, nil, err
 	}
 
-	state = *graphOutput.State
-	state = getStartState(state, localState, plan, platform)
-
+	state := getStartState(*graphOutput.State)
 	imageEnv := getImageEnv(graphOutput, plan)
 
-	startCommand := plan.Start.Command
-	if plan.Start.Command == "" {
+	startCommand := plan.Deploy.StartCmd
+	if startCommand == "" {
 		startCommand = "/bin/bash"
 	}
 
@@ -79,58 +75,22 @@ func ConvertPlanToLLB(plan *p.BuildPlan, opts ConvertPlanOptions) (*llb.State, *
 	return &state, &image, nil
 }
 
-func getStartState(buildState llb.State, localState llb.State, plan *p.BuildPlan, platform specs.Platform) llb.State {
-	// If there is no custom start image, we just copy over the outputs from the local state
-	if plan.Start.BaseImage == "" {
-		startState := buildState.Dir(WorkingDir)
-
-		// TODO: This is confusing and needs to change
-		// If baseImage is provided, we are using `outputs` to copy files from the local state
-		// If not provided, we are using `outputs` to copy files from the build state
-		// Confusing and not good
-		for _, path := range plan.Start.Outputs {
-			startState = startState.File(llb.Copy(localState, path, path, &llb.CopyInfo{
-				CreateDestPath:      true,
-				FollowSymlinks:      true,
-				CopyDirContentsOnly: true,
-			}))
-		}
-
-		return startState
-	}
-
-	startState := llb.Image(plan.Start.BaseImage, llb.Platform(platform)).Dir(WorkingDir)
-
-	// This is all the user code + any modifications made by the providers
-	mergedState := buildState.File(llb.Copy(localState, ".", ".", &llb.CopyInfo{
-		CreateDestPath:      true,
-		FollowSymlinks:      true,
-		CopyDirContentsOnly: true,
-	}))
-
-	// Copy over necessary files to the start image
-	for _, path := range plan.Start.Outputs {
-		startState = startState.File(llb.Copy(mergedState, path, path, &llb.CopyInfo{
-			CreateDestPath:      true,
-			FollowSymlinks:      true,
-			CopyDirContentsOnly: true,
-		}))
-	}
-
+func getStartState(buildState llb.State) llb.State {
+	startState := buildState.Dir(WorkingDir)
 	return startState
 }
 
 func getImageEnv(graphOutput *build_llb.BuildGraphOutput, plan *p.BuildPlan) []string {
 	paths := []string{}
+	paths = append(paths, plan.Deploy.Paths...)
 	paths = append(paths, graphOutput.GraphEnv.PathList...)
-	paths = append(paths, plan.Start.Paths...)
 	paths = append(paths, system.DefaultPathEnvUnix)
 	slices.Sort(paths)
 	pathString := strings.Join(paths, ":")
 
-	envMap := make(map[string]string, len(graphOutput.GraphEnv.EnvVars)+len(plan.Start.Variables)+1)
+	envMap := make(map[string]string, len(graphOutput.GraphEnv.EnvVars)+len(plan.Deploy.Variables)+1)
 	maps.Copy(envMap, graphOutput.GraphEnv.EnvVars)
-	maps.Copy(envMap, plan.Start.Variables)
+	maps.Copy(envMap, plan.Deploy.Variables)
 
 	envMap["PATH"] = pathString
 
@@ -141,14 +101,4 @@ func getImageEnv(graphOutput *build_llb.BuildGraphOutput, plan *p.BuildPlan) []s
 	}
 
 	return envVars
-}
-
-func getBaseState(plan *p.BuildPlan, platform specs.Platform) llb.State {
-	state := llb.Image(plan.BaseImage,
-		llb.Platform(platform),
-	)
-
-	state = state.AddEnv("DEBIAN_FRONTEND", "noninteractive").Dir(WorkingDir)
-
-	return state
 }

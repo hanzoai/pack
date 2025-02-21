@@ -14,5 +14,5 @@ func TestProcfile(t *testing.T) {
 	_, err := provider.Plan(ctx)
 	require.NoError(t, err)
 
-	require.Equal(t, "gunicorn --bind 0.0.0.0:3333 main:app", ctx.Start.Command)
+	require.Equal(t, "gunicorn --bind 0.0.0.0:3333 main:app", ctx.Deploy.StartCmd)
 }

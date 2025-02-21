@@ -144,10 +144,10 @@ func FormatBuildResult(br *BuildResult, options ...PrintOptions) string {
 		}
 	}
 
-	if br.Plan.Start.Command != "" {
-		output.WriteString(sectionHeaderStyle.MarginTop(1).Render("Start"))
+	if br.Plan.Deploy.StartCmd != "" {
+		output.WriteString(sectionHeaderStyle.MarginTop(1).Render("Deploy"))
 		output.WriteString("\n")
-		output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(br.Plan.Start.Command)))
+		output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(br.Plan.Deploy.StartCmd)))
 	}
 
 	if opts.Metadata && br.Metadata != nil && len(br.Metadata) > 0 {

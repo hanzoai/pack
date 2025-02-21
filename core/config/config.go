@@ -7,17 +7,14 @@ import (
 )
 
 type Config struct {
-	// The base image to use for the build
-	BaseImage string `json:"baseImage,omitempty" jsonschema:"description=The base image to use for the build"`
-
 	// List of providers to use
 	Providers *[]string `json:"providers,omitempty" jsonschema:"description=List of providers to use"`
 
 	// Map of step names to step definitions
 	Steps map[string]*plan.Step `json:"steps,omitempty" jsonschema:"description=Map of step names to step definitions"`
 
-	// Start configuration
-	Start plan.Start `json:"start,omitempty" jsonschema:"description=Start configuration"`
+	// Deploy configuration
+	Deploy plan.Deploy `json:"deploy,omitempty" jsonschema:"description=Deploy configuration"`
 
 	// Map of package name to package version
 	Packages map[string]string `json:"packages,omitempty" jsonschema:"description=Map of package name to package version"`

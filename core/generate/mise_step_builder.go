@@ -23,10 +23,10 @@ type MiseStepBuilder struct {
 	MisePackages          []*resolver.PackageRef
 	SupportingMiseFiles   []string
 	Assets                map[string]string
-	// Outputs               []string
-	Variables map[string]string
-	app       *a.App
-	env       *a.Environment
+	Inputs                []plan.Input
+	Variables             map[string]string
+	app                   *a.App
+	env                   *a.Environment
 }
 
 func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
@@ -36,10 +36,10 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 		MisePackages:          []*resolver.PackageRef{},
 		SupportingAptPackages: []string{},
 		Assets:                map[string]string{},
-		// Outputs:               []string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
-		Variables: map[string]string{},
-		app:       c.App,
-		env:       c.Env,
+		Inputs:                []plan.Input{},
+		Variables:             map[string]string{},
+		app:                   c.App,
+		env:                   c.Env,
 	}
 
 	c.Steps = append(c.Steps, step)
@@ -49,6 +49,10 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 
 func (b *MiseStepBuilder) AddSupportingAptPackage(name string) {
 	b.SupportingAptPackages = append(b.SupportingAptPackages, name)
+}
+
+func (b *MiseStepBuilder) AddInput(input plan.Input) {
+	b.Inputs = append(b.Inputs, input)
 }
 
 func (b *MiseStepBuilder) Default(name string, defaultVersion string) resolver.PackageRef {
@@ -72,7 +76,10 @@ func (b *MiseStepBuilder) Name() string {
 }
 
 func (b *MiseStepBuilder) GetOutputPaths() []string {
-	return []string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"}
+	supportingMiseConfigFiles := b.GetSupportingMiseConfigFiles(b.app.Source)
+	files := []string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"}
+	files = append(files, supportingMiseConfigFiles...)
+	return files
 }
 
 func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
@@ -84,7 +91,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 
 	// step.StartingImage = BuilderBaseImage
 
-	step.Inputs = []plan.StepInput{
+	step.Inputs = []plan.Input{
 		plan.NewImageInput(plan.RAILPACK_BUILDER_IMAGE),
 	}
 
@@ -111,9 +118,6 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		step.AddCommands([]plan.Command{
 			plan.NewCopyCommand(file, "/app/"+file),
 		})
-
-		// We want to make sure the file is copied into the next step
-		// b.Outputs = append(b.Outputs, "/app/"+file)
 	}
 
 	// Setup apt commands

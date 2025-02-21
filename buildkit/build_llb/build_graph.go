@@ -17,7 +17,6 @@ import (
 
 type BuildGraph struct {
 	graph      *graph.Graph
-	BaseState  *llb.State
 	CacheStore *BuildKitCacheStore
 	Plan       *plan.BuildPlan
 	Platform   *specs.Platform
@@ -32,7 +31,7 @@ type BuildGraphOutput struct {
 	GraphEnv BuildEnvironment
 }
 
-func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, localState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
+func NewBuildGraph(plan *plan.BuildPlan, localState *llb.State, cacheStore *BuildKitCacheStore, secretsHash string, platform *specs.Platform) (*BuildGraph, error) {
 	var secretsFile *llb.State
 	if secretsHash != "" {
 		st := llb.Scratch().File(llb.Mkfile("/secrets-hash", 0644, []byte(secretsHash)), llb.WithCustomName("[railpack] secrets hash"))
@@ -42,7 +41,6 @@ func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, localState *llb.S
 
 	g := &BuildGraph{
 		graph:      graph.NewGraph(),
-		BaseState:  baseState,
 		CacheStore: cacheStore,
 		Plan:       plan,
 		Platform:   platform,
@@ -83,16 +81,6 @@ func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, localState *llb.S
 				children = append(children, llbNode)
 				depNode.SetChildren(children)
 			}
-
-			// if depNode, exists := g.graph.GetNode(depName); exists {
-			// 	parents := llbNode.GetParents()
-			// 	parents = append(parents, depNode)
-			// 	llbNode.SetParents(parents)
-
-			// 	children := depNode.GetChildren()
-			// 	children = append(children, node)
-			// 	depNode.SetChildren(children)
-			// }
 		}
 	}
 
@@ -103,7 +91,7 @@ func NewBuildGraph(plan *plan.BuildPlan, baseState *llb.State, localState *llb.S
 	return g, nil
 }
 
-func (g *BuildGraph) GetStateForInput(input plan.StepInput, baseState llb.State) llb.State {
+func (g *BuildGraph) GetStateForInput(input plan.Input, baseState llb.State) llb.State {
 	var state llb.State
 
 	if input.Image != "" {
@@ -125,9 +113,13 @@ func (g *BuildGraph) GetStateForInput(input plan.StepInput, baseState llb.State)
 	return state
 }
 
-func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.StepInput) llb.State {
+func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.Input) llb.State {
 	if len(inputs) == 0 {
 		return llb.Scratch()
+	}
+
+	if len(inputs[0].Include)+len(inputs[0].Exclude) > 0 {
+		panic("first input must not have include or exclude paths")
 	}
 
 	// Get the base state from the first input
