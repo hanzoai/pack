@@ -64,12 +64,30 @@ func (p PackageManager) installDependencies(ctx *generate.GenerateContext, packa
 	p.InstallDeps(ctx, install)
 }
 
+// GetCache returns the cache for the package manager
+func (p PackageManager) GetInstallCache(ctx *generate.GenerateContext) string {
+	switch p {
+	case PackageManagerNpm:
+		return ctx.Caches.AddCache("npm-install", "/root/.npm")
+	case PackageManagerPnpm:
+		return ctx.Caches.AddCache("pnpm-install", "/root/.local/share/pnpm/store/v3")
+	case PackageManagerBun:
+		return ctx.Caches.AddCache("bun-install", "/root/.bun/install/cache")
+	case PackageManagerYarn1:
+		return ctx.Caches.AddCacheWithType("yarn-install", "/usr/local/share/.cache/yarn", plan.CacheTypeLocked)
+	case PackageManagerYarn2:
+		return ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn")
+	default:
+		return ""
+	}
+}
+
 func (p PackageManager) InstallDeps(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) {
+	install.AddCache(p.GetInstallCache(ctx))
+
 	switch p {
 	case PackageManagerNpm:
 		hasLockfile := ctx.App.HasMatch("package-lock.json")
-		install.AddCache(ctx.Caches.AddCache("npm-install", "/root/.npm"))
-
 		if hasLockfile {
 			install.AddCommand(plan.NewExecCommand("npm ci"))
 		} else {
@@ -77,34 +95,31 @@ func (p PackageManager) InstallDeps(ctx *generate.GenerateContext, install *gene
 		}
 	case PackageManagerPnpm:
 		install.AddCommand(plan.NewExecCommand("pnpm install --frozen-lockfile --prod=false"))
-		install.AddCache(ctx.Caches.AddCache("pnpm-install", "/root/.local/share/pnpm/store/v3"))
 	case PackageManagerBun:
 		install.AddCommand(plan.NewExecCommand("bun install --frozen-lockfile"))
-		// TODO: We should also cache this for the build step
-		install.AddCache(ctx.Caches.AddCache("bun-install", "/root/.bun/install/cache"))
 	case PackageManagerYarn1:
 		install.AddCommand(plan.NewExecCommand("yarn install --frozen-lockfile"))
-		install.AddCache(ctx.Caches.AddCacheWithType("yarn-install", "/usr/local/share/.cache/yarn", plan.CacheTypeLocked))
 	case PackageManagerYarn2:
 		install.AddCommand(plan.NewExecCommand("yarn install --check-cache"))
-		install.AddCache(ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn"))
 	}
 }
 
-func (p PackageManager) PruneCommand() plan.Command {
+func (p PackageManager) PruneDeps(ctx *generate.GenerateContext, prune *generate.CommandStepBuilder) {
+	prune.AddCache(p.GetInstallCache(ctx))
+
 	switch p {
 	case PackageManagerNpm:
-		return plan.NewExecCommand("npm prune --omit=dev")
+		prune.AddCommand(plan.NewExecCommand("npm prune --omit=dev"))
 	case PackageManagerPnpm:
-		return plan.NewExecCommand("pnpm prune --prod")
+		prune.AddCommand(plan.NewExecCommand("pnpm prune --prod"))
 	case PackageManagerBun:
-		return plan.NewExecShellCommand("rm -rf node_modules && bun install --production")
+		// Prune is not supported in Bun. https://github.com/oven-sh/bun/issues/3605
+		prune.AddCommand(plan.NewExecShellCommand("rm -rf node_modules && bun install --production"))
 	case PackageManagerYarn1:
-		return plan.NewExecCommand("yarn install --production=true")
+		prune.AddCommand(plan.NewExecCommand("yarn install --production=true"))
 	case PackageManagerYarn2:
-		return plan.NewExecCommand("yarn install --production=true")
+		prune.AddCommand(plan.NewExecCommand("yarn install --production=true"))
 	}
-	return nil
 }
 
 // SupportingInstallFiles returns a list of files that are needed to install dependencies
@@ -118,7 +133,6 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 		"**/bun.lockb",
 		"**/bun.lock",
 		"**/yarn.lock",
-		"**/node_modules",
 		"**/.pnp.*",        // Yarn Plug'n'Play files
 		"**/.yarnrc.yml",   // Yarn 2+ config
 		"**/.npmrc",        // NPM config
@@ -174,8 +188,10 @@ func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext,
 	}
 }
 
+// Check is Node is required for the package manager
+// If the package manager is Bun, we avoid using Node unless it's specified in the package.json
 func (p PackageManager) requiresNode(packageJson *PackageJson) bool {
-	if p != PackageManagerBun || packageJson == nil {
+	if p != PackageManagerBun || packageJson == nil || packageJson.PackageManager != nil {
 		return true
 	}
 

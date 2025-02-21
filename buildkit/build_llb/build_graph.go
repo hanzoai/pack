@@ -132,7 +132,6 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.StepInput) llb.State {
 
 	// Get the base state from the first input
 	state := g.GetStateForInput(inputs[0], llb.Scratch())
-	state = state.Dir("/app")
 	if len(inputs) == 1 {
 		return state
 	}
@@ -145,13 +144,47 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.StepInput) llb.State {
 		// Copy the specified paths (or everything) from this input into our base state
 		if len(input.Include) > 0 {
 			for _, include := range input.Include {
-				state = state.File(llb.Copy(inputState, include, include, &llb.CopyInfo{
-					CreateDestPath:     true,
-					FollowSymlinks:     true,
-					AllowWildcard:      true,
-					AllowEmptyWildcard: true,
-					ExcludePatterns:    input.Exclude,
-				}))
+				fmt.Printf("Copying %s from %s\n", include, input.Step)
+
+				if input.Local {
+					// For local context, always copy into /app
+					destPath := filepath.Join("/app", filepath.Base(include))
+					state = state.File(llb.Copy(inputState, include, destPath, &llb.CopyInfo{
+						CopyDirContentsOnly: true,
+						CreateDestPath:      true,
+						FollowSymlinks:      true,
+						AllowWildcard:       true,
+						AllowEmptyWildcard:  true,
+						ExcludePatterns:     input.Exclude,
+					}))
+				} else {
+					// For other states, handle paths based on whether they're absolute or relative
+					srcPath := include
+					var destPath string
+
+					switch {
+					case include == "." || include == "/app" || include == "/app/":
+						// Copy entire /app directory
+						srcPath = "/app"
+						destPath = "/app"
+					case filepath.IsAbs(include):
+						// Preserve absolute paths exactly
+						destPath = include
+					default:
+						// Relative paths are relative to /app
+						srcPath = filepath.Join("/app", include)
+						destPath = filepath.Join("/app", include)
+					}
+
+					state = state.File(llb.Copy(inputState, srcPath, destPath, &llb.CopyInfo{
+						CopyDirContentsOnly: true,
+						CreateDestPath:      true,
+						FollowSymlinks:      true,
+						AllowWildcard:       true,
+						AllowEmptyWildcard:  true,
+						ExcludePatterns:     input.Exclude,
+					}))
+				}
 			}
 		}
 	}

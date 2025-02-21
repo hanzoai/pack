@@ -3,6 +3,7 @@ package generate
 import (
 	"maps"
 
+	"github.com/charmbracelet/log"
 	a "github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/plan"
 )
@@ -40,6 +41,14 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 	return step
 }
 
+func (b *CommandStepBuilder) AddInput(input plan.StepInput) {
+	b.Inputs = append(b.Inputs, input)
+}
+
+func (b *CommandStepBuilder) AddInputs(inputs []plan.StepInput) {
+	b.Inputs = append(b.Inputs, inputs...)
+}
+
 // func (b *CommandStepBuilder) DependOn(name string) {
 // 	b.DependsOn = append(b.DependsOn, name)
 // }
@@ -49,6 +58,11 @@ func (b *CommandStepBuilder) AddVariables(variables map[string]string) {
 }
 
 func (b *CommandStepBuilder) AddCache(name string) {
+	if name == "" {
+		log.Error("Cache name is empty")
+		return
+	}
+
 	b.Caches = append(b.Caches, name)
 }
 

@@ -60,118 +60,59 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 
 	// Install
 	install := ctx.NewCommandStep("install")
-
-	install.Inputs = []plan.StepInput{
-		plan.NewStepInput(miseStep.Name()),
-	}
-
-	maps.Copy(install.Variables, p.GetNodeEnvVars(ctx))
-	install.Secrets = []string{}
-	install.UseSecretsWithPrefixes([]string{"NODE", "NPM", "BUN", "PNPM", "YARN", "CI"})
-	install.AddPaths([]string{"/app/node_modules/.bin"})
-
-	if p.usesCorepack() {
-		install.AddCommands([]plan.Command{
-			plan.NewCopyCommand("package.json"),
-			plan.NewExecCommand("corepack enable"),
-			plan.NewExecCommand("corepack prepare --activate"),
-		})
-	}
-
-	p.packageManager.installDependencies(ctx, p.packageJson, install)
+	install.AddInput(plan.NewStepInput(miseStep.Name()))
+	p.InstallNodeDeps(ctx, install)
 
 	// Prune
-	pruneStep := ctx.NewCommandStep("prune")
-	pruneStep.AddCommands([]plan.Command{
-		p.packageManager.PruneCommand(),
-	})
-	pruneStep.Variables["NPM_CONFIG_PRODUCTION"] = "true"
-	pruneStep.Inputs = []plan.StepInput{
-		plan.NewStepInput(install.Name()),
-	}
-	pruneStep.Secrets = []string{}
+	prune := ctx.NewCommandStep("prune")
+	prune.AddInput(plan.NewStepInput(install.Name()))
+	p.PruneNodeDeps(ctx, prune)
 
 	// Build
 	build := ctx.NewCommandStep("build")
-	build.Inputs = []plan.StepInput{
-		plan.NewStepInput(install.Name()),
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	// Deploy
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetNodeEnvVars(ctx))
+
+	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.StepInput{
+		plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE),
+		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
+			Include: miseStep.GetOutputPaths(),
+		}),
+		plan.NewLocalInput("."),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{"."},
+			Exclude: []string{"node_modules"},
+		}),
+		plan.NewStepInput(prune.Name(), plan.InputOptions{
+			Include: []string{"/app/node_modules"}, // we only wanted the pruned node_modules
+		}),
+	}...)
+
+	return nil
+}
+
+func (p *NodeProvider) GetStartCommand(ctx *generate.GenerateContext) string {
+	if start := p.getScripts(p.packageJson, "start"); start != "" {
+		return p.packageManager.RunCmd("start")
+	} else if main := p.packageJson.Main; main != "" {
+		return p.packageManager.RunScriptCommand(main)
+	} else if files, err := ctx.App.FindFiles("{index.js,index.ts}"); err == nil && len(files) > 0 {
+		return p.packageManager.RunScriptCommand(files[0])
 	}
+
+	return ""
+}
+
+func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.CommandStepBuilder) {
 	_, ok := p.packageJson.Scripts["build"]
 	if ok {
 		build.AddCommands([]plan.Command{
 			plan.NewCopyCommand("."),
 			plan.NewExecCommand(p.packageManager.RunCmd("build")),
 		})
-	}
-
-	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.StepInput{
-		plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE),
-		plan.NewLocalInput("."),
-		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
-			Include: miseStep.GetOutputPaths(),
-		}),
-		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{"/app"},
-			Exclude: []string{"node_modules"},
-		}),
-		plan.NewStepInput(pruneStep.Name(), plan.InputOptions{
-			Include: []string{"/app/node_modules"}, // we only wanted the pruned node_modules
-		}),
-	}...)
-
-	ctx.Deploy.StartCmd = "node --version"
-	maps.Copy(ctx.Deploy.Variables, p.GetNodeEnvVars(ctx))
-
-	// packages, err := p.Packages(ctx, p.packageJson)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// install, err := p.Install(ctx, packages, p.packageJson)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if _, err := p.Build(ctx, install, p.packageJson); err != nil {
-	// 	return err
-	// }
-
-	// if err := p.start(ctx, p.packageJson); err != nil {
-	// 	return err
-	// }
-
-	return nil
-}
-
-func (p *NodeProvider) start(ctx *generate.GenerateContext, packageJson *PackageJson) error {
-	packageManager := p.getPackageManager(ctx.App)
-
-	if start := p.getScripts(packageJson, "start"); start != "" {
-		ctx.Start.Command = packageManager.RunCmd("start")
-	} else if main := packageJson.Main; main != "" {
-		ctx.Start.Command = packageManager.RunScriptCommand(main)
-	} else if files, err := ctx.App.FindFiles("{index.js,index.ts}"); err == nil && len(files) > 0 {
-		ctx.Start.Command = packageManager.RunScriptCommand(files[0])
-	}
-
-	ctx.Start.AddOutputs([]string{"."})
-	ctx.Start.AddEnvVars(p.GetNodeEnvVars(ctx))
-
-	return nil
-}
-
-func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.CommandStepBuilder, packageJson *PackageJson) (*generate.CommandStepBuilder, error) {
-	packageManager := p.getPackageManager(ctx.App)
-	build := ctx.NewCommandStep("build")
-	// build.DependsOn = []string{install.DisplayName}
-
-	_, ok := packageJson.Scripts["build"]
-	if ok {
-		build.AddCommands([]plan.Command{
-			plan.NewCopyCommand("."),
-			plan.NewExecCommand(packageManager.RunCmd("build")),
-		})
-
 	}
 
 	// Generic node_modules cache
@@ -186,44 +127,29 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, install *generate.Co
 			build.AddCache(ctx.Caches.AddCache(fmt.Sprintf("next-%s", nextApp), nextCacheDir))
 		}
 	}
-
-	return build, nil
 }
 
-func (p *NodeProvider) InstallNodeDeps(ctx *generate.GenerateContext) (*generate.CommandStepBuilder, error) {
-	var corepackStepName string
-	if p.usesCorepack() {
-		corepackStep := ctx.NewCommandStep("corepack")
-		corepackStep.AddCommands([]plan.Command{
-			plan.NewCopyCommand("package.json"),
-			plan.NewExecCommand("corepack enable"),
-			plan.NewExecCommand("corepack prepare --activate"),
-		})
-		corepackStepName = corepackStep.DisplayName
-		corepackStep.Secrets = []string{} // Don't include any secrets in this step
+func (p *NodeProvider) PruneNodeDeps(ctx *generate.GenerateContext, prune *generate.CommandStepBuilder) {
+	prune.Variables["NPM_CONFIG_PRODUCTION"] = "true"
+	prune.Secrets = []string{}
+	p.packageManager.PruneDeps(ctx, prune)
+}
 
-		// corepackStep.DependsOn = append(corepackStep.DependsOn, setup.DisplayName)
-	}
-
-	pkgManager := p.getPackageManager(ctx.App)
-
-	install := ctx.NewCommandStep("install")
+func (p *NodeProvider) InstallNodeDeps(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) {
 	maps.Copy(install.Variables, p.GetNodeEnvVars(ctx))
-
-	// install.DependsOn = append(install.DependsOn, []string{packages.DisplayName, setup.DisplayName}...)
-
-	// We only want to invalidate the install step when these secrets change, not all of them
 	install.Secrets = []string{}
 	install.UseSecretsWithPrefixes([]string{"NODE", "NPM", "BUN", "PNPM", "YARN", "CI"})
 	install.AddPaths([]string{"/app/node_modules/.bin"})
 
-	pkgManager.installDependencies(ctx, p.packageJson, install)
-
-	if corepackStepName != "" {
-		// install.DependsOn = append(install.DependsOn, corepackStepName)
+	if p.usesCorepack() {
+		install.AddCommands([]plan.Command{
+			plan.NewCopyCommand("package.json"),
+			plan.NewExecCommand("corepack enable"),
+			plan.NewExecCommand("corepack prepare --activate"),
+		})
 	}
 
-	return nil, nil
+	p.packageManager.installDependencies(ctx, p.packageJson, install)
 }
 
 func (p *NodeProvider) InstallMisePackages(ctx *generate.GenerateContext, miseStep *generate.MiseStepBuilder) {
