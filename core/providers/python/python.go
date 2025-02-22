@@ -44,6 +44,8 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 
 	if p.hasRequirements(ctx) {
 		p.PlanPip(ctx)
+	} else if p.hasPyproject(ctx) && p.hasUv(ctx) {
+		p.PlanUv(ctx)
 	}
 
 	// Install dependencies
@@ -82,9 +84,50 @@ func (p *PythonProvider) GetStartCommand(ctx *generate.GenerateContext) string {
 	return ""
 }
 
+func (p *PythonProvider) PlanUv(ctx *generate.GenerateContext) {
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
+
+	install.AddCache(ctx.Caches.AddCache("uv", UV_CACHE_DIR))
+	install.AddEnvVars(map[string]string{
+		"UV_COMPILE_BYTECODE": "1",
+		"UV_LINK_MODE":        "copy",
+		"UV_CACHE_DIR":        UV_CACHE_DIR,
+		"UV_PYTHON_DOWNLOADS": "never",
+	})
+	install.AddEnvVars(p.GetPythonEnvVars(ctx))
+	install.AddCommands([]plan.Command{
+		plan.NewExecCommand("pipx install uv"),
+		plan.NewPathCommand("/root/.local/bin"),
+		plan.NewCopyCommand("pyproject.toml"),
+		plan.NewCopyCommand("uv.lock"),
+		plan.NewExecCommand("uv sync --locked --no-dev --no-install-project"),
+		plan.NewCopyCommand("."),
+		plan.NewExecCommand("uv sync --locked --no-dev --no-editable"),
+		plan.NewPathCommand("/app/.venv/bin"),
+	})
+
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
+			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{".", "/root/.local"},
+		}),
+		plan.NewLocalInput("."),
+	}
+}
+
 func (p *PythonProvider) PlanPip(ctx *generate.GenerateContext) {
 	install := ctx.NewCommandStep("install")
-	install.AddInput(plan.NewStepInput(ctx.GetMiseStepBuilder().Name()))
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
 	install.AddCache(ctx.Caches.AddCache("pip", PIP_CACHE_DIR))
 	install.AddCommands([]plan.Command{
@@ -106,7 +149,7 @@ func (p *PythonProvider) PlanPip(ctx *generate.GenerateContext) {
 	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
 
 	ctx.Deploy.Inputs = []plan.Input{
-		plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE),
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
 		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
 			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
 		}),
@@ -115,6 +158,32 @@ func (p *PythonProvider) PlanPip(ctx *generate.GenerateContext) {
 		}),
 		plan.NewLocalInput("."),
 	}
+}
+
+func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) *generate.AptStepBuilder {
+	aptStep := ctx.NewAptStepBuilder("python-runtime-deps")
+	aptStep.Inputs = []plan.Input{
+		plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE),
+	}
+
+	for dep, requiredPkgs := range pythonRuntimeDepRequirements {
+		if p.usesDep(ctx, dep) {
+			aptStep.Packages = append(aptStep.Packages, requiredPkgs...)
+		}
+	}
+
+	return aptStep
+}
+
+func (p *PythonProvider) GetBuilderDeps(ctx *generate.GenerateContext) *generate.AptStepBuilder {
+	aptStep := ctx.NewAptStepBuilder("python-builder-deps")
+	aptStep.Inputs = []plan.Input{
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name()),
+	}
+
+	aptStep.Packages = []string{"python3-dev"}
+
+	return aptStep
 }
 
 func (p *PythonProvider) InstallPythonDeps(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) {
@@ -191,7 +260,7 @@ func (p *PythonProvider) InstallPythonDeps(ctx *generate.GenerateContext, instal
 	aptStep := ctx.NewAptStepBuilder("python-system-deps")
 	aptStep.Packages = []string{"pkg-config"}
 
-	for dep, requiredPkgs := range pythonDepRequirements {
+	for dep, requiredPkgs := range pythonRuntimeDepRequirements {
 		if p.usesDep(ctx, dep) {
 			aptStep.Packages = append(aptStep.Packages, requiredPkgs...)
 		}
@@ -230,7 +299,6 @@ func (p *PythonProvider) GetPythonEnvVars(ctx *generate.GenerateContext) map[str
 		"PYTHONDONTWRITEBYTECODE":       "1",
 		"PIP_DISABLE_PIP_VERSION_CHECK": "1",
 		"PIP_DEFAULT_TIMEOUT":           "100",
-		"PIP_CACHE_DIR":                 PIP_CACHE_DIR,
 	}
 }
 
@@ -307,8 +375,8 @@ func (p *PythonProvider) hasUv(ctx *generate.GenerateContext) bool {
 }
 
 // Mapping of python dependencies to required apt packages
-var pythonDepRequirements = map[string][]string{
-	"pdf2image": {"poppler-utils", "gcc"},
-	"pydub":     {"ffmpeg", "gcc"},
-	"pymovie":   {"ffmpeg", "qt5-qmake", "qtbase5-dev", "qtbase5-dev-tools", "qttools5-dev-tools", "libqt5core5a", "python3-pyqt5", "gcc"},
+var pythonRuntimeDepRequirements = map[string][]string{
+	"pdf2image": {"poppler-utils"},
+	"pydub":     {"ffmpeg"},
+	"pymovie":   {"ffmpeg", "qt5-qmake", "qtbase5-dev", "qtbase5-dev-tools", "qttools5-dev-tools", "libqt5core5a", "python3-pyqt5"},
 }
