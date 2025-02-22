@@ -71,6 +71,7 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	// Build
 	build := ctx.NewCommandStep("build")
 	build.AddInput(plan.NewStepInput(install.Name()))
+	p.Build(ctx, build)
 
 	// Deploy
 	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)

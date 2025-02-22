@@ -46,6 +46,8 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 		p.PlanPip(ctx)
 	} else if p.hasPyproject(ctx) && p.hasUv(ctx) {
 		p.PlanUv(ctx)
+	} else if p.hasPyproject(ctx) && p.hasPoetry(ctx) {
+		p.PlanPoetry(ctx)
 	}
 
 	// Install dependencies
@@ -119,7 +121,50 @@ func (p *PythonProvider) PlanUv(ctx *generate.GenerateContext) {
 			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
 		}),
 		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{".", "/root/.local"},
+			Include: []string{"."},
+		}),
+		plan.NewLocalInput("."),
+	}
+}
+
+func (p *PythonProvider) PlanPoetry(ctx *generate.GenerateContext) {
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
+
+	install.AddEnvVars(p.GetPythonEnvVars(ctx))
+	install.Secrets = []string{}
+	install.UseSecretsWithPrefixes([]string{"PYTHON", "POETRY"})
+
+	// Set up paths for the virtual environment
+	venvPath := "/app/.venv"
+
+	install.AddCommands([]plan.Command{
+		plan.NewExecCommand("pipx install poetry"),
+		plan.NewPathCommand("/root/.local/bin"),
+		plan.NewExecCommand("poetry config virtualenvs.in-project true"),
+		plan.NewCopyCommand("pyproject.toml"),
+		plan.NewCopyCommand("poetry.lock"),
+		plan.NewExecCommand("poetry install --no-interaction --no-ansi --only main --no-root"),
+		plan.NewCopyCommand("."),
+		plan.NewPathCommand(fmt.Sprintf("%s/bin", venvPath)),
+	})
+
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+	maps.Copy(ctx.Deploy.Variables, map[string]string{
+		"VIRTUAL_ENV": venvPath,
+	})
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
+			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{venvPath, "."},
 		}),
 		plan.NewLocalInput("."),
 	}
