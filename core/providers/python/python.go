@@ -50,6 +50,8 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 		p.PlanPoetry(ctx)
 	} else if p.hasPyproject(ctx) && p.hasPdm(ctx) {
 		p.PlanPDM(ctx)
+	} else if p.hasPipfile(ctx) {
+		p.PlanPipenv(ctx)
 	}
 
 	// Install dependencies
@@ -110,6 +112,53 @@ func (p *PythonProvider) PlanUv(ctx *generate.GenerateContext) {
 		plan.NewExecCommand("uv sync --locked --no-dev --no-editable"),
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
+
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
+			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{"."},
+		}),
+		plan.NewLocalInput("."),
+	}
+}
+
+func (p *PythonProvider) PlanPipenv(ctx *generate.GenerateContext) {
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
+
+	install.AddEnvVars(p.GetPythonEnvVars(ctx))
+	install.AddEnvVars(map[string]string{
+		"PIPENV_CHECK_UPDATE":       "false",
+		"PIPENV_VENV_IN_PROJECT":    "1",
+		"PIPENV_IGNORE_VIRTUALENVS": "1",
+	})
+	install.Secrets = []string{}
+	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP"})
+
+	if ctx.App.HasMatch("Pipfile.lock") {
+		install.AddCommands([]plan.Command{
+			plan.NewExecCommand("pipx install pipenv"),
+			plan.NewPathCommand(LOCAL_BIN_PATH),
+			plan.NewCopyCommand("Pipfile"),
+			plan.NewCopyCommand("Pipfile.lock"),
+			plan.NewExecCommand("pipenv install --deploy --ignore-pipfile"),
+			plan.NewPathCommand(VENV_PATH + "/bin"),
+		})
+	} else {
+		install.AddCommands([]plan.Command{
+			plan.NewCopyCommand("Pipfile"),
+			plan.NewExecCommand("pipenv install --skip-lock"),
+		})
+	}
 
 	build := ctx.NewCommandStep("build")
 	build.AddInput(plan.NewStepInput(install.Name()))
@@ -263,7 +312,7 @@ func (p *PythonProvider) GetBuilderDeps(ctx *generate.GenerateContext) *generate
 		plan.NewStepInput(ctx.GetMiseStepBuilder().Name()),
 	}
 
-	aptStep.Packages = []string{"python3-dev"}
+	aptStep.Packages = []string{"python3-dev", "libpq-dev"}
 
 	return aptStep
 }
@@ -368,7 +417,7 @@ func (p *PythonProvider) InstallMisePackages(ctx *generate.GenerateContext, mise
 		miseStep.Version(python, pipfileVersion, "Pipfile")
 	}
 
-	if p.hasPoetry(ctx) || p.hasUv(ctx) || p.hasPdm(ctx) {
+	if p.hasPoetry(ctx) || p.hasUv(ctx) || p.hasPdm(ctx) || p.hasPipfile(ctx) {
 		miseStep.Default("pipx", "latest")
 	}
 }
