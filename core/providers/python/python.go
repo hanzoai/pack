@@ -15,6 +15,8 @@ const (
 	UV_CACHE_DIR           = "/opt/uv-cache"
 	PIP_CACHE_DIR          = "/opt/pip-cache"
 	PACKAGES_DIR           = "/opt/python-packages"
+	VENV_PATH              = "/app/.venv"
+	LOCAL_BIN_PATH         = "/root/.local/bin"
 )
 
 type PythonProvider struct{}
@@ -38,9 +40,7 @@ func (p *PythonProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 }
 
 func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
-	// Install mise packages
-	miseStep := ctx.GetMiseStepBuilder()
-	p.InstallMisePackages(ctx, miseStep)
+	p.InstallMisePackages(ctx, ctx.GetMiseStepBuilder())
 
 	if p.hasRequirements(ctx) {
 		p.PlanPip(ctx)
@@ -48,6 +48,8 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 		p.PlanUv(ctx)
 	} else if p.hasPyproject(ctx) && p.hasPoetry(ctx) {
 		p.PlanPoetry(ctx)
+	} else if p.hasPyproject(ctx) && p.hasPdm(ctx) {
+		p.PlanPDM(ctx)
 	}
 
 	// Install dependencies
@@ -100,13 +102,51 @@ func (p *PythonProvider) PlanUv(ctx *generate.GenerateContext) {
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
 	install.AddCommands([]plan.Command{
 		plan.NewExecCommand("pipx install uv"),
-		plan.NewPathCommand("/root/.local/bin"),
+		plan.NewPathCommand(LOCAL_BIN_PATH),
 		plan.NewCopyCommand("pyproject.toml"),
 		plan.NewCopyCommand("uv.lock"),
 		plan.NewExecCommand("uv sync --locked --no-dev --no-install-project"),
 		plan.NewCopyCommand("."),
 		plan.NewExecCommand("uv sync --locked --no-dev --no-editable"),
-		plan.NewPathCommand("/app/.venv/bin"),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
+	})
+
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
+			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{"."},
+		}),
+		plan.NewLocalInput("."),
+	}
+}
+
+func (p *PythonProvider) PlanPDM(ctx *generate.GenerateContext) {
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
+
+	install.AddEnvVars(p.GetPythonEnvVars(ctx))
+	install.AddEnvVars(map[string]string{
+		"PDM_CHECK_UPDATE": "false",
+	})
+	install.Secrets = []string{}
+	install.UseSecretsWithPrefixes([]string{"PYTHON", "PDM"})
+
+	install.AddCommands([]plan.Command{
+		plan.NewExecCommand("pipx install pdm"),
+		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewCopyCommand("."),
+		plan.NewExecCommand("python --version"),
+		plan.NewExecCommand("pdm install --check --prod --no-editable"),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
 	build := ctx.NewCommandStep("build")
@@ -135,18 +175,15 @@ func (p *PythonProvider) PlanPoetry(ctx *generate.GenerateContext) {
 	install.Secrets = []string{}
 	install.UseSecretsWithPrefixes([]string{"PYTHON", "POETRY"})
 
-	// Set up paths for the virtual environment
-	venvPath := "/app/.venv"
-
 	install.AddCommands([]plan.Command{
 		plan.NewExecCommand("pipx install poetry"),
-		plan.NewPathCommand("/root/.local/bin"),
+		plan.NewPathCommand(LOCAL_BIN_PATH),
 		plan.NewExecCommand("poetry config virtualenvs.in-project true"),
 		plan.NewCopyCommand("pyproject.toml"),
 		plan.NewCopyCommand("poetry.lock"),
 		plan.NewExecCommand("poetry install --no-interaction --no-ansi --only main --no-root"),
 		plan.NewCopyCommand("."),
-		plan.NewPathCommand(fmt.Sprintf("%s/bin", venvPath)),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
 	build := ctx.NewCommandStep("build")
@@ -155,7 +192,7 @@ func (p *PythonProvider) PlanPoetry(ctx *generate.GenerateContext) {
 	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
 	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
 	maps.Copy(ctx.Deploy.Variables, map[string]string{
-		"VIRTUAL_ENV": venvPath,
+		"VIRTUAL_ENV": VENV_PATH,
 	})
 
 	ctx.Deploy.Inputs = []plan.Input{
@@ -164,7 +201,7 @@ func (p *PythonProvider) PlanPoetry(ctx *generate.GenerateContext) {
 			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
 		}),
 		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{venvPath, "."},
+			Include: []string{"."},
 		}),
 		plan.NewLocalInput("."),
 	}
@@ -362,15 +399,16 @@ func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {
 		pkgManager = "uv"
 	}
 
-	ctx.Metadata.Set("packageManager", pkgManager)
-	ctx.Metadata.SetBool("requirements", p.hasRequirements(ctx))
-	ctx.Metadata.SetBool("pyproject", p.hasPyproject(ctx))
-	ctx.Metadata.SetBool("pipfile", p.hasPipfile(ctx))
+	ctx.Metadata.Set("pythonPackageManager", pkgManager)
+	ctx.Metadata.SetBool("pythonHasRequirementsTxt", p.hasRequirements(ctx))
+	ctx.Metadata.SetBool("pythonHasPyproject", p.hasPyproject(ctx))
+	ctx.Metadata.SetBool("pythonHasPipfile", p.hasPipfile(ctx))
 }
 
 func (p *PythonProvider) usesDep(ctx *generate.GenerateContext, dep string) bool {
 	for _, file := range []string{"requirements.txt", "pyproject.toml", "Pipfile"} {
 		if contents, err := ctx.App.ReadFile(file); err == nil {
+			// TODO: Do something better than string comparison
 			if strings.Contains(strings.ToLower(contents), strings.ToLower(dep)) {
 				return true
 			}

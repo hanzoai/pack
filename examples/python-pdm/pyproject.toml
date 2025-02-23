@@ -1,5 +1,5 @@
 [project]
-dependencies = [
-    "strawberry-graphql>=0.192.0",
-]
-requires-python = ">=3.8"
+name = "python-pdm"
+version = "0.1.0"
+dependencies = ["strawberry-graphql>=0.192.0", "numpy>=1.24.4"]
+requires-python = ">=3.11"
