@@ -11,6 +11,9 @@
     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
    },
    {
+    "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+   },
+   {
     "include": [
      "."
     ],
@@ -50,7 +53,6 @@
     }
    ],
    "name": "packages:mise",
-   "secrets": [],
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",

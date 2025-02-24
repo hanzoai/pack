@@ -21,9 +21,15 @@
  },
  "steps": [
   {
+   "commands": [
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y git nginx unzip zip'",
+     "customName": "install apt packages: git nginx unzip zip"
+    }
+   ],
    "inputs": [
     {
-     "step": "packages:apt"
+     "image": "php:8.2.27-fpm"
     }
    ],
    "name": "packages:image",
@@ -111,6 +117,11 @@
    ]
   },
   {
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
+   ],
    "name": "packages:mise",
    "secrets": [
     "*"

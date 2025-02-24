@@ -51,7 +51,6 @@
     }
    ],
    "name": "packages:mise",
-   "secrets": [],
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -76,8 +75,7 @@
      "step": "packages:mise"
     }
    ],
-   "name": "packages:test",
-   "secrets": []
+   "name": "packages:test"
   },
   {
    "commands": [
@@ -90,8 +88,7 @@
      "step": "packages:test"
     }
    ],
-   "name": "install",
-   "secrets": []
+   "name": "install"
   },
   {
    "commands": [

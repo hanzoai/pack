@@ -63,15 +63,15 @@
    ],
    "commands": [
     {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y libpq-dev python3-dev'",
+     "customName": "install apt packages: libpq-dev python3-dev"
+    },
+    {
      "path": "/mise/shims"
     },
     {
      "dest": "/app/.python-version",
      "src": ".python-version"
-    },
-    {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y libpq-dev python3-dev'",
-     "customName": "install apt packages: libpq-dev python3-dev"
     },
     {
      "customName": "create mise config",
@@ -89,7 +89,6 @@
     }
    ],
    "name": "packages:mise",
-   "secrets": [],
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -180,8 +179,7 @@
      "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
     }
    ],
-   "name": "packages:python-runtime-deps",
-   "secrets": []
+   "name": "packages:python-runtime-deps"
   }
  ]
 }

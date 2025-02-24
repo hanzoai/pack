@@ -1,20 +1,60 @@
 {
+ "caches": {
+  "apt": {
+   "directory": "/var/cache/apt",
+   "type": "locked"
+  },
+  "apt-lists": {
+   "directory": "/var/lib/apt/lists",
+   "type": "locked"
+  }
+ },
  "deploy": {
   "inputs": [
+   {
+    "step": "packages:runtime"
+   },
    {
     "include": [
      "."
     ],
     "step": "build"
    }
-  ]
+  ],
+  "startCommand": "neofetch $HELLO"
  },
  "steps": [
+  {
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
+   "commands": [
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
+     "customName": "install apt packages: neofetch"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+    }
+   ],
+   "name": "packages:runtime"
+  },
   {
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
    "commands": [
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
+     "customName": "install apt packages: neofetch"
+    },
     {
      "path": "/mise/shims"
     },
@@ -34,7 +74,6 @@
     }
    ],
    "name": "packages:mise",
-   "secrets": [],
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",

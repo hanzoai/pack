@@ -61,7 +61,7 @@ func (p *StaticfileProvider) Plan(ctx *generate.GenerateContext) error {
 		return err
 	}
 
-	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
+	ctx.Deploy.Inputs = []plan.Input{
 		ctx.DefaultRuntimeInput(),
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 			Include: miseStep.GetOutputPaths(),
@@ -70,7 +70,7 @@ func (p *StaticfileProvider) Plan(ctx *generate.GenerateContext) error {
 			Include: []string{"."},
 		}),
 		plan.NewLocalInput("."),
-	}...)
+	}
 
 	ctx.Deploy.StartCmd = p.CaddyStartCommand(ctx)
 
