@@ -19,6 +19,16 @@ type InputOptions struct {
 	Exclude []string
 }
 
+type Step struct {
+	Name      string            `json:"name,omitempty" jsonschema:"description=The name of the step"`
+	Inputs    []Input           `json:"inputs,omitempty" jsonschema:"description=The inputs for this step"`
+	Commands  []Command         `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
+	Secrets   []string          `json:"secrets,omitempty" jsonschema:"description=The secrets that this step uses"`
+	Assets    map[string]string `json:"assets,omitempty" jsonschema:"description=The assets available to this step. The key is the name of the asset that is referenced in a file command"`
+	Variables map[string]string `json:"variables,omitempty" jsonschema:"description=The variables available to this step. The key is the name of the variable that is referenced in a variable command"`
+	Caches    []string          `json:"caches,omitempty" jsonschema:"description=The caches available to all commands in this step. Each cache must refer to a cache at the top level of the plan"`
+}
+
 func NewStepInput(stepName string, options ...InputOptions) Input {
 	input := Input{
 		Step: stepName,
@@ -58,31 +68,6 @@ func NewLocalInput(path string) Input {
 func (i *Input) String() string {
 	bytes, _ := json.Marshal(i)
 	return string(bytes)
-}
-
-type Step struct {
-	// The name of the step
-	Name string `json:"name,omitempty" jsonschema:"description=The name of the step"`
-
-	Inputs []Input `json:"inputs,omitempty" jsonschema:"description=The inputs for this step"`
-
-	// The commands to run in this step
-	Commands []Command `json:"commands,omitempty" jsonschema:"description=The commands to run in this step"`
-
-	// The secrets that this step uses
-	Secrets []string `json:"secrets" jsonschema:"description=The secrets that this step uses"`
-
-	// Paths that this step outputs. Only these paths will be available to the next step
-	// Outputs []string `json:"outputs,omitempty" jsonschema:"description=Paths that this step outputs. Only these paths will be available to the next step"`
-
-	// The assets available to this step. The key is the name of the asset that is referenced in a file command
-	Assets map[string]string `json:"assets,omitempty" jsonschema:"description=The assets available to this step. The key is the name of the asset that is referenced in a file command"`
-
-	// The variables available to this step. The key is the name of the variable that is referenced in a variable command
-	Variables map[string]string `json:"variables,omitempty" jsonschema:"description=The variables available to this step. The key is the name of the variable that is referenced in a variable command"`
-
-	// The caches available to all commands in this step. Each cache must refer to a cache at the top level of the plan
-	Caches []string `json:"caches,omitempty" jsonschema:"description=The caches available to all commands in this step. Each cache must refer to a cache at the top level of the plan"`
 }
 
 func NewStep(name string) *Step {
@@ -133,7 +118,7 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	var required []string
 	for _, prop := range schema.Required {
 		if prop != "name" {
-			required = append(required, "name")
+			required = append(required, prop)
 		}
 	}
 	schema.Required = required

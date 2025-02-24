@@ -87,12 +87,12 @@ func (b *MiseStepBuilder) GetOutputPaths() []string {
 func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
 
-	if len(b.MisePackages) == 0 {
-		return step, nil
-	}
-
 	step.Inputs = []plan.Input{
 		plan.NewImageInput(plan.RAILPACK_BUILDER_IMAGE),
+	}
+
+	if len(b.MisePackages) == 0 {
+		return step, nil
 	}
 
 	// Setup mise
