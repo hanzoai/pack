@@ -224,7 +224,7 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 			detectedProviders = append(detectedProviders, provider.Name())
 
 			// If there are no providers manually specified in the config,
-			if config.Providers == nil {
+			if config.Provider == nil {
 				if err := provider.Initialize(ctx); err != nil {
 					log.Warnf("Failed to initialize provider `%s`: %s", provider.Name(), err.Error())
 					continue
@@ -236,20 +236,18 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 		}
 	}
 
-	if config.Providers != nil {
-		for _, providerName := range config.Providers {
-			provider := providers.GetProvider(providerName)
-			if provider == nil {
-				log.Warnf("Provider `%s` not found", providerName)
-				continue
-			}
-
-			if err := provider.Initialize(ctx); err != nil {
-				log.Warnf("Failed to initialize provider `%s`: %s", providerName, err.Error())
-				continue
-			}
-			providersToUse = append(providersToUse, provider)
+	if config.Provider != nil {
+		provider := providers.GetProvider(*config.Provider)
+		if provider == nil {
+			log.Warnf("Provider `%s` not found", *config.Provider)
+			return providersToUse, detectedProviders
 		}
+
+		if err := provider.Initialize(ctx); err != nil {
+			log.Warnf("Failed to initialize provider `%s`: %s", *config.Provider, err.Error())
+			return providersToUse, detectedProviders
+		}
+		providersToUse = append(providersToUse, provider)
 	}
 
 	return providersToUse, detectedProviders

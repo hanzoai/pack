@@ -47,21 +47,21 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 		runtimeAptStep := ctx.NewAptStepBuilder("runtime")
 		runtimeAptStep.AddInput(ctx.DefaultRuntimeInputWithPackages([]string{"libc6"}))
 
-		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
+		ctx.Deploy.Inputs = []plan.Input{
 			plan.NewStepInput(runtimeAptStep.Name()),
 			plan.NewStepInput(build.Name(), plan.InputOptions{
 				Include: []string{"."},
 			}),
 			plan.NewLocalInput("."),
-		}...)
+		}
 	} else {
-		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
+		ctx.Deploy.Inputs = []plan.Input{
 			ctx.DefaultRuntimeInput(),
 			plan.NewStepInput(build.Name(), plan.InputOptions{
 				Include: []string{"."},
 			}),
 			plan.NewLocalInput("."),
-		}...)
+		}
 	}
 
 	p.addMetadata(ctx)

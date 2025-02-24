@@ -15,7 +15,7 @@ func TestEmptyConfig(t *testing.T) {
 	require.Empty(t, config.Packages)
 	require.Empty(t, config.BuildAptPackages)
 	require.Empty(t, config.Steps)
-	require.Nil(t, config.Providers)
+	require.Nil(t, config.Provider)
 
 	require.NotNil(t, config.Deploy)
 	require.Nil(t, config.Deploy.Inputs)

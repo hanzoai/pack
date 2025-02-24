@@ -15,7 +15,7 @@ type DeployConfig struct {
 }
 
 type Config struct {
-	Providers        []string               `json:"providers" jsonschema:"description=List of providers to use"`
+	Provider         *string                `json:"provider" jsonschema:"description=The provider to use"`
 	BuildAptPackages []string               `json:"buildAptPackages,omitempty" jsonschema:"description=List of apt packages to install during the build step"`
 	Steps            map[string]*plan.Step  `json:"steps,omitempty" jsonschema:"description=Map of step names to step definitions"`
 	Deploy           *DeployConfig          `json:"deploy,omitempty" jsonschema:"description=Deploy configuration"`

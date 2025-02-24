@@ -11,9 +11,6 @@
     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
    },
    {
-    "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
-   },
-   {
     "include": [
      "."
     ],
