@@ -77,13 +77,18 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
 	maps.Copy(ctx.Deploy.Variables, p.GetNodeEnvVars(ctx))
 
+	buildIncludeDirs := []string{"."}
+	if p.usesCorepack() {
+		buildIncludeDirs = append(buildIncludeDirs, "/root/.cache")
+	}
+
 	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
 		ctx.DefaultRuntimeInput(),
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 			Include: miseStep.GetOutputPaths(),
 		}),
 		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{".", "/root/.cache"},
+			Include: buildIncludeDirs,
 			Exclude: []string{"node_modules"},
 		}),
 		plan.NewStepInput(prune.Name(), plan.InputOptions{

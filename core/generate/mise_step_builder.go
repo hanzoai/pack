@@ -91,6 +91,14 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		plan.NewImageInput(plan.RAILPACK_BUILDER_IMAGE),
 	}
 
+	// Setup apt commands
+	if len(b.SupportingAptPackages) > 0 {
+		step.AddCommands([]plan.Command{
+			options.NewAptInstallCommand(b.SupportingAptPackages),
+		})
+		step.Caches = options.Caches.GetAptCaches()
+	}
+
 	if len(b.MisePackages) == 0 {
 		return step, nil
 	}
@@ -120,49 +128,38 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		})
 	}
 
-	// Setup apt commands
-	if len(b.SupportingAptPackages) > 0 {
-		step.AddCommands([]plan.Command{
-			options.NewAptInstallCommand(b.SupportingAptPackages),
-		})
-		step.Caches = options.Caches.GetAptCaches()
-	}
-
 	// Setup mise commands
-	if len(b.MisePackages) > 0 {
-		packagesToInstall := make(map[string]string)
-		for _, pkg := range b.MisePackages {
-			resolved, ok := options.ResolvedPackages[pkg.Name]
-			if ok && resolved.ResolvedVersion != nil {
-				packagesToInstall[pkg.Name] = *resolved.ResolvedVersion
-			}
+	packagesToInstall := make(map[string]string)
+	for _, pkg := range b.MisePackages {
+		resolved, ok := options.ResolvedPackages[pkg.Name]
+		if ok && resolved.ResolvedVersion != nil {
+			packagesToInstall[pkg.Name] = *resolved.ResolvedVersion
 		}
-
-		miseToml, err := mise.GenerateMiseToml(packagesToInstall)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate mise.toml: %w", err)
-		}
-
-		b.Assets["mise.toml"] = miseToml
-
-		pkgNames := make([]string, 0, len(packagesToInstall))
-		for k := range packagesToInstall {
-			pkgNames = append(pkgNames, k)
-		}
-		sort.Strings(pkgNames)
-
-		step.AddCommands([]plan.Command{
-			plan.NewFileCommand("/etc/mise/config.toml", "mise.toml", plan.FileOptions{
-				CustomName: "create mise config",
-			}),
-			plan.NewExecCommand("sh -c 'mise trust -a && mise install'", plan.ExecOptions{
-				CustomName: "install mise packages: " + strings.Join(pkgNames, ", "),
-			}),
-		})
 	}
+
+	miseToml, err := mise.GenerateMiseToml(packagesToInstall)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate mise.toml: %w", err)
+	}
+
+	b.Assets["mise.toml"] = miseToml
+
+	pkgNames := make([]string, 0, len(packagesToInstall))
+	for k := range packagesToInstall {
+		pkgNames = append(pkgNames, k)
+	}
+	sort.Strings(pkgNames)
+
+	step.AddCommands([]plan.Command{
+		plan.NewFileCommand("/etc/mise/config.toml", "mise.toml", plan.FileOptions{
+			CustomName: "create mise config",
+		}),
+		plan.NewExecCommand("sh -c 'mise trust -a && mise install'", plan.ExecOptions{
+			CustomName: "install mise packages: " + strings.Join(pkgNames, ", "),
+		}),
+	})
 
 	step.Assets = b.Assets
-	// step.Outputs = b.Outputs
 	step.Secrets = []string{}
 
 	return step, nil
