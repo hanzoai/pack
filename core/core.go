@@ -1,7 +1,6 @@
 package core
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -212,9 +211,6 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 
 	allProviders := providers.GetLanguageProviders()
 	detectedProviders := []string{}
-
-	configJson, _ := json.MarshalIndent(config, "", "  ")
-	fmt.Printf("Config: %s\n", string(configJson))
 
 	// Even if there are providers manually specified, we want to detect to see what type of app this is
 	for _, provider := range allProviders {

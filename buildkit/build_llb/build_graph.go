@@ -86,7 +86,7 @@ func NewBuildGraph(plan *plan.BuildPlan, localState *llb.State, cacheStore *Buil
 
 	g.graph.ComputeTransitiveDependencies()
 
-	g.graph.PrintGraph()
+	// g.graph.PrintGraph()
 
 	return g, nil
 }
@@ -130,14 +130,11 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.Input) llb.State {
 
 	// Copy from subsequent inputs into the base state
 	for _, input := range inputs[1:] {
-		fmt.Printf("Combining input: %s\n", input.String())
 		inputState := g.GetStateForInput(input, llb.Scratch())
 
 		// Copy the specified paths (or everything) from this input into our base state
 		if len(input.Include) > 0 {
 			for _, include := range input.Include {
-				fmt.Printf("Copying %s from %s\n", include, input.Step)
-
 				if input.Local {
 					// For local context, always copy into /app
 					destPath := filepath.Join("/app", filepath.Base(include))

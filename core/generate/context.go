@@ -51,7 +51,7 @@ func NewGenerateContext(app *a.App, env *a.Environment, config *config.Config) (
 		return nil, err
 	}
 
-	return &GenerateContext{
+	ctx := &GenerateContext{
 		App:      app,
 		Env:      env,
 		Config:   config,
@@ -61,7 +61,12 @@ func NewGenerateContext(app *a.App, env *a.Environment, config *config.Config) (
 		Secrets:  []string{},
 		Metadata: NewMetadata(),
 		Resolver: resolver,
-	}, nil
+	}
+
+	// The default runtime image should include the runtime apt packages
+	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, ctx.DefaultRuntimeInput())
+
+	return ctx, nil
 }
 
 func (c *GenerateContext) GetMiseStepBuilder() *MiseStepBuilder {

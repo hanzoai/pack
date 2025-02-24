@@ -2,7 +2,6 @@ package generate
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/gkampitakis/go-snaps/snaps"
@@ -93,12 +92,8 @@ func TestGenerateContext(t *testing.T) {
 	buildPlan, _, err := ctx.Generate()
 	require.NoError(t, err)
 
-	fmt.Printf("Actual plan: %v\n", config.Deploy.StartCmd)
-
 	buildPlanJSON, err := json.MarshalIndent(buildPlan, "", "  ")
 	require.NoError(t, err)
-
-	fmt.Printf("Serialized plan: %v\n", string(buildPlanJSON))
 
 	var actualPlan map[string]interface{}
 	require.NoError(t, json.Unmarshal(buildPlanJSON, &actualPlan))
