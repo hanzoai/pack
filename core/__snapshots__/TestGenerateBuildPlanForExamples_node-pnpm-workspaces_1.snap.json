@@ -1,16 +1,52 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "node-modules": {
    "directory": "/app/node_modules/.cache",
    "type": "shared"
+  },
+  "pnpm-install": {
+   "directory": "/root/.local/share/pnpm/store/v3",
+   "type": "shared"
   }
  },
- "start": {
-  "cmd": "node index.js",
-  "outputs": [
-   "."
+ "deploy": {
+  "inputs": [
+   {
+    "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+   },
+   {
+    "include": [
+     "/mise/shims",
+     "/mise/installs",
+     "/usr/local/bin/mise",
+     "/etc/mise/config.toml",
+     "/root/.local/state/mise"
+    ],
+    "step": "packages:mise"
+   },
+   {
+    "exclude": [
+     "node_modules"
+    ],
+    "include": [
+     "."
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "/app/node_modules"
+    ],
+    "step": "prune"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
   ],
+  "startCommand": "node index.js",
   "variables": {
    "CI": "true",
    "NODE_ENV": "production",
@@ -39,16 +75,13 @@
      "customName": "install mise packages: node, pnpm"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
+   "name": "packages:mise",
    "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -58,15 +91,43 @@
    }
   },
   {
+   "caches": [
+    "pnpm-install"
+   ],
    "commands": [
     {
      "path": "/app/node_modules/.bin"
+    },
+    {
+     "dest": "package.json",
+     "src": "package.json"
+    },
+    {
+     "dest": "packages/pkg-a/package.json",
+     "src": "packages/pkg-a/package.json"
+    },
+    {
+     "dest": "packages/pkg-b/package.json",
+     "src": "packages/pkg-b/package.json"
+    },
+    {
+     "dest": "pnpm-workspace.yaml",
+     "src": "pnpm-workspace.yaml"
+    },
+    {
+     "dest": "pnpm-lock.yaml",
+     "src": "pnpm-lock.yaml"
+    },
+    {
+     "cmd": "pnpm install --frozen-lockfile --prod=false"
     }
    ],
-   "dependsOn": [
-    "packages:mise"
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
    ],
-   "name": "setup",
+   "name": "install",
    "secrets": [],
    "variables": {
     "CI": "true",
@@ -79,10 +140,32 @@
   },
   {
    "caches": [
+    "pnpm-install"
+   ],
+   "commands": [
+    {
+     "cmd": "pnpm prune --prod"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "install"
+    }
+   ],
+   "name": "prune",
+   "secrets": [],
+   "variables": {
+    "NPM_CONFIG_PRODUCTION": "true"
+   }
+  },
+  {
+   "caches": [
     "node-modules"
    ],
-   "dependsOn": [
-    "setup"
+   "inputs": [
+    {
+     "step": "install"
+    }
    ],
    "name": "build",
    "secrets": [

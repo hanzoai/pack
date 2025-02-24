@@ -7,10 +7,6 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
-  },
-  "uv": {
-   "directory": "/opt/uv-cache",
-   "type": "shared"
   }
  },
  "deploy": {
@@ -24,8 +20,7 @@
      "/mise/installs",
      "/usr/local/bin/mise",
      "/etc/mise/config.toml",
-     "/root/.local/state/mise",
-     ".python-version"
+     "/root/.local/state/mise"
     ],
     "step": "packages:mise"
    },
@@ -42,7 +37,7 @@
     "local": true
    }
   ],
-  "startCommand": "gunicorn --bind 0.0.0.0:3333 main:app",
+  "startCommand": "python main.py",
   "variables": {
    "PIP_DEFAULT_TIMEOUT": "100",
    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
@@ -64,10 +59,6 @@
    "commands": [
     {
      "path": "/mise/shims"
-    },
-    {
-     "dest": "/app/.python-version",
-     "src": ".python-version"
     },
     {
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y libpq-dev python3-dev'",
@@ -99,33 +90,37 @@
    }
   },
   {
-   "caches": [
-    "uv"
-   ],
    "commands": [
     {
-     "cmd": "pipx install uv"
+     "cmd": "pipx install pipenv"
     },
     {
      "path": "/root/.local/bin"
     },
     {
-     "dest": "pyproject.toml",
-     "src": "pyproject.toml"
+     "dest": "Pipfile",
+     "src": "Pipfile"
     },
     {
-     "dest": "uv.lock",
-     "src": "uv.lock"
+     "dest": "Pipfile.lock",
+     "src": "Pipfile.lock"
     },
     {
-     "cmd": "uv sync --locked --no-dev --no-install-project"
+     "cmd": "pipenv install --deploy --ignore-pipfile"
     },
     {
-     "dest": ".",
-     "src": "."
+     "path": "/app/.venv/bin"
     },
     {
-     "cmd": "uv sync --locked --no-dev --no-editable"
+     "dest": "Pipfile",
+     "src": "Pipfile"
+    },
+    {
+     "dest": "Pipfile.lock",
+     "src": "Pipfile.lock"
+    },
+    {
+     "cmd": "pipenv install --deploy --ignore-pipfile"
     },
     {
      "path": "/app/.venv/bin"
@@ -137,20 +132,17 @@
     }
    ],
    "name": "install",
-   "secrets": [
-    "*"
-   ],
+   "secrets": [],
    "variables": {
+    "PIPENV_CHECK_UPDATE": "false",
+    "PIPENV_IGNORE_VIRTUALENVS": "1",
+    "PIPENV_VENV_IN_PROJECT": "1",
     "PIP_DEFAULT_TIMEOUT": "100",
     "PIP_DISABLE_PIP_VERSION_CHECK": "1",
     "PYTHONDONTWRITEBYTECODE": "1",
     "PYTHONFAULTHANDLER": "1",
     "PYTHONHASHSEED": "random",
-    "PYTHONUNBUFFERED": "1",
-    "UV_CACHE_DIR": "/opt/uv-cache",
-    "UV_COMPILE_BYTECODE": "1",
-    "UV_LINK_MODE": "copy",
-    "UV_PYTHON_DOWNLOADS": "never"
+    "PYTHONUNBUFFERED": "1"
    }
   },
   {

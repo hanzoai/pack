@@ -1,5 +1,4 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "node-modules": {
    "directory": "/app/node_modules/.cache",
@@ -10,11 +9,45 @@
    "type": "shared"
   }
  },
- "start": {
-  "cmd": "npm run start",
-  "outputs": [
-   "."
+ "deploy": {
+  "inputs": [
+   {
+    "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+   },
+   {
+    "include": [
+     "/mise/shims",
+     "/mise/installs",
+     "/usr/local/bin/mise",
+     "/etc/mise/config.toml",
+     "/root/.local/state/mise",
+     "mise.toml"
+    ],
+    "step": "packages:mise"
+   },
+   {
+    "exclude": [
+     "node_modules"
+    ],
+    "include": [
+     "."
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "/app/node_modules"
+    ],
+    "step": "prune"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
   ],
+  "startCommand": "npm run start",
   "variables": {
    "CI": "true",
    "NODE_ENV": "production",
@@ -47,17 +80,13 @@
      "customName": "install mise packages: node"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise",
-    "/app/mise.toml"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
+   "name": "packages:mise",
    "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -67,15 +96,27 @@
    }
   },
   {
+   "caches": [
+    "npm-install"
+   ],
    "commands": [
     {
      "path": "/app/node_modules/.bin"
+    },
+    {
+     "dest": "package.json",
+     "src": "package.json"
+    },
+    {
+     "cmd": "npm install"
     }
    ],
-   "dependsOn": [
-    "packages:mise"
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
    ],
-   "name": "setup",
+   "name": "install",
    "secrets": [],
    "variables": {
     "CI": "true",
@@ -92,19 +133,19 @@
    ],
    "commands": [
     {
-     "dest": "package.json",
-     "src": "package.json"
-    },
-    {
-     "cmd": "npm install"
+     "cmd": "npm prune --omit=dev"
     }
    ],
-   "dependsOn": [
-    "packages:mise",
-    "setup"
+   "inputs": [
+    {
+     "step": "install"
+    }
    ],
-   "name": "install",
-   "secrets": []
+   "name": "prune",
+   "secrets": [],
+   "variables": {
+    "NPM_CONFIG_PRODUCTION": "true"
+   }
   },
   {
    "caches": [
@@ -119,8 +160,10 @@
      "cmd": "npm run build"
     }
    ],
-   "dependsOn": [
-    "install"
+   "inputs": [
+    {
+     "step": "install"
+    }
    ],
    "name": "build",
    "secrets": [

@@ -231,19 +231,25 @@ func (c *GenerateContext) applyConfig() {
 		}
 	}
 
+	if c.Config.Secrets != nil {
+		c.Secrets = c.Config.Secrets
+	}
+
 	// Update deploy from config
-	if c.Config.Deploy.StartCmd != "" {
-		c.Deploy.StartCmd = c.Config.Deploy.StartCmd
+	if c.Config.Deploy != nil {
+		if c.Config.Deploy.StartCmd != "" {
+			c.Deploy.StartCmd = c.Config.Deploy.StartCmd
+		}
+
+		if c.Config.Deploy.Inputs != nil {
+			c.Deploy.Inputs = c.Config.Deploy.Inputs
+		}
+
+		if c.Config.Deploy.Paths != nil {
+			c.Deploy.Paths = c.Config.Deploy.Paths
+		}
+
+		maps.Copy(c.Deploy.Variables, c.Config.Deploy.Variables)
 	}
 
-	if c.Config.Deploy.Inputs != nil {
-		fmt.Printf("Inputs: %v\n", c.Config.Deploy.Inputs)
-		c.Deploy.Inputs = c.Config.Deploy.Inputs
-	}
-
-	if c.Config.Deploy.Paths != nil {
-		c.Deploy.Paths = c.Config.Deploy.Paths
-	}
-
-	maps.Copy(c.Deploy.Variables, c.Config.Deploy.Variables)
 }

@@ -24,20 +24,12 @@ type Config struct {
 	Secrets          []string               `json:"secrets,omitempty" jsonschema:"description=Secrets that should be made available to commands that have useSecrets set to true"`
 }
 
-func EmptyDeployConfig() *DeployConfig {
-	return &DeployConfig{
-		AptPackages: []string{},
-		StartCmd:    "",
-		Variables:   make(map[string]string),
-	}
-}
-
 func EmptyConfig() *Config {
 	return &Config{
 		Steps:    make(map[string]*plan.Step),
 		Packages: make(map[string]string),
 		Caches:   make(map[string]*plan.Cache),
-		Deploy:   EmptyDeployConfig(),
+		Deploy:   &DeployConfig{},
 	}
 }
 

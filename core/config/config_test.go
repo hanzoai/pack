@@ -13,8 +13,13 @@ func TestEmptyConfig(t *testing.T) {
 	require.NotNil(t, config)
 	require.Empty(t, config.Caches)
 	require.Empty(t, config.Packages)
-	require.Empty(t, config.AptPackages)
+	require.Empty(t, config.BuildAptPackages)
 	require.Empty(t, config.Steps)
+	require.Nil(t, config.Providers)
+
+	require.NotNil(t, config.Deploy)
+	require.Nil(t, config.Deploy.Inputs)
+	require.Nil(t, config.Deploy.Paths)
 }
 
 func TestMergeConfigSmall(t *testing.T) {
@@ -37,7 +42,7 @@ func TestMergeConfigSmall(t *testing.T) {
 				"caches": ["pip"]
 			}
 		},
-		"start": {
+		"deploy": {
 			"variables": {
 				"SHARED": "one",
 				"HELLO": "world"
@@ -58,7 +63,7 @@ func TestMergeConfigSmall(t *testing.T) {
 				}
 			}
 		},
-		"start": {
+		"deploy": {
 			"variables": {
 				"SHARED": "two",
 				"FOO": "bar"
@@ -87,7 +92,7 @@ func TestMergeConfigSmall(t *testing.T) {
 				"caches": ["pip"]
 			}
 		},
-		"start": {
+		"deploy": {
 			"variables": {
 				"HELLO": "world",
 				"SHARED": "two",
@@ -131,13 +136,11 @@ func TestMergeConfig(t *testing.T) {
 		"steps": {
 			"install": {
 				"name": "install",
-				"useSecrets": true,
-				"outputs": ["node_modules/", "package-lock.json"],
+				"secrets": ["*"],
 				"assets": {
 					"package.json": "content1",
 					"requirements.txt": "content2"
 				},
-				"startingImage": "node:16",
 				"commands": [
 					{"type": "exec", "cmd": "npm install", "caches": ["npm"], "customName": "Install NPM deps"},
 					{"type": "path", "path": "/usr/local/bin"},
@@ -154,8 +157,8 @@ func TestMergeConfig(t *testing.T) {
 				]
 			}
 		},
-		"start": {
-			"command": "python app.py"
+		"deploy": {
+			"startCommand": "python app.py"
 		}
 	}`
 
@@ -179,25 +182,23 @@ func TestMergeConfig(t *testing.T) {
 		"steps": {
 			"install": {
 				"name": "install",
-				"useSecrets": true,
-				"outputs": ["dist/"],
+				"secrets": ["*"],
 				"assets": {
 					"package.json": "content3"
-				},
-				"startingImage": "node:18"
+				}
 			},
 			"build": {
 				"name": "build",
-				"useSecrets": false,
+				"secrets": [],
 				"commands": [
 					{"type": "exec", "cmd": "config 2 a"},
 					{"type": "exec", "cmd": "config 2 b"}
 				]
 			}
 		},
-		"start": {
-			"baseImage": "node:18",
-			"command": "node server.js",
+		"deploy": {
+			"aptPackages": ["curl"],
+			"startCommand": "node server.js",
 			"paths": ["/usr/local/bin", "/app/bin"]
 		}
 	}`
@@ -226,13 +227,11 @@ func TestMergeConfig(t *testing.T) {
 		"steps": {
 			"install": {
 				"name": "install",
-				"useSecrets": true,
-				"outputs": ["dist/"],
+				"secrets": ["*"],
 				"assets": {
 					"package.json": "content3",
 					"requirements.txt": "content2"
 				},
-				"startingImage": "node:18",
 				"commands": [
 					{"type": "exec", "cmd": "npm install", "caches": ["npm"], "customName": "Install NPM deps"},
 					{"type": "path", "path": "/usr/local/bin"},
@@ -243,16 +242,16 @@ func TestMergeConfig(t *testing.T) {
 			},
 			"build": {
 				"name": "build",
-				"useSecrets": false,
+				"secrets": [],
 				"commands": [
 					{"type": "exec", "cmd": "config 2 a"},
 					{"type": "exec", "cmd": "config 2 b"}
 				]
 			}
 		},
-		"start": {
-			"baseImage": "node:18",
-			"command": "node server.js",
+		"deploy": {
+			"aptPackages": ["curl"],
+			"startCommand": "node server.js",
 			"paths": ["/usr/local/bin", "/app/bin"]
 		}
 	}`
@@ -271,8 +270,8 @@ func TestMergeConfig(t *testing.T) {
 
 func TestMergeConfigStart(t *testing.T) {
 	config1JSON := `{
-		"start": {
-			"command": "python app.py"
+		"deploy": {
+			"startCommand": "python app.py"
 		}
 	}`
 
@@ -286,8 +285,8 @@ func TestMergeConfigStart(t *testing.T) {
 		"packages": {
 			"node": "23"
 		},
-		"start": {
-			"command": "python app.py"
+		"deploy": {
+			"startCommand": "python app.py"
 		},
 		"steps": {},
 		"caches": {}

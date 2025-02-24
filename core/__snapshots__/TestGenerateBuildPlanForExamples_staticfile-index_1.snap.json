@@ -1,11 +1,5 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
- "start": {
-  "cmd": "caddy run --config Caddyfile --adapter caddyfile 2\u003e\u00261",
-  "outputs": [
-   "."
-  ]
- },
+ "deploy": {},
  "steps": [
   {
    "assets": {
@@ -25,16 +19,13 @@
      "customName": "install mise packages: caddy"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
+   "name": "packages:mise",
    "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -55,9 +46,6 @@
     {
      "cmd": "caddy fmt --overwrite Caddyfile"
     }
-   ],
-   "dependsOn": [
-    "packages:mise"
    ],
    "name": "setup",
    "secrets": [

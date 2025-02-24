@@ -83,7 +83,10 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	}
 
 	if isNode {
-		nodeProvider.Initialize(ctx)
+		err = nodeProvider.Initialize(ctx)
+		if err != nil {
+			return err
+		}
 
 		miseStep := ctx.GetMiseStepBuilder()
 		nodeProvider.InstallMisePackages(ctx, miseStep)

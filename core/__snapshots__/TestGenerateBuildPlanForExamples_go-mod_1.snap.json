@@ -1,17 +1,29 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "go-build": {
    "directory": "/root/.cache/go-build",
    "type": "shared"
   }
  },
- "start": {
-  "baseImage": "alpine:latest",
-  "cmd": "./out",
-  "outputs": [
-   "out"
-  ]
+ "deploy": {
+  "inputs": [
+   {
+    "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
+  ],
+  "startCommand": "./out"
  },
  "steps": [
   {
@@ -32,16 +44,13 @@
      "customName": "install mise packages: go"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
+   "name": "packages:mise",
    "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -67,8 +76,10 @@
      "cmd": "go mod download"
     }
    ],
-   "dependsOn": [
-    "packages:mise"
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
    ],
    "name": "install",
    "secrets": [
@@ -88,12 +99,13 @@
      "src": "."
     },
     {
-     "cmd": "go build -o out"
+     "cmd": "go build -ldflags=\"-w -s\" -o out"
     }
    ],
-   "dependsOn": [
-    "packages:mise",
-    "install"
+   "inputs": [
+    {
+     "step": "install"
+    }
    ],
    "name": "build",
    "secrets": [

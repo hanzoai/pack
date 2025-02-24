@@ -1,5 +1,4 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -14,20 +13,61 @@
    "type": "shared"
   }
  },
- "start": {
-  "cmd": "python main.py",
-  "outputs": [
-   "."
-  ]
+ "deploy": {
+  "inputs": [
+   {
+    "step": "packages:python-runtime-deps"
+   },
+   {
+    "include": [
+     "/mise/shims",
+     "/mise/installs",
+     "/usr/local/bin/mise",
+     "/etc/mise/config.toml",
+     "/root/.local/state/mise"
+    ],
+    "step": "packages:mise"
+   },
+   {
+    "include": [
+     "/opt/python-packages",
+     "."
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
+  ],
+  "startCommand": "python main.py",
+  "variables": {
+   "PIP_DEFAULT_TIMEOUT": "100",
+   "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "PYTHONFAULTHANDLER": "1",
+   "PYTHONHASHSEED": "random",
+   "PYTHONUNBUFFERED": "1"
+  }
  },
  "steps": [
   {
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
    "commands": [
     {
      "path": "/mise/shims"
+    },
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y libpq-dev python3-dev'",
+     "customName": "install apt packages: libpq-dev python3-dev"
     },
     {
      "customName": "create mise config",
@@ -39,45 +79,19 @@
      "customName": "install mise packages: python"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
+   "name": "packages:mise",
    "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
     "MISE_DATA_DIR": "/mise",
     "MISE_INSTALLS_DIR": "/mise/installs",
     "MISE_SHIMS_DIR": "/mise/shims"
-   }
-  },
-  {
-   "commands": [
-    {
-     "path": "/root/.local/bin"
-    }
-   ],
-   "dependsOn": [
-    "packages:mise"
-   ],
-   "name": "setup",
-   "secrets": [
-    "*"
-   ],
-   "variables": {
-    "PIP_CACHE_DIR": "/opt/pip-cache",
-    "PIP_DEFAULT_TIMEOUT": "100",
-    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
-    "PYTHONDONTWRITEBYTECODE": "1",
-    "PYTHONFAULTHANDLER": "1",
-    "PYTHONHASHSEED": "random",
-    "PYTHONUNBUFFERED": "1"
    }
   },
   {
@@ -90,16 +104,37 @@
      "src": "requirements.txt"
     },
     {
-     "cmd": "pip install -r requirements.txt"
+     "cmd": "pip install --target=/opt/python-packages -r requirements.txt"
     }
    ],
-   "dependsOn": [
-    "packages:mise",
-    "setup",
-    "packages:apt:python-system-deps"
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
    ],
    "name": "install",
-   "secrets": []
+   "secrets": [],
+   "variables": {
+    "PIP_CACHE_DIR": "/opt/pip-cache",
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONPATH": "/opt/python-packages",
+    "PYTHONUNBUFFERED": "1"
+   }
+  },
+  {
+   "inputs": [
+    {
+     "step": "install"
+    }
+   ],
+   "name": "build",
+   "secrets": [
+    "*"
+   ]
   },
   {
    "caches": [
@@ -108,11 +143,16 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y pkg-config'",
-     "customName": "install apt packages: pkg-config"
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y '",
+     "customName": "install apt packages: "
     }
    ],
-   "name": "packages:apt:python-system-deps",
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+    }
+   ],
+   "name": "packages:python-runtime-deps",
    "secrets": []
   }
  ]
