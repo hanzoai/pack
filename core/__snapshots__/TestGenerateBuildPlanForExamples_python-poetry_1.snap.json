@@ -1,5 +1,4 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -10,18 +9,59 @@
    "type": "locked"
   }
  },
- "start": {
-  "cmd": "python main.py",
-  "outputs": [
-   "."
-  ]
+ "deploy": {
+  "inputs": [
+   {
+    "step": "packages:python-runtime-deps"
+   },
+   {
+    "include": [
+     "/mise/shims",
+     "/mise/installs",
+     "/usr/local/bin/mise",
+     "/etc/mise/config.toml",
+     "/root/.local/state/mise"
+    ],
+    "step": "packages:mise"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
+  ],
+  "startCommand": "python main.py",
+  "variables": {
+   "PIP_DEFAULT_TIMEOUT": "100",
+   "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "PYTHONFAULTHANDLER": "1",
+   "PYTHONHASHSEED": "random",
+   "PYTHONUNBUFFERED": "1",
+   "VIRTUAL_ENV": "/app/.venv"
+  }
  },
  "steps": [
   {
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
    "commands": [
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y libpq-dev python3-dev'",
+     "customName": "install apt packages: libpq-dev python3-dev"
+    },
     {
      "path": "/mise/shims"
     },
@@ -35,16 +75,12 @@
      "customName": "install mise packages: pipx, python"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
-   "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
+   "name": "packages:mise",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -56,33 +92,13 @@
   {
    "commands": [
     {
-     "path": "/root/.local/bin"
-    }
-   ],
-   "dependsOn": [
-    "packages:mise"
-   ],
-   "name": "setup",
-   "secrets": [
-    "*"
-   ],
-   "variables": {
-    "PIP_CACHE_DIR": "/opt/pip-cache",
-    "PIP_DEFAULT_TIMEOUT": "100",
-    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
-    "PYTHONDONTWRITEBYTECODE": "1",
-    "PYTHONFAULTHANDLER": "1",
-    "PYTHONHASHSEED": "random",
-    "PYTHONUNBUFFERED": "1"
-   }
-  },
-  {
-   "commands": [
-    {
      "cmd": "pipx install poetry"
     },
     {
-     "cmd": "poetry config virtualenvs.create false"
+     "path": "/root/.local/bin"
+    },
+    {
+     "cmd": "poetry config virtualenvs.in-project true"
     },
     {
      "dest": "pyproject.toml",
@@ -93,16 +109,41 @@
      "src": "poetry.lock"
     },
     {
-     "cmd": "poetry install --no-interaction --no-ansi --no-root"
+     "cmd": "poetry install --no-interaction --no-ansi --only main --no-root"
+    },
+    {
+     "dest": ".",
+     "src": "."
+    },
+    {
+     "path": "/app/.venv/bin"
     }
    ],
-   "dependsOn": [
-    "packages:mise",
-    "setup",
-    "packages:apt:python-system-deps"
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
    ],
    "name": "install",
-   "secrets": []
+   "variables": {
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONUNBUFFERED": "1"
+   }
+  },
+  {
+   "inputs": [
+    {
+     "step": "install"
+    }
+   ],
+   "name": "build",
+   "secrets": [
+    "*"
+   ]
   },
   {
    "caches": [
@@ -111,12 +152,16 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y pkg-config'",
-     "customName": "install apt packages: pkg-config"
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y '",
+     "customName": "install apt packages: "
     }
    ],
-   "name": "packages:apt:python-system-deps",
-   "secrets": []
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+    }
+   ],
+   "name": "packages:python-runtime-deps"
   }
  ]
 }

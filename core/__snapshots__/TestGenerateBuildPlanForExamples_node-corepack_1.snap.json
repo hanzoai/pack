@@ -1,5 +1,4 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "node-modules": {
    "directory": "/app/node_modules/.cache",
@@ -10,11 +9,48 @@
    "type": "shared"
   }
  },
- "start": {
-  "cmd": "pnpm run start",
-  "outputs": [
-   "."
+ "deploy": {
+  "inputs": [
+   {
+    "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+   },
+   {
+    "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+   },
+   {
+    "include": [
+     "/mise/shims",
+     "/mise/installs",
+     "/usr/local/bin/mise",
+     "/etc/mise/config.toml",
+     "/root/.local/state/mise"
+    ],
+    "step": "packages:mise"
+   },
+   {
+    "exclude": [
+     "node_modules"
+    ],
+    "include": [
+     ".",
+     "/root/.cache"
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "/app/node_modules"
+    ],
+    "step": "prune"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
   ],
+  "startCommand": "pnpm run start",
   "variables": {
    "CI": "true",
    "NODE_ENV": "production",
@@ -43,16 +79,12 @@
      "customName": "install mise packages: node, pnpm"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
-   "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
+   "name": "packages:mise",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -63,27 +95,13 @@
    }
   },
   {
+   "caches": [
+    "pnpm-install"
+   ],
    "commands": [
     {
      "path": "/app/node_modules/.bin"
-    }
-   ],
-   "dependsOn": [
-    "packages:mise"
-   ],
-   "name": "setup",
-   "secrets": [],
-   "variables": {
-    "CI": "true",
-    "NODE_ENV": "production",
-    "NPM_CONFIG_FUND": "false",
-    "NPM_CONFIG_PRODUCTION": "false",
-    "NPM_CONFIG_UPDATE_NOTIFIER": "false",
-    "YARN_PRODUCTION": "false"
-   }
-  },
-  {
-   "commands": [
+    },
     {
      "dest": "package.json",
      "src": "package.json"
@@ -93,20 +111,7 @@
     },
     {
      "cmd": "corepack prepare --activate"
-    }
-   ],
-   "dependsOn": [
-    "packages:mise",
-    "setup"
-   ],
-   "name": "corepack",
-   "secrets": []
-  },
-  {
-   "caches": [
-    "pnpm-install"
-   ],
-   "commands": [
+    },
     {
      "dest": "package.json",
      "src": "package.json"
@@ -119,13 +124,39 @@
      "cmd": "pnpm install --frozen-lockfile --prod=false"
     }
    ],
-   "dependsOn": [
-    "packages:mise",
-    "setup",
-    "corepack"
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
    ],
    "name": "install",
-   "secrets": []
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_FUND": "false",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "NPM_CONFIG_UPDATE_NOTIFIER": "false",
+    "YARN_PRODUCTION": "false"
+   }
+  },
+  {
+   "caches": [
+    "pnpm-install"
+   ],
+   "commands": [
+    {
+     "cmd": "pnpm prune --prod"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "install"
+    }
+   ],
+   "name": "prune",
+   "variables": {
+    "NPM_CONFIG_PRODUCTION": "true"
+   }
   },
   {
    "caches": [
@@ -140,8 +171,10 @@
      "cmd": "pnpm run build"
     }
    ],
-   "dependsOn": [
-    "install"
+   "inputs": [
+    {
+     "step": "install"
+    }
    ],
    "name": "build",
    "secrets": [

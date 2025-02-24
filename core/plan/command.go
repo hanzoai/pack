@@ -60,6 +60,12 @@ func NewExecCommand(cmd string, options ...ExecOptions) Command {
 }
 
 func NewExecShellCommand(cmd string, options ...ExecOptions) Command {
+	if len(options) == 0 {
+		options = []ExecOptions{
+			{CustomName: cmd},
+		}
+	}
+
 	exec := NewExecCommand("sh -c '"+cmd+"'", options...)
 	return exec
 }

@@ -1,5 +1,4 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "bun-install": {
    "directory": "/root/.bun/install/cache",
@@ -10,11 +9,47 @@
    "type": "shared"
   }
  },
- "start": {
-  "cmd": "bun index.ts",
-  "outputs": [
-   "."
+ "deploy": {
+  "inputs": [
+   {
+    "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+   },
+   {
+    "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+   },
+   {
+    "include": [
+     "/mise/shims",
+     "/mise/installs",
+     "/usr/local/bin/mise",
+     "/etc/mise/config.toml",
+     "/root/.local/state/mise"
+    ],
+    "step": "packages:mise"
+   },
+   {
+    "exclude": [
+     "node_modules"
+    ],
+    "include": [
+     "."
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "/app/node_modules"
+    ],
+    "step": "prune"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
   ],
+  "startCommand": "bun index.ts",
   "variables": {
    "CI": "true",
    "NODE_ENV": "production",
@@ -40,19 +75,15 @@
     },
     {
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
-     "customName": "install mise packages: bun"
+     "customName": "install mise packages: bun, go"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
     }
    ],
    "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
-   ],
-   "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -62,16 +93,31 @@
    }
   },
   {
+   "caches": [
+    "bun-install"
+   ],
    "commands": [
     {
      "path": "/app/node_modules/.bin"
+    },
+    {
+     "dest": "package.json",
+     "src": "package.json"
+    },
+    {
+     "dest": "bun.lockb",
+     "src": "bun.lockb"
+    },
+    {
+     "cmd": "bun install --frozen-lockfile"
     }
    ],
-   "dependsOn": [
-    "packages:mise"
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
    ],
-   "name": "setup",
-   "secrets": [],
+   "name": "install",
    "variables": {
     "CI": "true",
     "NODE_ENV": "production",
@@ -87,23 +133,19 @@
    ],
    "commands": [
     {
-     "dest": "package.json",
-     "src": "package.json"
-    },
-    {
-     "dest": "bun.lockb",
-     "src": "bun.lockb"
-    },
-    {
-     "cmd": "bun install --frozen-lockfile"
+     "cmd": "sh -c 'rm -rf node_modules \u0026\u0026 bun install --production'",
+     "customName": "rm -rf node_modules \u0026\u0026 bun install --production"
     }
    ],
-   "dependsOn": [
-    "packages:mise",
-    "setup"
+   "inputs": [
+    {
+     "step": "install"
+    }
    ],
-   "name": "install",
-   "secrets": []
+   "name": "prune",
+   "variables": {
+    "NPM_CONFIG_PRODUCTION": "true"
+   }
   },
   {
    "caches": [
@@ -118,8 +160,10 @@
      "cmd": "bun run build"
     }
    ],
-   "dependsOn": [
-    "install"
+   "inputs": [
+    {
+     "step": "install"
+    }
    ],
    "name": "build",
    "secrets": [

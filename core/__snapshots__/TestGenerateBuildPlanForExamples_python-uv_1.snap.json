@@ -1,5 +1,4 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -8,20 +7,65 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
+  },
+  "uv": {
+   "directory": "/opt/uv-cache",
+   "type": "shared"
   }
  },
- "start": {
-  "cmd": "gunicorn --bind 0.0.0.0:3333 main:app",
-  "outputs": [
-   "."
-  ]
+ "deploy": {
+  "inputs": [
+   {
+    "step": "packages:python-runtime-deps"
+   },
+   {
+    "include": [
+     "/mise/shims",
+     "/mise/installs",
+     "/usr/local/bin/mise",
+     "/etc/mise/config.toml",
+     "/root/.local/state/mise",
+     ".python-version"
+    ],
+    "step": "packages:mise"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
+  ],
+  "startCommand": "gunicorn --bind 0.0.0.0:3333 main:app",
+  "variables": {
+   "PIP_DEFAULT_TIMEOUT": "100",
+   "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "PYTHONFAULTHANDLER": "1",
+   "PYTHONHASHSEED": "random",
+   "PYTHONUNBUFFERED": "1"
+  }
  },
  "steps": [
   {
    "assets": {
     "mise.toml": "[mise.toml]"
    },
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
    "commands": [
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y libpq-dev python3-dev'",
+     "customName": "install apt packages: libpq-dev python3-dev"
+    },
     {
      "path": "/mise/shims"
     },
@@ -39,17 +83,12 @@
      "customName": "install mise packages: pipx, python"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise",
-    "/app/.python-version"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
-   "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
+   "name": "packages:mise",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -59,32 +98,15 @@
    }
   },
   {
-   "commands": [
-    {
-     "path": "/root/.local/bin"
-    }
+   "caches": [
+    "uv"
    ],
-   "dependsOn": [
-    "packages:mise"
-   ],
-   "name": "setup",
-   "secrets": [
-    "*"
-   ],
-   "variables": {
-    "PIP_CACHE_DIR": "/opt/pip-cache",
-    "PIP_DEFAULT_TIMEOUT": "100",
-    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
-    "PYTHONDONTWRITEBYTECODE": "1",
-    "PYTHONFAULTHANDLER": "1",
-    "PYTHONHASHSEED": "random",
-    "PYTHONUNBUFFERED": "1"
-   }
-  },
-  {
    "commands": [
     {
      "cmd": "pipx install uv"
+    },
+    {
+     "path": "/root/.local/bin"
     },
     {
      "dest": "pyproject.toml",
@@ -95,31 +117,51 @@
      "src": "uv.lock"
     },
     {
-     "cmd": "uv sync --frozen --no-install-project --no-install-workspace --no-dev"
+     "cmd": "uv sync --locked --no-dev --no-install-project"
     },
     {
      "dest": ".",
      "src": "."
     },
     {
-     "cmd": "uv sync --frozen --no-dev"
+     "cmd": "uv sync --locked --no-dev --no-editable"
     },
     {
      "path": "/app/.venv/bin"
     }
    ],
-   "dependsOn": [
-    "packages:mise",
-    "setup",
-    "packages:apt:python-system-deps"
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
    ],
    "name": "install",
-   "secrets": [],
+   "secrets": [
+    "*"
+   ],
    "variables": {
+    "PIP_DEFAULT_TIMEOUT": "100",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONFAULTHANDLER": "1",
+    "PYTHONHASHSEED": "random",
+    "PYTHONUNBUFFERED": "1",
     "UV_CACHE_DIR": "/opt/uv-cache",
     "UV_COMPILE_BYTECODE": "1",
-    "UV_LINK_MODE": "copy"
+    "UV_LINK_MODE": "copy",
+    "UV_PYTHON_DOWNLOADS": "never"
    }
+  },
+  {
+   "inputs": [
+    {
+     "step": "install"
+    }
+   ],
+   "name": "build",
+   "secrets": [
+    "*"
+   ]
   },
   {
    "caches": [
@@ -128,12 +170,16 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y pkg-config'",
-     "customName": "install apt packages: pkg-config"
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y '",
+     "customName": "install apt packages: "
     }
    ],
-   "name": "packages:apt:python-system-deps",
-   "secrets": []
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+    }
+   ],
+   "name": "packages:python-runtime-deps"
   }
  ]
 }

@@ -1,43 +1,35 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
- "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  }
- },
- "start": {
-  "cmd": "bash /start-nginx.sh",
-  "outputs": [
-   "."
-  ]
+ "deploy": {
+  "inputs": [
+   {
+    "step": "build"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
+  ],
+  "startCommand": "bash /start-nginx.sh"
  },
  "steps": [
   {
-   "name": "packages:image",
-   "secrets": [],
-   "startingImage": "php:8.4.3-fpm"
-  },
-  {
-   "caches": [
-    "apt",
-    "apt-lists"
-   ],
    "commands": [
     {
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y git nginx unzip zip'",
      "customName": "install apt packages: git nginx unzip zip"
     }
    ],
-   "dependsOn": [
-    "packages:image"
+   "inputs": [
+    {
+     "image": "php:8.4.3-fpm"
+    }
    ],
-   "name": "packages:apt:nginx",
-   "secrets": []
+   "name": "packages:image",
+   "secrets": [
+    "*"
+   ]
   },
   {
    "assets": {
@@ -66,15 +58,44 @@
      "path": "/start-nginx.sh"
     }
    ],
-   "dependsOn": [
-    "packages:apt:nginx"
+   "inputs": [
+    {
+     "step": "packages:image"
+    }
    ],
-   "name": "nginx:setup",
+   "name": "nginx",
    "secrets": [
     "*"
    ]
   },
   {
+   "inputs": [
+    {
+     "step": "nginx"
+    }
+   ],
+   "name": "install:composer",
+   "secrets": [
+    "*"
+   ]
+  },
+  {
+   "inputs": [
+    {
+     "step": "install:composer"
+    }
+   ],
+   "name": "build",
+   "secrets": [
+    "*"
+   ]
+  },
+  {
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
+   ],
    "name": "packages:mise",
    "secrets": [
     "*"

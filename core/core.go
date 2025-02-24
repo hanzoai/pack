@@ -33,7 +33,13 @@ type BuildResult struct {
 }
 
 func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*BuildResult, error) {
-	ctx, err := generate.NewGenerateContext(app, env)
+	// Get the full user config based on file config, env config, and options
+	config, err := GetConfig(app, env, options)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, err := generate.NewGenerateContext(app, env, config)
 	if err != nil {
 		return nil, err
 	}
@@ -43,12 +49,6 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 		for name, version := range options.PreviousVersions {
 			ctx.Resolver.SetPreviousVersion(name, version)
 		}
-	}
-
-	// Get the full user config based on file config, env config, and options
-	config, err := GetConfig(app, env, options)
-	if err != nil {
-		return nil, err
 	}
 
 	// Figure out what providers to use
@@ -80,11 +80,6 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	procfileProvider := &procfile.ProcfileProvider{}
 	if _, err := procfileProvider.Plan(ctx); err != nil {
 		return nil, fmt.Errorf("failed to run procfile provider: %w", err)
-	}
-
-	// Update the context with the config
-	if err := ctx.ApplyConfig(config); err != nil {
-		return nil, fmt.Errorf("failed to apply config: %w", err)
 	}
 
 	buildPlan, resolvedPackages, err := ctx.Generate()
@@ -153,24 +148,16 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 		return config
 	}
 
-	if installCmdVar, _ := env.GetConfigVariable("INSTALL_CMD"); installCmdVar != "" {
-		installStep := config.GetOrCreateStep("install")
-		installStep.Commands = []plan.Command{plan.NewExecShellCommand(installCmdVar, plan.ExecOptions{CustomName: installCmdVar})}
-		installStep.DependsOn = append(installStep.DependsOn, "packages")
-	}
-
 	if buildCmdVar, _ := env.GetConfigVariable("BUILD_CMD"); buildCmdVar != "" {
 		buildStep := config.GetOrCreateStep("build")
 		buildStep.Commands = []plan.Command{
-			// We want to run the build command with all the files in the current directory
 			plan.NewCopyCommand("."),
 			plan.NewExecShellCommand(buildCmdVar, plan.ExecOptions{CustomName: buildCmdVar}),
 		}
-		buildStep.DependsOn = append(buildStep.DependsOn, "install")
 	}
 
 	if startCmdVar, _ := env.GetConfigVariable("START_CMD"); startCmdVar != "" {
-		config.Start.Command = startCmdVar
+		config.Deploy.StartCmd = startCmdVar
 	}
 
 	if envPackages, _ := env.GetConfigVariable("PACKAGES"); envPackages != "" {
@@ -181,8 +168,12 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 		}
 	}
 
-	if envAptPackages, _ := env.GetConfigVariable("APT_PACKAGES"); envAptPackages != "" {
-		config.AptPackages = strings.Split(envAptPackages, " ")
+	if envAptPackages, _ := env.GetConfigVariable("BUILD_APT_PACKAGES"); envAptPackages != "" {
+		config.BuildAptPackages = strings.Split(envAptPackages, " ")
+	}
+
+	if envAptPackages, _ := env.GetConfigVariable("DEPLOY_APT_PACKAGES"); envAptPackages != "" {
+		config.Deploy.AptPackages = strings.Split(envAptPackages, " ")
 	}
 
 	for name := range env.Variables {
@@ -206,11 +197,10 @@ func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config
 			plan.NewCopyCommand("."),
 			plan.NewExecShellCommand(options.BuildCommand, plan.ExecOptions{CustomName: options.BuildCommand}),
 		}
-		buildStep.DependsOn = append(buildStep.DependsOn, "install")
 	}
 
 	if options.StartCommand != "" {
-		config.Start.Command = options.StartCommand
+		config.Deploy.StartCmd = options.StartCommand
 	}
 
 	return config
@@ -234,7 +224,7 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 			detectedProviders = append(detectedProviders, provider.Name())
 
 			// If there are no providers manually specified in the config,
-			if config.Providers == nil {
+			if config.Provider == nil {
 				if err := provider.Initialize(ctx); err != nil {
 					log.Warnf("Failed to initialize provider `%s`: %s", provider.Name(), err.Error())
 					continue
@@ -246,20 +236,18 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 		}
 	}
 
-	if config.Providers != nil {
-		for _, providerName := range *config.Providers {
-			provider := providers.GetProvider(providerName)
-			if provider == nil {
-				log.Warnf("Provider `%s` not found", providerName)
-				continue
-			}
-
-			if err := provider.Initialize(ctx); err != nil {
-				log.Warnf("Failed to initialize provider `%s`: %s", providerName, err.Error())
-				continue
-			}
-			providersToUse = append(providersToUse, provider)
+	if config.Provider != nil {
+		provider := providers.GetProvider(*config.Provider)
+		if provider == nil {
+			log.Warnf("Provider `%s` not found", *config.Provider)
+			return providersToUse, detectedProviders
 		}
+
+		if err := provider.Initialize(ctx); err != nil {
+			log.Warnf("Failed to initialize provider `%s`: %s", *config.Provider, err.Error())
+			return providersToUse, detectedProviders
+		}
+		providersToUse = append(providersToUse, provider)
 	}
 
 	return providersToUse, detectedProviders

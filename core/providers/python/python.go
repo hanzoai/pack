@@ -1,6 +1,8 @@
 package python
 
 import (
+	"fmt"
+	"maps"
 	"regexp"
 	"strings"
 
@@ -12,6 +14,9 @@ const (
 	DEFAULT_PYTHON_VERSION = "3.13.2"
 	UV_CACHE_DIR           = "/opt/uv-cache"
 	PIP_CACHE_DIR          = "/opt/pip-cache"
+	PACKAGES_DIR           = "/opt/python-packages"
+	VENV_PATH              = "/app/.venv"
+	LOCAL_BIN_PATH         = "/root/.local/bin"
 )
 
 type PythonProvider struct{}
@@ -35,40 +40,294 @@ func (p *PythonProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 }
 
 func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
-	if err := p.packages(ctx); err != nil {
-		return err
+	p.InstallMisePackages(ctx, ctx.GetMiseStepBuilder())
+
+	if p.hasRequirements(ctx) {
+		p.PlanPip(ctx)
+	} else if p.hasPyproject(ctx) && p.hasUv(ctx) {
+		p.PlanUv(ctx)
+	} else if p.hasPyproject(ctx) && p.hasPoetry(ctx) {
+		p.PlanPoetry(ctx)
+	} else if p.hasPyproject(ctx) && p.hasPdm(ctx) {
+		p.PlanPDM(ctx)
+	} else if p.hasPipfile(ctx) {
+		p.PlanPipenv(ctx)
 	}
 
-	if err := p.install(ctx); err != nil {
-		return err
-	}
+	// Install dependencies
+	// install := ctx.NewCommandStep("install")
+	// install.AddInput(plan.NewStepInput(miseStep.Name()))
+	// p.InstallPythonDeps(ctx, install)
 
-	if err := p.start(ctx); err != nil {
-		return err
-	}
+	// // Build step (if needed)
+	// build := ctx.NewCommandStep("build")
+	// build.AddInput(plan.NewStepInput(install.Name()))
+
+	// // Deploy configuration
+	// ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	// maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+
+	// ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
+	// 	plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE),
+	// 	plan.NewStepInput(miseStep.Name(), plan.InputOptions{
+	// 		Include: miseStep.GetOutputPaths(),
+	// 	}),
+	// 	plan.NewStepInput(build.Name(), plan.InputOptions{
+	// 		Include: []string{"."},
+	// 	}),
+	// 	plan.NewLocalInput("."),
+	// }...)
 
 	p.addMetadata(ctx)
 
 	return nil
 }
 
-func (p *PythonProvider) start(ctx *generate.GenerateContext) error {
-	ctx.Start.AddOutputs([]string{"."})
-
-	var startCommand string
-
+func (p *PythonProvider) GetStartCommand(ctx *generate.GenerateContext) string {
 	if ctx.App.HasMatch("main.py") {
-		startCommand = "python main.py"
+		return "python main.py"
 	}
-
-	if startCommand != "" {
-		ctx.Start.Command = startCommand
-	}
-
-	return nil
+	return ""
 }
 
-func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
+func (p *PythonProvider) PlanUv(ctx *generate.GenerateContext) {
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
+
+	install.AddCache(ctx.Caches.AddCache("uv", UV_CACHE_DIR))
+	install.AddEnvVars(map[string]string{
+		"UV_COMPILE_BYTECODE": "1",
+		"UV_LINK_MODE":        "copy",
+		"UV_CACHE_DIR":        UV_CACHE_DIR,
+		"UV_PYTHON_DOWNLOADS": "never",
+	})
+	install.AddEnvVars(p.GetPythonEnvVars(ctx))
+	install.AddCommands([]plan.Command{
+		plan.NewExecCommand("pipx install uv"),
+		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewCopyCommand("pyproject.toml"),
+		plan.NewCopyCommand("uv.lock"),
+		plan.NewExecCommand("uv sync --locked --no-dev --no-install-project"),
+		plan.NewCopyCommand("."),
+		plan.NewExecCommand("uv sync --locked --no-dev --no-editable"),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
+	})
+
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
+			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{"."},
+		}),
+		plan.NewLocalInput("."),
+	}
+}
+
+func (p *PythonProvider) PlanPipenv(ctx *generate.GenerateContext) {
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
+
+	install.AddEnvVars(p.GetPythonEnvVars(ctx))
+	install.AddEnvVars(map[string]string{
+		"PIPENV_CHECK_UPDATE":       "false",
+		"PIPENV_VENV_IN_PROJECT":    "1",
+		"PIPENV_IGNORE_VIRTUALENVS": "1",
+	})
+	install.Secrets = []string{}
+	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP"})
+
+	install.AddCommands([]plan.Command{
+		plan.NewExecCommand("pipx install pipenv"),
+		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewCopyCommand("Pipfile"),
+		plan.NewCopyCommand("Pipfile.lock"),
+		plan.NewExecCommand("pipenv install --deploy --ignore-pipfile"),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
+	})
+
+	if ctx.App.HasMatch("Pipfile.lock") {
+		install.AddCommands([]plan.Command{
+			plan.NewCopyCommand("Pipfile"),
+			plan.NewCopyCommand("Pipfile.lock"),
+			plan.NewExecCommand("pipenv install --deploy --ignore-pipfile"),
+		})
+	} else {
+		install.AddCommands([]plan.Command{
+			plan.NewCopyCommand("Pipfile"),
+			plan.NewExecCommand("pipenv install --skip-lock"),
+		})
+	}
+
+	install.AddCommands([]plan.Command{
+		plan.NewPathCommand(VENV_PATH + "/bin"),
+	})
+
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
+			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{"."},
+		}),
+		plan.NewLocalInput("."),
+	}
+}
+
+func (p *PythonProvider) PlanPDM(ctx *generate.GenerateContext) {
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
+
+	install.AddEnvVars(p.GetPythonEnvVars(ctx))
+	install.AddEnvVars(map[string]string{
+		"PDM_CHECK_UPDATE": "false",
+	})
+	install.Secrets = []string{}
+	install.UseSecretsWithPrefixes([]string{"PYTHON", "PDM"})
+
+	install.AddCommands([]plan.Command{
+		plan.NewExecCommand("pipx install pdm"),
+		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewCopyCommand("."),
+		plan.NewExecCommand("python --version"),
+		plan.NewExecCommand("pdm install --check --prod --no-editable"),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
+	})
+
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
+			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{"."},
+		}),
+		plan.NewLocalInput("."),
+	}
+}
+
+func (p *PythonProvider) PlanPoetry(ctx *generate.GenerateContext) {
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
+
+	install.AddEnvVars(p.GetPythonEnvVars(ctx))
+	install.Secrets = []string{}
+	install.UseSecretsWithPrefixes([]string{"PYTHON", "POETRY"})
+
+	install.AddCommands([]plan.Command{
+		plan.NewExecCommand("pipx install poetry"),
+		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewExecCommand("poetry config virtualenvs.in-project true"),
+		plan.NewCopyCommand("pyproject.toml"),
+		plan.NewCopyCommand("poetry.lock"),
+		plan.NewExecCommand("poetry install --no-interaction --no-ansi --only main --no-root"),
+		plan.NewCopyCommand("."),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
+	})
+
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+	maps.Copy(ctx.Deploy.Variables, map[string]string{
+		"VIRTUAL_ENV": VENV_PATH,
+	})
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
+			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{"."},
+		}),
+		plan.NewLocalInput("."),
+	}
+}
+
+func (p *PythonProvider) PlanPip(ctx *generate.GenerateContext) {
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
+
+	install.AddCache(ctx.Caches.AddCache("pip", PIP_CACHE_DIR))
+	install.AddCommands([]plan.Command{
+		plan.NewCopyCommand("requirements.txt"),
+		plan.NewExecCommand(fmt.Sprintf("pip install --target=%s -r requirements.txt", PACKAGES_DIR)),
+	})
+	install.Secrets = []string{}
+	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP", "PIPX"})
+	maps.Copy(install.Variables, p.GetPythonEnvVars(ctx))
+	maps.Copy(install.Variables, map[string]string{
+		"PIP_CACHE_DIR": PIP_CACHE_DIR,
+		"PYTHONPATH":    PACKAGES_DIR,
+	})
+
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
+			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{PACKAGES_DIR, "."},
+		}),
+		plan.NewLocalInput("."),
+	}
+}
+
+func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) *generate.AptStepBuilder {
+	aptStep := ctx.NewAptStepBuilder("python-runtime-deps")
+	aptStep.Inputs = []plan.Input{
+		ctx.DefaultRuntimeInput(),
+	}
+
+	for dep, requiredPkgs := range pythonRuntimeDepRequirements {
+		if p.usesDep(ctx, dep) {
+			aptStep.Packages = append(aptStep.Packages, requiredPkgs...)
+		}
+	}
+
+	return aptStep
+}
+
+func (p *PythonProvider) GetBuilderDeps(ctx *generate.GenerateContext) *generate.MiseStepBuilder {
+	miseStep := ctx.GetMiseStepBuilder()
+	miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "python3-dev", "libpq-dev")
+
+	return miseStep
+}
+
+func (p *PythonProvider) InstallPythonDeps(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) {
+	maps.Copy(install.Variables, p.GetPythonEnvVars(ctx))
+	install.Secrets = []string{}
+	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP", "PIPX", "PIPENV", "UV", "POETRY", "PDM"})
+	install.AddPaths([]string{"/root/.local/bin", "/app/.venv/bin"})
 
 	hasRequirements := p.hasRequirements(ctx)
 	hasPyproject := p.hasPyproject(ctx)
@@ -76,13 +335,6 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 	hasPoetry := p.hasPoetry(ctx)
 	hasPdm := p.hasPdm(ctx)
 	hasUv := p.hasUv(ctx)
-
-	setup := ctx.NewCommandStep("setup")
-	setup.AddEnvVars(p.GetPythonEnvVars(ctx))
-	setup.AddPaths([]string{"/root/.local/bin"})
-
-	install := ctx.NewCommandStep("install")
-	install.DependsOn = append(install.DependsOn, setup.DisplayName)
 
 	if hasRequirements {
 		install.AddCache(ctx.Caches.AddCache("pip", PIP_CACHE_DIR))
@@ -99,8 +351,6 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 			plan.NewExecCommand("poetry install --no-interaction --no-ansi --no-root"),
 		})
 	} else if hasPyproject && hasPdm {
-		// TODO: Fix this. PDM is not working because the packages are installed into a venv
-		// that is not available to python at runtime
 		install.AddEnvVars(map[string]string{"PDM_CHECK_UPDATE": "false"})
 		install.AddCommands([]plan.Command{
 			plan.NewExecCommand("pipx install pdm"),
@@ -143,48 +393,39 @@ func (p *PythonProvider) install(ctx *generate.GenerateContext) error {
 		}
 	}
 
-	install.Secrets = []string{}
-	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP", "PIPX", "PIPENV", "UV", "POETRY", "PDM"})
-
+	// Handle system dependencies
 	aptStep := ctx.NewAptStepBuilder("python-system-deps")
 	aptStep.Packages = []string{"pkg-config"}
-	install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
 
-	for dep, requiredPkgs := range pythonDepRequirements {
+	for dep, requiredPkgs := range pythonRuntimeDepRequirements {
 		if p.usesDep(ctx, dep) {
 			aptStep.Packages = append(aptStep.Packages, requiredPkgs...)
 		}
 	}
-
-	return nil
 }
 
-func (p *PythonProvider) packages(ctx *generate.GenerateContext) error {
-	packages := ctx.GetMiseStepBuilder()
-
-	python := packages.Default("python", DEFAULT_PYTHON_VERSION)
+func (p *PythonProvider) InstallMisePackages(ctx *generate.GenerateContext, miseStep *generate.MiseStepBuilder) {
+	python := miseStep.Default("python", DEFAULT_PYTHON_VERSION)
 
 	if envVersion, varName := ctx.Env.GetConfigVariable("PYTHON_VERSION"); envVersion != "" {
-		packages.Version(python, envVersion, varName)
+		miseStep.Version(python, envVersion, varName)
 	}
 
 	if versionFile, err := ctx.App.ReadFile(".python-version"); err == nil {
-		packages.Version(python, string(versionFile), ".python-version")
+		miseStep.Version(python, string(versionFile), ".python-version")
 	}
 
 	if runtimeFile, err := ctx.App.ReadFile("runtime.txt"); err == nil {
-		packages.Version(python, string(runtimeFile), "runtime.txt")
+		miseStep.Version(python, string(runtimeFile), "runtime.txt")
 	}
 
 	if pipfileVersion := parseVersionFromPipfile(ctx); pipfileVersion != "" {
-		packages.Version(python, pipfileVersion, "Pipfile")
+		miseStep.Version(python, pipfileVersion, "Pipfile")
 	}
 
-	if p.hasPoetry(ctx) || p.hasUv(ctx) || p.hasPdm(ctx) {
-		packages.Default("pipx", "latest")
+	if p.hasPoetry(ctx) || p.hasUv(ctx) || p.hasPdm(ctx) || p.hasPipfile(ctx) {
+		miseStep.Default("pipx", "latest")
 	}
-
-	return nil
 }
 
 func (p *PythonProvider) GetPythonEnvVars(ctx *generate.GenerateContext) map[string]string {
@@ -195,7 +436,6 @@ func (p *PythonProvider) GetPythonEnvVars(ctx *generate.GenerateContext) map[str
 		"PYTHONDONTWRITEBYTECODE":       "1",
 		"PIP_DISABLE_PIP_VERSION_CHECK": "1",
 		"PIP_DEFAULT_TIMEOUT":           "100",
-		"PIP_CACHE_DIR":                 PIP_CACHE_DIR,
 	}
 }
 
@@ -214,15 +454,16 @@ func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {
 		pkgManager = "uv"
 	}
 
-	ctx.Metadata.Set("packageManager", pkgManager)
-	ctx.Metadata.SetBool("requirements", p.hasRequirements(ctx))
-	ctx.Metadata.SetBool("pyproject", p.hasPyproject(ctx))
-	ctx.Metadata.SetBool("pipfile", p.hasPipfile(ctx))
+	ctx.Metadata.Set("pythonPackageManager", pkgManager)
+	ctx.Metadata.SetBool("pythonHasRequirementsTxt", p.hasRequirements(ctx))
+	ctx.Metadata.SetBool("pythonHasPyproject", p.hasPyproject(ctx))
+	ctx.Metadata.SetBool("pythonHasPipfile", p.hasPipfile(ctx))
 }
 
 func (p *PythonProvider) usesDep(ctx *generate.GenerateContext, dep string) bool {
 	for _, file := range []string{"requirements.txt", "pyproject.toml", "Pipfile"} {
 		if contents, err := ctx.App.ReadFile(file); err == nil {
+			// TODO: Do something better than string comparison
 			if strings.Contains(strings.ToLower(contents), strings.ToLower(dep)) {
 				return true
 			}
@@ -272,8 +513,8 @@ func (p *PythonProvider) hasUv(ctx *generate.GenerateContext) bool {
 }
 
 // Mapping of python dependencies to required apt packages
-var pythonDepRequirements = map[string][]string{
-	"pdf2image": {"poppler-utils", "gcc"},
-	"pydub":     {"ffmpeg", "gcc"},
-	"pymovie":   {"ffmpeg", "qt5-qmake", "qtbase5-dev", "qtbase5-dev-tools", "qttools5-dev-tools", "libqt5core5a", "python3-pyqt5", "gcc"},
+var pythonRuntimeDepRequirements = map[string][]string{
+	"pdf2image": {"poppler-utils"},
+	"pydub":     {"ffmpeg"},
+	"pymovie":   {"ffmpeg", "qt5-qmake", "qtbase5-dev", "qtbase5-dev-tools", "qttools5-dev-tools", "libqt5core5a", "python3-pyqt5"},
 }

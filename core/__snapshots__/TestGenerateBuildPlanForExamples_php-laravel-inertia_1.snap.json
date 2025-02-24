@@ -1,14 +1,5 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
-  "apt": {
-   "directory": "/var/cache/apt",
-   "type": "locked"
-  },
-  "apt-lists": {
-   "directory": "/var/lib/apt/lists",
-   "type": "locked"
-  },
   "composer": {
    "directory": "/opt/cache/composer",
    "type": "shared"
@@ -22,164 +13,52 @@
    "type": "shared"
   }
  },
- "start": {
-  "cmd": "bash /start-nginx.sh",
-  "outputs": [
-   "."
-  ]
+ "deploy": {
+  "inputs": [
+   {
+    "step": "install:composer"
+   },
+   {
+    "exclude": [
+     "node_modules"
+    ],
+    "include": [
+     "."
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "/app/node_modules"
+    ],
+    "step": "prune:node"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
+  ],
+  "startCommand": "bash /start-nginx.sh",
+  "variables": {
+   "IS_LARAVEL": "true"
+  }
  },
  "steps": [
   {
-   "name": "packages:image",
-   "secrets": [],
-   "startingImage": "php:8.2.27-fpm"
-  },
-  {
-   "caches": [
-    "apt",
-    "apt-lists"
-   ],
    "commands": [
     {
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y git nginx unzip zip'",
      "customName": "install apt packages: git nginx unzip zip"
     }
    ],
-   "dependsOn": [
-    "packages:image"
-   ],
-   "name": "packages:apt:nginx",
-   "secrets": []
-  },
-  {
-   "caches": [
-    "composer"
-   ],
-   "commands": [
+   "inputs": [
     {
-     "dest": "/usr/bin/composer",
-     "image": "composer:latest",
-     "src": "/usr/bin/composer"
-    },
-    {
-     "dest": ".",
-     "src": "."
-    },
-    {
-     "cmd": "composer install --ignore-platform-reqs"
+     "image": "php:8.2.27-fpm"
     }
    ],
-   "dependsOn": [
-    "packages:apt:nginx"
-   ],
-   "name": "install",
-   "secrets": [
-    "*"
-   ],
-   "variables": {
-    "COMPOSER_CACHE_DIR": "/opt/cache/composer"
-   }
-  },
-  {
-   "assets": {
-    "mise.toml": "[mise.toml]"
-   },
-   "commands": [
-    {
-     "path": "/mise/shims"
-    },
-    {
-     "customName": "create mise config",
-     "name": "mise.toml",
-     "path": "/etc/mise/config.toml"
-    },
-    {
-     "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
-     "customName": "install mise packages: node"
-    }
-   ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
-   ],
-   "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
-   "variables": {
-    "MISE_CACHE_DIR": "/mise/cache",
-    "MISE_CONFIG_DIR": "/mise",
-    "MISE_DATA_DIR": "/mise",
-    "MISE_INSTALLS_DIR": "/mise/installs",
-    "MISE_SHIMS_DIR": "/mise/shims"
-   }
-  },
-  {
-   "commands": [
-    {
-     "path": "/app/node_modules/.bin"
-    }
-   ],
-   "dependsOn": [
-    "packages:mise"
-   ],
-   "name": "setup:node",
-   "secrets": [],
-   "variables": {
-    "CI": "true",
-    "NODE_ENV": "production",
-    "NPM_CONFIG_FUND": "false",
-    "NPM_CONFIG_PRODUCTION": "false",
-    "NPM_CONFIG_UPDATE_NOTIFIER": "false",
-    "YARN_PRODUCTION": "false"
-   }
-  },
-  {
-   "caches": [
-    "npm-install"
-   ],
-   "commands": [
-    {
-     "dest": "package.json",
-     "src": "package.json"
-    },
-    {
-     "dest": "package-lock.json",
-     "src": "package-lock.json"
-    },
-    {
-     "cmd": "npm ci"
-    }
-   ],
-   "dependsOn": [
-    "packages:mise",
-    "setup:node"
-   ],
-   "name": "install:node",
-   "secrets": []
-  },
-  {
-   "caches": [
-    "node-modules"
-   ],
-   "commands": [
-    {
-     "dest": ".",
-     "src": "."
-    },
-    {
-     "cmd": "npm run build"
-    }
-   ],
-   "dependsOn": [
-    "install:node"
-   ],
-   "name": "build:node",
-   "outputs": [
-    "/app"
-   ],
+   "name": "packages:image",
    "secrets": [
     "*"
    ]
@@ -211,16 +90,166 @@
      "path": "/start-nginx.sh"
     }
    ],
-   "dependsOn": [
-    "packages:apt:nginx"
+   "inputs": [
+    {
+     "step": "packages:image"
+    }
    ],
-   "name": "nginx:setup",
+   "name": "nginx",
+   "secrets": [
+    "*"
+   ]
+  },
+  {
+   "caches": [
+    "composer"
+   ],
+   "commands": [
+    {
+     "dest": "/usr/bin/composer",
+     "image": "composer:latest",
+     "src": "/usr/bin/composer"
+    },
+    {
+     "dest": ".",
+     "src": "."
+    },
+    {
+     "cmd": "composer install --ignore-platform-reqs"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "nginx"
+    }
+   ],
+   "name": "install:composer",
    "secrets": [
     "*"
    ],
    "variables": {
-    "IS_LARAVEL": "true"
+    "COMPOSER_CACHE_DIR": "/opt/cache/composer"
    }
+  },
+  {
+   "assets": {
+    "mise.toml": "[mise.toml]"
+   },
+   "commands": [
+    {
+     "path": "/mise/shims"
+    },
+    {
+     "customName": "create mise config",
+     "name": "mise.toml",
+     "path": "/etc/mise/config.toml"
+    },
+    {
+     "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
+     "customName": "install mise packages: node"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
+   ],
+   "name": "packages:mise",
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
+  },
+  {
+   "caches": [
+    "npm-install"
+   ],
+   "commands": [
+    {
+     "path": "/app/node_modules/.bin"
+    },
+    {
+     "dest": "package.json",
+     "src": "package.json"
+    },
+    {
+     "dest": "package-lock.json",
+     "src": "package-lock.json"
+    },
+    {
+     "cmd": "npm ci"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
+   ],
+   "name": "install:node",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_FUND": "false",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "NPM_CONFIG_UPDATE_NOTIFIER": "false",
+    "YARN_PRODUCTION": "false"
+   }
+  },
+  {
+   "caches": [
+    "npm-install"
+   ],
+   "commands": [
+    {
+     "cmd": "npm prune --omit=dev"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "install:node"
+    }
+   ],
+   "name": "prune:node",
+   "variables": {
+    "NPM_CONFIG_PRODUCTION": "true"
+   }
+  },
+  {
+   "caches": [
+    "node-modules"
+   ],
+   "commands": [
+    {
+     "dest": ".",
+     "src": "."
+    },
+    {
+     "cmd": "npm run build"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "install:composer"
+    },
+    {
+     "include": [
+      ".",
+      "/mise/shims",
+      "/mise/installs",
+      "/usr/local/bin/mise",
+      "/etc/mise/config.toml",
+      "/root/.local/state/mise"
+     ],
+     "step": "install:node"
+    }
+   ],
+   "name": "build",
+   "secrets": [
+    "*"
+   ]
   }
  ]
 }

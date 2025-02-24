@@ -21,20 +21,23 @@ func (p *TestProvider) Plan(ctx *GenerateContext) error {
 
 	// apt
 	aptStep := ctx.NewAptStepBuilder("test")
+	aptStep.AddInput(plan.NewStepInput(mise.Name()))
 	aptStep.AddAptPackage("git")
 	aptStep.AddAptPackage("neofetch")
 
 	// commands
 	installStep := ctx.NewCommandStep("install")
 	installStep.AddCommand(plan.NewExecCommand("npm install", plan.ExecOptions{}))
-	installStep.Outputs = []string{"node_modules"}
-	installStep.DependsOn = []string{aptStep.Name()}
+	installStep.AddInput(plan.NewStepInput(aptStep.Name()))
+	installStep.Secrets = []string{}
 
 	buildStep := ctx.NewCommandStep("build")
 	buildStep.AddCommand(plan.NewExecCommand("npm run build", plan.ExecOptions{}))
-	buildStep.DependsOn = []string{installStep.Name()}
+	buildStep.AddInput(plan.NewStepInput(installStep.Name()))
 
-	ctx.Start.Command = "npm run start"
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(buildStep.Name()),
+	}
 
 	return nil
 }
@@ -46,8 +49,9 @@ func CreateTestContext(t *testing.T, path string) *GenerateContext {
 	require.NoError(t, err)
 
 	env := app.NewEnvironment(nil)
+	config := config.EmptyConfig()
 
-	ctx, err := NewGenerateContext(userApp, env)
+	ctx, err := NewGenerateContext(userApp, env, config)
 	require.NoError(t, err)
 
 	return ctx
@@ -72,39 +76,23 @@ func TestGenerateContext(t *testing.T) {
 			}
 		},
 		"secrets": ["RAILWAY_SECRET_1", "RAILWAY_SECRET_2"],
-		"start": {
+		"deploy": {
+			"startCommand": "echo hello",
 			"variables": {
 				"HELLO": "world"
 			}
 		}
 	}`
 
-	var cfg config.Config
-	require.NoError(t, json.Unmarshal([]byte(configJSON), &cfg))
+	var config config.Config
+	require.NoError(t, json.Unmarshal([]byte(configJSON), &config))
 
-	// Apply the config to the context
-	require.NoError(t, ctx.ApplyConfig(&cfg))
-
-	// Resolve packages
-	resolvedPkgs, err := ctx.ResolvePackages()
-	require.NoError(t, err)
-
-	// Generate a plan
-	buildOpts := &BuildStepOptions{
-		ResolvedPackages: resolvedPkgs,
-		Caches:           ctx.Caches,
-	}
-
-	// Build and verify each step
-	for _, builder := range ctx.Steps {
-		_, err := builder.Build(buildOpts)
-		require.NoError(t, err)
-	}
+	ctx.Config = &config
 
 	buildPlan, _, err := ctx.Generate()
 	require.NoError(t, err)
 
-	buildPlanJSON, err := json.Marshal(buildPlan)
+	buildPlanJSON, err := json.MarshalIndent(buildPlan, "", "  ")
 	require.NoError(t, err)
 
 	var actualPlan map[string]interface{}

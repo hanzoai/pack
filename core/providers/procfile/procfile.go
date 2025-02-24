@@ -22,9 +22,9 @@ func (p *ProcfileProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 	workerCommand := parsedProcfile["worker"]
 
 	if webCommand != "" {
-		ctx.Start.Command = webCommand
+		ctx.Deploy.StartCmd = webCommand
 	} else if workerCommand != "" {
-		ctx.Start.Command = workerCommand
+		ctx.Deploy.StartCmd = workerCommand
 	}
 
 	return false, nil

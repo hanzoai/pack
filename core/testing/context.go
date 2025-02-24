@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/railwayapp/railpack/core/app"
+	"github.com/railwayapp/railpack/core/config"
 	"github.com/railwayapp/railpack/core/generate"
 )
 
@@ -18,7 +19,9 @@ func CreateGenerateContext(t *testing.T, path string) *generate.GenerateContext 
 
 	env := app.NewEnvironment(nil)
 
-	ctx, err := generate.NewGenerateContext(userApp, env)
+	config := config.EmptyConfig()
+
+	ctx, err := generate.NewGenerateContext(userApp, env, config)
 	if err != nil {
 		t.Fatalf("error creating generate context: %v", err)
 	}

@@ -102,11 +102,10 @@ func TestNodeCorepack(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := testingUtils.CreateGenerateContext(t, tt.path)
 			provider := NodeProvider{}
-
-			packageJson, err := provider.GetPackageJson(ctx.App)
+			err := provider.Initialize(ctx)
 			require.NoError(t, err)
 
-			usesCorepack := provider.usesCorepack(packageJson)
+			usesCorepack := provider.usesCorepack()
 			require.Equal(t, tt.wantCorepack, usesCorepack)
 		})
 	}
@@ -139,6 +138,8 @@ func TestGetNextApps(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := testingUtils.CreateGenerateContext(t, tt.path)
 			provider := NodeProvider{}
+			err := provider.Initialize(ctx)
+			require.NoError(t, err)
 
 			nextApps, err := provider.getNextApps(ctx)
 			require.NoError(t, err)

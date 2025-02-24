@@ -14,7 +14,6 @@ import (
 
 const (
 	MisePackageStepName = "packages:mise"
-	BuilderBaseImage    = "ghcr.io/railwayapp/railpack-builder-base:latest"
 )
 
 type MiseStepBuilder struct {
@@ -24,20 +23,22 @@ type MiseStepBuilder struct {
 	MisePackages          []*resolver.PackageRef
 	SupportingMiseFiles   []string
 	Assets                map[string]string
-	Outputs               []string
+	Inputs                []plan.Input
 	Variables             map[string]string
 	app                   *a.App
 	env                   *a.Environment
 }
 
 func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
+	supportingAptPackages := c.Config.BuildAptPackages
+
 	step := &MiseStepBuilder{
 		DisplayName:           MisePackageStepName,
 		Resolver:              c.Resolver,
 		MisePackages:          []*resolver.PackageRef{},
-		SupportingAptPackages: []string{},
+		SupportingAptPackages: append(supportingAptPackages, c.Config.BuildAptPackages...),
 		Assets:                map[string]string{},
-		Outputs:               []string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"},
+		Inputs:                []plan.Input{},
 		Variables:             map[string]string{},
 		app:                   c.App,
 		env:                   c.Env,
@@ -50,6 +51,10 @@ func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
 
 func (b *MiseStepBuilder) AddSupportingAptPackage(name string) {
 	b.SupportingAptPackages = append(b.SupportingAptPackages, name)
+}
+
+func (b *MiseStepBuilder) AddInput(input plan.Input) {
+	b.Inputs = append(b.Inputs, input)
 }
 
 func (b *MiseStepBuilder) Default(name string, defaultVersion string) resolver.PackageRef {
@@ -72,14 +77,31 @@ func (b *MiseStepBuilder) Name() string {
 	return b.DisplayName
 }
 
+func (b *MiseStepBuilder) GetOutputPaths() []string {
+	supportingMiseConfigFiles := b.GetSupportingMiseConfigFiles(b.app.Source)
+	files := []string{"/mise/shims", "/mise/installs", "/usr/local/bin/mise", "/etc/mise/config.toml", "/root/.local/state/mise"}
+	files = append(files, supportingMiseConfigFiles...)
+	return files
+}
+
 func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
+
+	step.Inputs = []plan.Input{
+		plan.NewImageInput(plan.RAILPACK_BUILDER_IMAGE),
+	}
+
+	// Setup apt commands
+	if len(b.SupportingAptPackages) > 0 {
+		step.AddCommands([]plan.Command{
+			options.NewAptInstallCommand(b.SupportingAptPackages),
+		})
+		step.Caches = options.Caches.GetAptCaches()
+	}
 
 	if len(b.MisePackages) == 0 {
 		return step, nil
 	}
-
-	step.StartingImage = BuilderBaseImage
 
 	// Setup mise
 	step.AddCommands([]plan.Command{
@@ -104,54 +126,40 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 		step.AddCommands([]plan.Command{
 			plan.NewCopyCommand(file, "/app/"+file),
 		})
-
-		// We want to make sure the file is copied into the next step
-		b.Outputs = append(b.Outputs, "/app/"+file)
-	}
-
-	// Setup apt commands
-	if len(b.SupportingAptPackages) > 0 {
-		step.AddCommands([]plan.Command{
-			options.NewAptInstallCommand(b.SupportingAptPackages),
-		})
-		step.Caches = options.Caches.GetAptCaches()
 	}
 
 	// Setup mise commands
-	if len(b.MisePackages) > 0 {
-		packagesToInstall := make(map[string]string)
-		for _, pkg := range b.MisePackages {
-			resolved, ok := options.ResolvedPackages[pkg.Name]
-			if ok && resolved.ResolvedVersion != nil {
-				packagesToInstall[pkg.Name] = *resolved.ResolvedVersion
-			}
+	packagesToInstall := make(map[string]string)
+	for _, pkg := range b.MisePackages {
+		resolved, ok := options.ResolvedPackages[pkg.Name]
+		if ok && resolved.ResolvedVersion != nil {
+			packagesToInstall[pkg.Name] = *resolved.ResolvedVersion
 		}
-
-		miseToml, err := mise.GenerateMiseToml(packagesToInstall)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate mise.toml: %w", err)
-		}
-
-		b.Assets["mise.toml"] = miseToml
-
-		pkgNames := make([]string, 0, len(packagesToInstall))
-		for k := range packagesToInstall {
-			pkgNames = append(pkgNames, k)
-		}
-		sort.Strings(pkgNames)
-
-		step.AddCommands([]plan.Command{
-			plan.NewFileCommand("/etc/mise/config.toml", "mise.toml", plan.FileOptions{
-				CustomName: "create mise config",
-			}),
-			plan.NewExecCommand("sh -c 'mise trust -a && mise install'", plan.ExecOptions{
-				CustomName: "install mise packages: " + strings.Join(pkgNames, ", "),
-			}),
-		})
 	}
 
+	miseToml, err := mise.GenerateMiseToml(packagesToInstall)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate mise.toml: %w", err)
+	}
+
+	b.Assets["mise.toml"] = miseToml
+
+	pkgNames := make([]string, 0, len(packagesToInstall))
+	for k := range packagesToInstall {
+		pkgNames = append(pkgNames, k)
+	}
+	sort.Strings(pkgNames)
+
+	step.AddCommands([]plan.Command{
+		plan.NewFileCommand("/etc/mise/config.toml", "mise.toml", plan.FileOptions{
+			CustomName: "create mise config",
+		}),
+		plan.NewExecCommand("sh -c 'mise trust -a && mise install'", plan.ExecOptions{
+			CustomName: "install mise packages: " + strings.Join(pkgNames, ", "),
+		}),
+	})
+
 	step.Assets = b.Assets
-	step.Outputs = b.Outputs
 	step.Secrets = []string{}
 
 	return step, nil

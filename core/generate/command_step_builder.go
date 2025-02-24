@@ -3,16 +3,15 @@ package generate
 import (
 	"maps"
 
+	"github.com/charmbracelet/log"
 	a "github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/utils"
 )
 
 type CommandStepBuilder struct {
 	DisplayName string
-	DependsOn   []string
 	Commands    []plan.Command
-	Outputs     []string
+	Inputs      []plan.Input
 	Assets      map[string]string
 	Variables   map[string]string
 	Caches      []string
@@ -24,7 +23,7 @@ type CommandStepBuilder struct {
 func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 	step := &CommandStepBuilder{
 		DisplayName: c.GetStepName(name),
-		DependsOn:   []string{MisePackageStepName},
+		Inputs:      []plan.Input{},
 		Commands:    []plan.Command{},
 		Assets:      map[string]string{},
 		Variables:   map[string]string{},
@@ -34,13 +33,25 @@ func (c *GenerateContext) NewCommandStep(name string) *CommandStepBuilder {
 		env:         c.Env,
 	}
 
+	// Remove any existing step with the same name
+	for i, existingStep := range c.Steps {
+		if existingStep.Name() == step.Name() {
+			c.Steps = append(c.Steps[:i], c.Steps[i+1:]...)
+			break
+		}
+	}
+
 	c.Steps = append(c.Steps, step)
 
 	return step
 }
 
-func (b *CommandStepBuilder) DependOn(name string) {
-	b.DependsOn = append(b.DependsOn, name)
+func (b *CommandStepBuilder) AddInput(input plan.Input) {
+	b.Inputs = append(b.Inputs, input)
+}
+
+func (b *CommandStepBuilder) AddInputs(inputs []plan.Input) {
+	b.Inputs = append(b.Inputs, inputs...)
 }
 
 func (b *CommandStepBuilder) AddVariables(variables map[string]string) {
@@ -48,6 +59,11 @@ func (b *CommandStepBuilder) AddVariables(variables map[string]string) {
 }
 
 func (b *CommandStepBuilder) AddCache(name string) {
+	if name == "" {
+		log.Error("Cache name is empty")
+		return
+	}
+
 	b.Caches = append(b.Caches, name)
 }
 
@@ -98,8 +114,7 @@ func (b *CommandStepBuilder) Name() string {
 func (b *CommandStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	step := plan.NewStep(b.DisplayName)
 
-	step.DependsOn = utils.RemoveDuplicates(b.DependsOn)
-	step.Outputs = b.Outputs
+	step.Inputs = b.Inputs
 	step.Commands = b.Commands
 	step.Assets = b.Assets
 	step.Caches = b.Caches

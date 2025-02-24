@@ -1,7 +1,6 @@
 
 [TestGenerateContext - 1]
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -12,32 +11,29 @@
    "type": "locked"
   }
  },
- "secrets": [
-  "RAILWAY_SECRET_1",
-  "RAILWAY_SECRET_2"
- ],
- "start": {
-  "cmd": "npm run start",
+ "deploy": {
+  "inputs": [
+   {
+    "step": "build"
+   }
+  ],
+  "startCommand": "echo hello",
   "variables": {
    "HELLO": "world"
   }
  },
+ "secrets": [
+  "RAILWAY_SECRET_1",
+  "RAILWAY_SECRET_2"
+ ],
  "steps": [
   {
    "assets": {
     "mise.toml": "[tools]\n  [tools.go]\n    version = \"1.23.5\"\n  [tools.node]\n    version = \"20.18.2\"\n  [tools.python]\n    version = \"3.13.1\"\n"
    },
-   "caches": [
-    "apt",
-    "apt-lists"
-   ],
    "commands": [
     {
      "path": "/mise/shims"
-    },
-    {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y curl'",
-     "customName": "install apt packages: curl"
     },
     {
      "customName": "create mise config",
@@ -49,16 +45,12 @@
      "customName": "install mise packages: go, node, python"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
-   "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
+   "name": "packages:mise",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -78,8 +70,12 @@
      "customName": "install apt packages: git neofetch"
     }
    ],
-   "name": "packages:apt:test",
-   "secrets": []
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
+   ],
+   "name": "packages:test"
   },
   {
    "commands": [
@@ -87,16 +83,12 @@
      "cmd": "npm install"
     }
    ],
-   "dependsOn": [
-    "packages:apt:test"
+   "inputs": [
+    {
+     "step": "packages:test"
+    }
    ],
-   "name": "install",
-   "outputs": [
-    "node_modules"
-   ],
-   "secrets": [
-    "*"
-   ]
+   "name": "install"
   },
   {
    "commands": [
@@ -105,28 +97,15 @@
      "customName": "echo building"
     }
    ],
-   "dependsOn": [
-    "install",
-    "packages:apt:config"
+   "inputs": [
+    {
+     "step": "install"
+    }
    ],
    "name": "build",
    "secrets": [
     "*"
    ]
-  },
-  {
-   "caches": [
-    "apt",
-    "apt-lists"
-   ],
-   "commands": [
-    {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y curl'",
-     "customName": "install apt packages: curl"
-    }
-   ],
-   "name": "packages:apt:config",
-   "secrets": []
   }
  ]
 }

@@ -1,5 +1,4 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
   "apt": {
    "directory": "/var/cache/apt",
@@ -10,13 +9,39 @@
    "type": "locked"
   }
  },
- "start": {
-  "cmd": "neofetch $HELLO",
-  "outputs": [
-   "."
-  ]
+ "deploy": {
+  "inputs": [
+   {
+    "step": "packages:runtime"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "step": "build"
+   }
+  ],
+  "startCommand": "neofetch $HELLO"
  },
  "steps": [
+  {
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
+   "commands": [
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
+     "customName": "install apt packages: neofetch"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+    }
+   ],
+   "name": "packages:runtime"
+  },
   {
    "assets": {
     "mise.toml": "[mise.toml]"
@@ -27,11 +52,11 @@
    ],
    "commands": [
     {
-     "path": "/mise/shims"
-    },
-    {
      "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
      "customName": "install apt packages: neofetch"
+    },
+    {
+     "path": "/mise/shims"
     },
     {
      "customName": "create mise config",
@@ -43,16 +68,12 @@
      "customName": "install mise packages: python"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
-   "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
+   "name": "packages:mise",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -64,73 +85,14 @@
   {
    "commands": [
     {
-     "path": "/root/.local/bin"
-    }
-   ],
-   "dependsOn": [
-    "packages:mise"
-   ],
-   "name": "setup",
-   "secrets": [
-    "*"
-   ],
-   "variables": {
-    "PIP_CACHE_DIR": "/opt/pip-cache",
-    "PIP_DEFAULT_TIMEOUT": "100",
-    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
-    "PYTHONDONTWRITEBYTECODE": "1",
-    "PYTHONFAULTHANDLER": "1",
-    "PYTHONHASHSEED": "random",
-    "PYTHONUNBUFFERED": "1"
-   }
-  },
-  {
-   "dependsOn": [
-    "packages:mise",
-    "setup",
-    "packages:apt:python-system-deps"
-   ],
-   "name": "install",
-   "secrets": []
-  },
-  {
-   "caches": [
-    "apt",
-    "apt-lists"
-   ],
-   "commands": [
-    {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y pkg-config'",
-     "customName": "install apt packages: pkg-config"
-    }
-   ],
-   "name": "packages:apt:python-system-deps",
-   "secrets": []
-  },
-  {
-   "caches": [
-    "apt",
-    "apt-lists"
-   ],
-   "commands": [
-    {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
-     "customName": "install apt packages: neofetch"
-    }
-   ],
-   "name": "packages:apt:config",
-   "secrets": []
-  },
-  {
-   "commands": [
-    {
      "cmd": "sh -c 'neofetch'",
      "customName": "neofetch"
     }
    ],
-   "dependsOn": [
-    "packages:mise",
-    "packages:apt:config"
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
    ],
    "name": "build",
    "secrets": [

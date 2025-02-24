@@ -1,20 +1,37 @@
 {
- "baseImage": "ghcr.io/railwayapp/railpack-runtime-base:latest",
  "caches": {
+  "apt": {
+   "directory": "/var/cache/apt",
+   "type": "locked"
+  },
+  "apt-lists": {
+   "directory": "/var/lib/apt/lists",
+   "type": "locked"
+  },
   "go-build": {
    "directory": "/root/.cache/go-build",
    "type": "shared"
   }
  },
- "start": {
-  "baseImage": "alpine:latest",
-  "cmd": "./out",
-  "outputs": [
-   "out"
+ "deploy": {
+  "inputs": [
+   {
+    "step": "packages:runtime"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
   ],
-  "variables": {
-   "GIN_MODE": "release"
-  }
+  "startCommand": "./out"
  },
  "steps": [
   {
@@ -35,16 +52,12 @@
      "customName": "install mise packages: go"
     }
    ],
-   "name": "packages:mise",
-   "outputs": [
-    "/mise/shims",
-    "/mise/installs",
-    "/usr/local/bin/mise",
-    "/etc/mise/config.toml",
-    "/root/.local/state/mise"
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
    ],
-   "secrets": [],
-   "startingImage": "ghcr.io/railwayapp/railpack-builder-base:latest",
+   "name": "packages:mise",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
@@ -59,6 +72,9 @@
    ],
    "commands": [
     {
+     "path": "/go/bin"
+    },
+    {
      "dest": "go.mod",
      "src": "go.mod"
     },
@@ -70,15 +86,19 @@
      "cmd": "go mod download"
     }
    ],
-   "dependsOn": [
-    "packages:mise"
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
    ],
    "name": "install",
    "secrets": [
     "*"
    ],
    "variables": {
-    "CGO_ENABLED": "0"
+    "CGO_ENABLED": "0",
+    "GOBIN": "/go/bin",
+    "GOPATH": "/go"
    }
   },
   {
@@ -91,17 +111,36 @@
      "src": "."
     },
     {
-     "cmd": "go build -o out ./cmd/server"
+     "cmd": "go build -ldflags=\"-w -s\" -o out ./cmd/server"
     }
    ],
-   "dependsOn": [
-    "packages:mise",
-    "install"
+   "inputs": [
+    {
+     "step": "install"
+    }
    ],
    "name": "build",
    "secrets": [
     "*"
    ]
+  },
+  {
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
+   "commands": [
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y tzdata'",
+     "customName": "install apt packages: tzdata"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+    }
+   ],
+   "name": "packages:runtime"
   }
  ]
 }

@@ -32,65 +32,15 @@ func (p *PhpProvider) Initialize(ctx *generate.GenerateContext) error {
 }
 
 func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
-	imageStep, err := p.phpImagePackage(ctx)
+	phpImageStep, err := p.phpImagePackage(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Install nginx
-	nginxPackages := ctx.NewAptStepBuilder("nginx")
-	nginxPackages.Packages = []string{"nginx", "git", "zip", "unzip"}
-	nginxPackages.DependsOn = []string{imageStep.DisplayName}
-
-	// Install composer
-	if _, err := p.readComposerJson(ctx); err == nil {
-		install := ctx.NewCommandStep("install")
-		install.AddCache(ctx.Caches.AddCache("composer", "/opt/cache/composer"))
-		install.AddEnvVars(map[string]string{"COMPOSER_CACHE_DIR": "/opt/cache/composer"})
-
-		install.AddCommands([]plan.Command{
-			// Copy composer from the composer image
-			plan.CopyCommand{Image: "composer:latest", Src: "/usr/bin/composer", Dest: "/usr/bin/composer"},
-			plan.NewCopyCommand("."),
-			plan.NewExecCommand("composer install --ignore-platform-reqs"),
-		})
-
-		install.DependsOn = []string{nginxPackages.DisplayName}
-	}
-
-	// Install node
-	nodeProvider := node.NodeProvider{}
-	isNode := ctx.App.HasMatch("package.json")
-	if packageJson, err := nodeProvider.GetPackageJson(ctx.App); isNode && err == nil && packageJson != nil {
-		ctx.EnterSubContext("node")
-
-		nodePackages, err := nodeProvider.Packages(ctx, packageJson)
-		if err != nil {
-			return err
-		}
-		// nodePackages.DependsOn = []string{imageStep.DisplayName}
-
-		nodeInstall, err := nodeProvider.Install(ctx, nodePackages, packageJson)
-		if err != nil {
-			return err
-		}
-
-		nodeBuild, err := nodeProvider.Build(ctx, nodeInstall, packageJson)
-		if err != nil {
-			return err
-		}
-
-		// Only copy the changes to the app, not the entire rest of the file system
-		nodeBuild.Outputs = []string{"/app"}
-
-		ctx.ExitSubContext()
-	}
-
-	// Setup nginx
-	nginxSetup := ctx.NewCommandStep("nginx:setup")
-	nginxSetup.DependsOn = []string{nginxPackages.DisplayName}
-
-	nginxSetup.AddCommands([]plan.Command{
+	// Nginx
+	nginx := ctx.NewCommandStep("nginx")
+	nginx.AddInput(plan.NewStepInput(phpImageStep.Name()))
+	nginx.AddCommands([]plan.Command{
 		plan.NewFileCommand("/etc/nginx/railpack.conf", "nginx.conf", plan.FileOptions{CustomName: "create nginx config"}),
 		plan.NewExecCommand("nginx -t -c /etc/nginx/railpack.conf"),
 		plan.NewFileCommand("/etc/php-fpm.conf", "php-fpm.conf", plan.FileOptions{CustomName: "create php-fpm config"}),
@@ -100,22 +50,93 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		}),
 	})
 
-	if p.usesLaravel(ctx) {
-		nginxSetup.AddEnvVars(map[string]string{"IS_LARAVEL": "true"})
-	}
-
-	nginxSetup.Assets["start-nginx.sh"] = startNginxScriptAsset
+	nginx.Assets["start-nginx.sh"] = startNginxScriptAsset
 	configFiles, err := p.getConfigFiles(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get config files: %w", err)
 	}
 
-	nginxSetup.Assets["nginx.conf"] = configFiles.NginxConf
-	nginxSetup.Assets["nginx.conf"] = configFiles.NginxConf
-	nginxSetup.Assets["php-fpm.conf"] = configFiles.PhpFpmConf
+	nginx.Assets["nginx.conf"] = configFiles.NginxConf
+	nginx.Assets["nginx.conf"] = configFiles.NginxConf
+	nginx.Assets["php-fpm.conf"] = configFiles.PhpFpmConf
 
-	ctx.Start.Command = "bash /start-nginx.sh"
-	ctx.Start.AddOutputs([]string{"."})
+	// Composer
+	composer := ctx.NewCommandStep("install:composer")
+	composer.AddInput(plan.NewStepInput(nginx.Name()))
+	if _, err := p.readComposerJson(ctx); err == nil {
+		composer.AddCache(ctx.Caches.AddCache("composer", "/opt/cache/composer"))
+		composer.AddEnvVars(map[string]string{"COMPOSER_CACHE_DIR": "/opt/cache/composer"})
+
+		composer.AddCommands([]plan.Command{
+			// Copy composer from the composer image
+			plan.CopyCommand{Image: "composer:latest", Src: "/usr/bin/composer", Dest: "/usr/bin/composer"},
+			plan.NewCopyCommand("."),
+			plan.NewExecCommand("composer install --ignore-platform-reqs"),
+		})
+	}
+
+	// Node (if necessary)
+	nodeProvider := node.NodeProvider{}
+	isNode, err := nodeProvider.Detect(ctx)
+	if err != nil {
+		return err
+	}
+
+	if isNode {
+		err = nodeProvider.Initialize(ctx)
+		if err != nil {
+			return err
+		}
+
+		miseStep := ctx.GetMiseStepBuilder()
+		nodeProvider.InstallMisePackages(ctx, miseStep)
+
+		install := ctx.NewCommandStep("install:node")
+		install.AddInput(plan.NewStepInput(miseStep.Name()))
+		nodeProvider.InstallNodeDeps(ctx, install)
+
+		prune := ctx.NewCommandStep("prune:node")
+		prune.AddInput(plan.NewStepInput(install.Name()))
+		nodeProvider.PruneNodeDeps(ctx, prune)
+
+		build := ctx.NewCommandStep("build")
+		build.Inputs = []plan.Input{
+			plan.NewStepInput(composer.Name()),
+
+			// Include the app and mise packages (node, pnpm, etc.)
+			plan.NewStepInput(install.Name(), plan.InputOptions{
+				Include: append([]string{"."}, miseStep.GetOutputPaths()...),
+			}),
+		}
+		nodeProvider.Build(ctx, build)
+
+		ctx.Deploy.Inputs = []plan.Input{
+			plan.NewStepInput(composer.Name()),
+			plan.NewStepInput(build.Name(), plan.InputOptions{
+				Include: []string{"."},
+				Exclude: []string{"node_modules"},
+			}),
+			plan.NewStepInput(prune.Name(), plan.InputOptions{
+				Include: []string{"/app/node_modules"},
+			}),
+			plan.NewLocalInput("."),
+		}
+	} else {
+		// A manual build command will go here
+		build := ctx.NewCommandStep("build")
+		build.AddInput(plan.NewStepInput(composer.Name()))
+
+		ctx.Deploy.Inputs = []plan.Input{
+			plan.NewStepInput(build.Name()),
+			plan.NewLocalInput("."),
+		}
+	}
+
+	ctx.Deploy.StartCmd = "bash /start-nginx.sh"
+
+	if p.usesLaravel(ctx) {
+		ctx.Deploy.Variables["IS_LARAVEL"] = "true"
+	}
 
 	return nil
 }
@@ -167,6 +188,12 @@ func (p *PhpProvider) phpImagePackage(ctx *generate.GenerateContext) (*generate.
 		// Return the default if we were not able to resolve the version
 		return getPhpImage(DEFAULT_PHP_VERSION)
 	})
+
+	imageStep.AptPackages = append(imageStep.AptPackages, "nginx", "git", "zip", "unzip")
+
+	// Include both build and runtime apt packages since we don't have a separate runtime image
+	imageStep.AptPackages = append(imageStep.AptPackages, ctx.Config.BuildAptPackages...)
+	imageStep.AptPackages = append(imageStep.AptPackages, ctx.Config.Deploy.AptPackages...)
 
 	php := imageStep.Default("php", DEFAULT_PHP_VERSION)
 

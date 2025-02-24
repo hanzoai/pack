@@ -16,10 +16,6 @@ import (
 	"github.com/railwayapp/railpack/core/utils"
 )
 
-const (
-	DefaultBaseImage = "ghcr.io/railwayapp/railpack-runtime-base:latest"
-)
-
 type BuildStepOptions struct {
 	ResolvedPackages map[string]*resolver.ResolvedPackage
 	Caches           *CacheContext
@@ -31,49 +27,53 @@ type StepBuilder interface {
 }
 
 type GenerateContext struct {
-	App *a.App
-	Env *a.Environment
+	App    *a.App
+	Env    *a.Environment
+	Config *config.Config
 
 	BaseImage string
 	Steps     []StepBuilder
-	Start     StartContext
+	Deploy    *DeployBuilder
 
 	Caches  *CacheContext
 	Secrets []string
 
 	SubContexts []string
 
-	Metadata *Metadata
-
-	Resolver *resolver.Resolver
-
-	miseStepBuilder *MiseStepBuilder
+	Metadata        *Metadata
+	Resolver        *resolver.Resolver
+	MiseStepBuilder *MiseStepBuilder
 }
 
-func NewGenerateContext(app *a.App, env *a.Environment) (*GenerateContext, error) {
+func NewGenerateContext(app *a.App, env *a.Environment, config *config.Config) (*GenerateContext, error) {
 	resolver, err := resolver.NewResolver(mise.InstallDir)
 	if err != nil {
 		return nil, err
 	}
 
-	return &GenerateContext{
-		App:       app,
-		Env:       env,
-		BaseImage: DefaultBaseImage,
-		Steps:     make([]StepBuilder, 0),
-		Start:     *NewStartContext(),
-		Caches:    NewCacheContext(),
-		Secrets:   []string{},
-		Metadata:  NewMetadata(),
-		Resolver:  resolver,
-	}, nil
+	ctx := &GenerateContext{
+		App:      app,
+		Env:      env,
+		Config:   config,
+		Steps:    make([]StepBuilder, 0),
+		Deploy:   NewDeployBuilder(),
+		Caches:   NewCacheContext(),
+		Secrets:  []string{},
+		Metadata: NewMetadata(),
+		Resolver: resolver,
+	}
+
+	// The default runtime image should include the runtime apt packages
+	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, ctx.DefaultRuntimeInput())
+
+	return ctx, nil
 }
 
 func (c *GenerateContext) GetMiseStepBuilder() *MiseStepBuilder {
-	if c.miseStepBuilder == nil {
-		c.miseStepBuilder = c.newMiseStepBuilder()
+	if c.MiseStepBuilder == nil {
+		c.MiseStepBuilder = c.newMiseStepBuilder()
 	}
-	return c.miseStepBuilder
+	return c.MiseStepBuilder
 }
 
 func (c *GenerateContext) EnterSubContext(subContext string) *GenerateContext {
@@ -109,16 +109,24 @@ func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackag
 
 // Generate a build plan from the context
 func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.ResolvedPackage, error) {
+	// Add all packages from the config to the mise step
+	miseStep := c.GetMiseStepBuilder()
+	for _, pkg := range slices.Sorted(maps.Keys(c.Config.Packages)) {
+		version := c.Config.Packages[pkg]
+		pkgRef := miseStep.Default(pkg, version)
+		miseStep.Version(pkgRef, version, "custom config")
+	}
+
+	c.applyConfig()
+
 	// Resolve all package versions into a fully qualified and valid version
 	resolvedPackages, err := c.ResolvePackages()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to resolve packages: %w", err)
 	}
 
-	// Generate the plan based on the context and resolved packages
-
+	// Create the actual build plan
 	buildPlan := plan.NewBuildPlan()
-	buildPlan.BaseImage = c.BaseImage
 
 	buildStepOptions := &BuildStepOptions{
 		ResolvedPackages: resolvedPackages,
@@ -136,122 +144,28 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 	}
 
 	buildPlan.Caches = c.Caches.Caches
-
 	buildPlan.Secrets = utils.RemoveDuplicates(c.Secrets)
-
-	buildPlan.Start.BaseImage = c.Start.BaseImage
-	buildPlan.Start.Command = c.Start.Command
-	buildPlan.Start.Outputs = utils.RemoveDuplicates(c.Start.outputs)
-	buildPlan.Start.Paths = utils.RemoveDuplicates(c.Start.paths)
-	buildPlan.Start.Variables = c.Start.variables
+	buildPlan.Deploy = c.Deploy.Build()
 
 	return buildPlan, resolvedPackages, nil
 }
 
-func (c *GenerateContext) ApplyConfig(config *config.Config) error {
-	// Mise package config
-	miseStep := c.GetMiseStepBuilder()
-	for _, pkg := range slices.Sorted(maps.Keys(config.Packages)) {
-		version := config.Packages[pkg]
-		pkgRef := miseStep.Default(pkg, version)
-		miseStep.Version(pkgRef, version, "custom config")
+func (c *GenerateContext) DefaultRuntimeInput() plan.Input {
+	return c.DefaultRuntimeInputWithPackages([]string{})
+}
+
+func (c *GenerateContext) DefaultRuntimeInputWithPackages(additionalAptPackages []string) plan.Input {
+	aptPackages := append(c.Config.Deploy.AptPackages, additionalAptPackages...)
+
+	if len(aptPackages) == 0 {
+		return plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE)
 	}
 
-	// Apt package config
-	aptStepName := ""
-	if len(config.AptPackages) > 0 {
-		aptStep := c.NewAptStepBuilder("config")
-		aptStepName = aptStep.Name()
-		aptStep.Packages = config.AptPackages
+	runtimeAptStep := c.NewAptStepBuilder("runtime")
+	runtimeAptStep.Packages = aptPackages
+	runtimeAptStep.AddInput(plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE))
 
-		// We install the apt packages again in the mise step since they may be required for install mise packages
-		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, config.AptPackages...)
-	}
-
-	// Step config
-	for _, name := range slices.Sorted(maps.Keys(config.Steps)) {
-		configStep := config.Steps[name]
-
-		var commandStepBuilder *CommandStepBuilder
-
-		// We need to use the key as the step name and not `configStep.Name`
-		if existingStep := c.GetStepByName(name); existingStep != nil {
-			if csb, ok := (*existingStep).(*CommandStepBuilder); ok {
-				commandStepBuilder = csb
-			} else {
-				log.Warnf("Step `%s` exists, but it is not a command step. Skipping...", name)
-				continue
-			}
-		} else {
-			commandStepBuilder = c.NewCommandStep(name)
-		}
-
-		// Overwrite the step with values from the config if they exist
-
-		if len(configStep.DependsOn) > 0 {
-			commandStepBuilder.DependsOn = configStep.DependsOn
-		}
-
-		if aptStepName != "" {
-			commandStepBuilder.DependsOn = append(commandStepBuilder.DependsOn, aptStepName)
-		}
-
-		if configStep.Commands != nil {
-			commandStepBuilder.Commands = configStep.Commands
-		}
-
-		if configStep.Outputs != nil {
-			commandStepBuilder.Outputs = configStep.Outputs
-		}
-		for k, v := range configStep.Assets {
-			commandStepBuilder.Assets[k] = v
-		}
-
-		if configStep.Secrets != nil {
-			commandStepBuilder.Secrets = configStep.Secrets
-		}
-
-		// if configStep.UseSecrets != nil {
-		// 	commandStepBuilder.UseSecrets = *configStep.UseSecrets
-		// }
-
-		if len(configStep.Caches) > 0 {
-			commandStepBuilder.Caches = configStep.Caches
-		}
-
-		if configStep.Variables != nil {
-			commandStepBuilder.AddEnvVars(configStep.Variables)
-		}
-	}
-
-	// Cache config
-	for name, cache := range config.Caches {
-		c.Caches.SetCache(name, cache)
-	}
-
-	// Secret config
-	c.Secrets = append(c.Secrets, config.Secrets...)
-
-	// Start config
-	if config.Start.BaseImage != "" {
-		c.Start.BaseImage = config.Start.BaseImage
-	}
-
-	if config.Start.Command != "" {
-		c.Start.Command = config.Start.Command
-	}
-
-	if config.Start.Variables != nil {
-		c.Start.AddEnvVars(config.Start.Variables)
-	}
-
-	c.Start.AddPaths(config.Start.Paths)
-
-	if len(config.Start.Outputs) > 0 {
-		c.Start.outputs = config.Start.Outputs
-	}
-
-	return nil
+	return plan.NewStepInput(runtimeAptStep.Name())
 }
 
 func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {
@@ -261,4 +175,86 @@ func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {
 	return plan.NewExecCommand("sh -c 'apt-get update && apt-get install -y "+strings.Join(pkgs, " ")+"'", plan.ExecOptions{
 		CustomName: "install apt packages: " + strings.Join(pkgs, " "),
 	})
+}
+
+func (c *GenerateContext) applyConfig() {
+	miseStep := c.GetMiseStepBuilder()
+
+	// Apply the cache config to the context
+	maps.Copy(c.Caches.Caches, c.Config.Caches)
+
+	// Apply step config to the context
+	for _, name := range slices.Sorted(maps.Keys(c.Config.Steps)) {
+		configStep := c.Config.Steps[name]
+
+		var commandStepBuilder *CommandStepBuilder
+
+		if existingStep := c.GetStepByName(name); existingStep != nil {
+			if csb, ok := (*existingStep).(*CommandStepBuilder); ok {
+				commandStepBuilder = csb
+			} else {
+				log.Warnf("Step `%s` exists, but it is not a command step. Skipping...", name)
+				continue
+			}
+		} else {
+			// If no build step found, create a new one
+			// Run the build in the builder context and copy the /app contents to the final image
+			commandStepBuilder = c.NewCommandStep(name)
+			commandStepBuilder.AddInput(plan.NewStepInput(miseStep.Name()))
+			c.Deploy.Inputs = append(c.Deploy.Inputs, plan.NewStepInput(commandStepBuilder.Name(), plan.InputOptions{
+				Include: []string{"."},
+			}))
+		}
+
+		if configStep.Commands != nil {
+			commandStepBuilder.Commands = configStep.Commands
+		}
+
+		if configStep.Inputs != nil {
+			commandStepBuilder.Inputs = configStep.Inputs
+		}
+
+		for k, v := range configStep.Assets {
+			commandStepBuilder.Assets[k] = v
+		}
+
+		if configStep.Secrets != nil {
+			commandStepBuilder.Secrets = configStep.Secrets
+		}
+
+		if len(configStep.Caches) > 0 {
+			commandStepBuilder.Caches = configStep.Caches
+		}
+
+		if configStep.Variables != nil {
+			commandStepBuilder.AddEnvVars(configStep.Variables)
+		}
+
+		// Secret config
+		if configStep.Secrets != nil {
+			commandStepBuilder.Secrets = configStep.Secrets
+		}
+	}
+
+	if c.Config.Secrets != nil {
+		c.Secrets = c.Config.Secrets
+	}
+
+	// Update deploy from config
+	if c.Config.Deploy != nil {
+		if c.Config.Deploy.StartCmd != "" {
+			c.Deploy.StartCmd = c.Config.Deploy.StartCmd
+		}
+
+		if c.Config.Deploy.Inputs != nil {
+			c.Deploy.Inputs = c.Config.Deploy.Inputs
+		}
+
+		if c.Config.Deploy.Paths != nil {
+			c.Deploy.Paths = c.Config.Deploy.Paths
+		}
+
+		maps.Copy(c.Deploy.Variables, c.Config.Deploy.Variables)
+	}
+
 }

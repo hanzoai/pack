@@ -88,8 +88,7 @@ func TestGetRootDir(t *testing.T) {
 				ctx.Env.SetVariable(k, v)
 			}
 
-			provider := StaticfileProvider{}
-			got, err := provider.getRootDir(ctx)
+			got, err := getRootDir(ctx)
 
 			if tt.expectError {
 				require.Error(t, err)

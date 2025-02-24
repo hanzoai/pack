@@ -3,7 +3,6 @@ package build_llb
 import (
 	"fmt"
 
-	"github.com/charmbracelet/log"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/railwayapp/railpack/core/plan"
 )
@@ -33,7 +32,6 @@ func (c *BuildKitCacheStore) GetCache(key string, planCache *plan.Cache) BuildKi
 	}
 
 	if cache, ok := c.CacheMap[cacheKey]; ok {
-		log.Debugf("Cache %s already exists", cacheKey)
 		return cache
 	}
 
@@ -44,7 +42,6 @@ func (c *BuildKitCacheStore) GetCache(key string, planCache *plan.Cache) BuildKi
 		planCache:  planCache,
 		cacheState: &cacheState,
 	}
-	log.Debugf("Creating new cache %s", cacheKey)
 
 	c.CacheMap[cacheKey] = cache
 
