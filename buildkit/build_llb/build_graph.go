@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/util/system"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
@@ -175,6 +176,8 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.Input) llb.State {
 					}))
 				}
 			}
+		} else {
+			log.Warnf("input %s has no include or exclude paths. This is probably a mistake.", input.Step)
 		}
 	}
 
