@@ -83,7 +83,7 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 			Include: miseStep.GetOutputPaths(),
 		}),
 		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{"."},
+			Include: []string{".", "/root/.cache"},
 			Exclude: []string{"node_modules"},
 		}),
 		plan.NewStepInput(prune.Name(), plan.InputOptions{
