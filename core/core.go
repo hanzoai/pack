@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -33,7 +34,13 @@ type BuildResult struct {
 }
 
 func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*BuildResult, error) {
-	ctx, err := generate.NewGenerateContext(app, env)
+	// Get the full user config based on file config, env config, and options
+	config, err := GetConfig(app, env, options)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, err := generate.NewGenerateContext(app, env, config)
 	if err != nil {
 		return nil, err
 	}
@@ -43,12 +50,6 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 		for name, version := range options.PreviousVersions {
 			ctx.Resolver.SetPreviousVersion(name, version)
 		}
-	}
-
-	// Get the full user config based on file config, env config, and options
-	config, err := GetConfig(app, env, options)
-	if err != nil {
-		return nil, err
 	}
 
 	// Figure out what providers to use
@@ -80,11 +81,6 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	procfileProvider := &procfile.ProcfileProvider{}
 	if _, err := procfileProvider.Plan(ctx); err != nil {
 		return nil, fmt.Errorf("failed to run procfile provider: %w", err)
-	}
-
-	// Update the context with the config
-	if err := ctx.ApplyConfig(config); err != nil {
-		return nil, fmt.Errorf("failed to apply config: %w", err)
 	}
 
 	buildPlan, resolvedPackages, err := ctx.Generate()
@@ -173,8 +169,12 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 		}
 	}
 
-	if envAptPackages, _ := env.GetConfigVariable("APT_PACKAGES"); envAptPackages != "" {
-		config.AptPackages = strings.Split(envAptPackages, " ")
+	if envAptPackages, _ := env.GetConfigVariable("BUILD_APT_PACKAGES"); envAptPackages != "" {
+		config.BuildAptPackages = strings.Split(envAptPackages, " ")
+	}
+
+	if envAptPackages, _ := env.GetConfigVariable("DEPLOY_APT_PACKAGES"); envAptPackages != "" {
+		config.Deploy.AptPackages = strings.Split(envAptPackages, " ")
 	}
 
 	for name := range env.Variables {
@@ -213,6 +213,9 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 	allProviders := providers.GetLanguageProviders()
 	detectedProviders := []string{}
 
+	configJson, _ := json.MarshalIndent(config, "", "  ")
+	fmt.Printf("Config: %s\n", string(configJson))
+
 	// Even if there are providers manually specified, we want to detect to see what type of app this is
 	for _, provider := range allProviders {
 		matched, err := provider.Detect(ctx)
@@ -238,7 +241,7 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 	}
 
 	if config.Providers != nil {
-		for _, providerName := range *config.Providers {
+		for _, providerName := range config.Providers {
 			provider := providers.GetProvider(providerName)
 			if provider == nil {
 				log.Warnf("Provider `%s` not found", providerName)

@@ -6,27 +6,30 @@ import (
 	"github.com/railwayapp/railpack/core/utils"
 )
 
+type DeployConfig struct {
+	AptPackages []string          `json:"aptPackages,omitempty" jsonschema:"description=List of apt packages to include at runtime"`
+	Inputs      []plan.Input      `json:"inputs,omitempty" jsonschema:"description=The inputs for the deploy step"`
+	StartCmd    string            `json:"startCommand,omitempty" jsonschema:"description=The command to run in the container"`
+	Variables   map[string]string `json:"variables,omitempty" jsonschema:"description=The variables available to this step. The key is the name of the variable that is referenced in a variable command"`
+	Paths       []string          `json:"paths,omitempty" jsonschema:"description=The paths to prepend to the $PATH environment variable"`
+}
+
 type Config struct {
-	// List of providers to use
-	Providers *[]string `json:"providers,omitempty" jsonschema:"description=List of providers to use"`
+	Providers        []string               `json:"providers" jsonschema:"description=List of providers to use"`
+	BuildAptPackages []string               `json:"buildAptPackages,omitempty" jsonschema:"description=List of apt packages to install during the build step"`
+	Steps            map[string]*plan.Step  `json:"steps,omitempty" jsonschema:"description=Map of step names to step definitions"`
+	Deploy           *DeployConfig          `json:"deploy,omitempty" jsonschema:"description=Deploy configuration"`
+	Packages         map[string]string      `json:"packages,omitempty" jsonschema:"description=Map of package name to package version"`
+	Caches           map[string]*plan.Cache `json:"caches,omitempty" jsonschema:"description=Map of cache name to cache definitions. The cache key can be referenced in an exec command"`
+	Secrets          []string               `json:"secrets,omitempty" jsonschema:"description=Secrets that should be made available to commands that have useSecrets set to true"`
+}
 
-	// Map of step names to step definitions
-	Steps map[string]*plan.Step `json:"steps,omitempty" jsonschema:"description=Map of step names to step definitions"`
-
-	// Deploy configuration
-	Deploy plan.Deploy `json:"deploy,omitempty" jsonschema:"description=Deploy configuration"`
-
-	// Map of package name to package version
-	Packages map[string]string `json:"packages,omitempty" jsonschema:"description=Map of package name to package version"`
-
-	// List of apt packages to install
-	AptPackages []string `json:"aptPackages,omitempty" jsonschema:"description=List of apt packages to install"`
-
-	// Map of cache name to cache definitions. The cache key can be referenced in an exec command.
-	Caches map[string]*plan.Cache `json:"caches,omitempty" jsonschema:"description=Map of cache name to cache definitions. The cache key can be referenced in an exec command"`
-
-	// Secrets that should be made available to commands that have useSecrets set to true
-	Secrets []string `json:"secrets,omitempty" jsonschema:"description=Secrets that should be made available to commands that have useSecrets set to true"`
+func EmptyDeployConfig() *DeployConfig {
+	return &DeployConfig{
+		AptPackages: []string{},
+		StartCmd:    "",
+		Variables:   make(map[string]string),
+	}
 }
 
 func EmptyConfig() *Config {
@@ -34,6 +37,7 @@ func EmptyConfig() *Config {
 		Steps:    make(map[string]*plan.Step),
 		Packages: make(map[string]string),
 		Caches:   make(map[string]*plan.Cache),
+		Deploy:   EmptyDeployConfig(),
 	}
 }
 

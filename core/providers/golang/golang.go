@@ -13,7 +13,6 @@ const (
 	DEFAULT_GO_VERSION = "1.23"
 	GO_BUILD_CACHE_KEY = "go-build"
 	GO_BINARY_NAME     = "out"
-	START_IMAGE        = "alpine:latest"
 )
 
 type GoProvider struct{}
@@ -31,36 +30,38 @@ func (p *GoProvider) Initialize(ctx *generate.GenerateContext) error {
 }
 
 func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
-	packages, err := p.Packages(ctx)
-	if err != nil {
-		return err
-	}
+	builder := p.GetBuilder(ctx)
+	p.InstallGoPackages(ctx, builder)
 
-	install, err := p.Install(ctx, packages)
-	if err != nil {
-		return err
-	}
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(builder.Name()))
+	p.InstallGoDeps(ctx, install)
 
-	build, err := p.Build(ctx, packages, install)
-	if err != nil {
-		return err
-	}
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+	p.Build(ctx, build)
 
-	if build != nil {
-		ctx.Deploy.StartCmd = fmt.Sprintf("./%s", GO_BINARY_NAME)
+	ctx.Deploy.StartCmd = fmt.Sprintf("./%s", GO_BINARY_NAME)
 
-		if !p.hasCGOEnabled(ctx) {
-			// ctx.Deploy.Outputs = []string{GO_BINARY_NAME}
+	if p.hasCGOEnabled(ctx) {
+		runtimeAptStep := ctx.NewAptStepBuilder("runtime")
+		runtimeAptStep.AddInput(ctx.DefaultRuntimeInputWithPackages([]string{"libc6"}))
 
-			// ctx.Start.BaseImage = START_IMAGE
-			// if startImage, _ := ctx.Env.GetConfigVariable("START_IMAGE"); startImage != "" {
-			// 	ctx.Start.BaseImage = startImage
-			// }
-		}
-
-		if p.isGin(ctx) {
-			ctx.Deploy.Variables["GIN_MODE"] = "release"
-		}
+		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
+			plan.NewStepInput(runtimeAptStep.Name()),
+			plan.NewStepInput(build.Name(), plan.InputOptions{
+				Include: []string{"."},
+			}),
+			plan.NewLocalInput("."),
+		}...)
+	} else {
+		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
+			ctx.DefaultRuntimeInput(),
+			plan.NewStepInput(build.Name(), plan.InputOptions{
+				Include: []string{"."},
+			}),
+			plan.NewLocalInput("."),
+		}...)
 	}
 
 	p.addMetadata(ctx)
@@ -68,52 +69,43 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 	return nil
 }
 
-func (p *GoProvider) Build(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder, install *generate.CommandStepBuilder) (*generate.CommandStepBuilder, error) {
+func (p *GoProvider) Build(ctx *generate.GenerateContext, build *generate.CommandStepBuilder) {
 	var buildCmd string
 
+	flags := "-w -s"
+	baseBuildCmd := fmt.Sprintf("go build -ldflags=\"%s\" -o %s", flags, GO_BINARY_NAME)
+
 	if binName, _ := ctx.Env.GetConfigVariable("GO_BIN"); binName != "" {
-		// If there is a RAILPACK_GO_BIN variable, use that
-		buildCmd = fmt.Sprintf("go build -o %s ./cmd/%s", GO_BINARY_NAME, binName)
+		buildCmd = fmt.Sprintf("%s ./cmd/%s", baseBuildCmd, binName)
 	} else if p.isGoMod(ctx) && p.hasRootGoFiles(ctx) {
-		buildCmd = fmt.Sprintf("go build -o %s", GO_BINARY_NAME)
+		buildCmd = baseBuildCmd
 	} else if dirs, err := ctx.App.FindDirectories("cmd/*"); err == nil && len(dirs) > 0 {
 		// Try to find a command in the cmd directory
 		cmdName := filepath.Base(dirs[0])
-		buildCmd = fmt.Sprintf("go build -o %s ./cmd/%s", GO_BINARY_NAME, cmdName)
+		buildCmd = fmt.Sprintf("%s ./cmd/%s", baseBuildCmd, cmdName)
 	} else if p.isGoMod(ctx) {
-		buildCmd = fmt.Sprintf("go build -o %s", GO_BINARY_NAME)
+		buildCmd = baseBuildCmd
 	} else if ctx.App.HasMatch("main.go") {
-		buildCmd = fmt.Sprintf("go build -o %s main.go", GO_BINARY_NAME)
+		buildCmd = fmt.Sprintf("%s main.go", baseBuildCmd)
 	}
 
 	if buildCmd == "" {
-		return nil, nil
+		return
 	}
 
-	build := ctx.NewCommandStep("build")
 	build.AddCache(p.goBuildCache(ctx))
 	build.AddCommands([]plan.Command{
 		plan.NewCopyCommand("."),
 		plan.NewExecCommand(buildCmd),
 	})
 
-	if packages != nil {
-		// build.DependsOn = append(build.DependsOn, packages.DisplayName)
-	}
-
-	if install != nil {
-		// build.DependsOn = append(build.DependsOn, install.DisplayName)
-	}
-
-	return build, nil
 }
 
-func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder) (*generate.CommandStepBuilder, error) {
+func (p *GoProvider) InstallGoDeps(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) {
 	if !p.isGoMod(ctx) {
-		return nil, nil
+		return
 	}
 
-	install := ctx.NewCommandStep("install")
 	install.AddCache(p.goBuildCache(ctx))
 	install.AddCommand(plan.NewCopyCommand("go.mod"))
 
@@ -123,24 +115,13 @@ func (p *GoProvider) Install(ctx *generate.GenerateContext, packages *generate.M
 
 	install.AddCommand(plan.NewExecCommand("go mod download"))
 
-	// If CGO is enabled, we need to install the gcc packages
-	if p.hasCGOEnabled(ctx) {
-		aptStep := ctx.NewAptStepBuilder("cgo")
-		aptStep.Packages = []string{"gcc", "g++", "libc6-dev"}
-		// install.DependsOn = append(install.DependsOn, aptStep.DisplayName)
-	} else {
+	if !p.hasCGOEnabled(ctx) {
 		install.AddEnvVars(map[string]string{"CGO_ENABLED": "0"})
 	}
-
-	// install.DependsOn = []string{packages.DisplayName}
-
-	return install, nil
 }
 
-func (p *GoProvider) Packages(ctx *generate.GenerateContext) (*generate.MiseStepBuilder, error) {
-	packages := ctx.GetMiseStepBuilder()
-
-	goPkg := packages.Default("go", DEFAULT_GO_VERSION)
+func (p *GoProvider) InstallGoPackages(ctx *generate.GenerateContext, miseStep *generate.MiseStepBuilder) {
+	goPkg := miseStep.Default("go", DEFAULT_GO_VERSION)
 
 	if goModContents, err := ctx.App.ReadFile("go.mod"); err == nil {
 		// Split content into lines and look for "go X.XX" line
@@ -149,7 +130,7 @@ func (p *GoProvider) Packages(ctx *generate.GenerateContext) (*generate.MiseStep
 			if strings.HasPrefix(strings.TrimSpace(line), "go ") {
 				// Extract version number
 				if goVersion := strings.TrimSpace(strings.TrimPrefix(line, "go")); goVersion != "" {
-					packages.Version(goPkg, goVersion, "go.mod")
+					miseStep.Version(goPkg, goVersion, "go.mod")
 					break
 				}
 			}
@@ -157,10 +138,18 @@ func (p *GoProvider) Packages(ctx *generate.GenerateContext) (*generate.MiseStep
 	}
 
 	if envVersion, varName := ctx.Env.GetConfigVariable("GO_VERSION"); envVersion != "" {
-		packages.Version(goPkg, envVersion, varName)
+		miseStep.Version(goPkg, envVersion, varName)
+	}
+}
+
+func (p *GoProvider) GetBuilder(ctx *generate.GenerateContext) *generate.MiseStepBuilder {
+	miseStep := ctx.GetMiseStepBuilder()
+
+	if p.hasCGOEnabled(ctx) {
+		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "gcc", "g++", "libc6-dev")
 	}
 
-	return packages, nil
+	return miseStep
 }
 
 func (p *GoProvider) addMetadata(ctx *generate.GenerateContext) {

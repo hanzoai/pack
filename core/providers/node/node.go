@@ -78,7 +78,7 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	maps.Copy(ctx.Deploy.Variables, p.GetNodeEnvVars(ctx))
 
 	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
-		plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE),
+		ctx.DefaultRuntimeInput(),
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 			Include: miseStep.GetOutputPaths(),
 		}),

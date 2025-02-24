@@ -38,12 +38,8 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	}
 
 	// Nginx
-	nginxPackages := ctx.NewAptStepBuilder("nginx")
-	nginxPackages.AddInput(plan.NewStepInput(phpImageStep.Name()))
-	nginxPackages.Packages = []string{"nginx", "git", "zip", "unzip"}
-
 	nginx := ctx.NewCommandStep("nginx")
-	nginx.AddInput(plan.NewStepInput(nginxPackages.Name()))
+	nginx.AddInput(plan.NewStepInput(phpImageStep.Name()))
 	nginx.AddCommands([]plan.Command{
 		plan.NewFileCommand("/etc/nginx/railpack.conf", "nginx.conf", plan.FileOptions{CustomName: "create nginx config"}),
 		plan.NewExecCommand("nginx -t -c /etc/nginx/railpack.conf"),
@@ -128,8 +124,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		build.AddInput(plan.NewStepInput(composer.Name()))
 
 		ctx.Deploy.Inputs = []plan.Input{
-			// plan.NewStepInput(build.Name()),
-			plan.NewStepInput(composer.Name()),
+			plan.NewStepInput(build.Name()),
 			plan.NewLocalInput("."),
 		}
 	}
@@ -190,6 +185,12 @@ func (p *PhpProvider) phpImagePackage(ctx *generate.GenerateContext) (*generate.
 		// Return the default if we were not able to resolve the version
 		return getPhpImage(DEFAULT_PHP_VERSION)
 	})
+
+	imageStep.AptPackages = append(imageStep.AptPackages, "nginx", "git", "zip", "unzip")
+
+	// Include both build and runtime apt packages since we don't have a separate runtime image
+	imageStep.AptPackages = append(imageStep.AptPackages, ctx.Config.BuildAptPackages...)
+	imageStep.AptPackages = append(imageStep.AptPackages, ctx.Config.Deploy.AptPackages...)
 
 	php := imageStep.Default("php", DEFAULT_PHP_VERSION)
 

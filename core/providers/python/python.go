@@ -144,14 +144,20 @@ func (p *PythonProvider) PlanPipenv(ctx *generate.GenerateContext) {
 	install.Secrets = []string{}
 	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP"})
 
+	install.AddCommands([]plan.Command{
+		plan.NewExecCommand("pipx install pipenv"),
+		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewCopyCommand("Pipfile"),
+		plan.NewCopyCommand("Pipfile.lock"),
+		plan.NewExecCommand("pipenv install --deploy --ignore-pipfile"),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
+	})
+
 	if ctx.App.HasMatch("Pipfile.lock") {
 		install.AddCommands([]plan.Command{
-			plan.NewExecCommand("pipx install pipenv"),
-			plan.NewPathCommand(LOCAL_BIN_PATH),
 			plan.NewCopyCommand("Pipfile"),
 			plan.NewCopyCommand("Pipfile.lock"),
 			plan.NewExecCommand("pipenv install --deploy --ignore-pipfile"),
-			plan.NewPathCommand(VENV_PATH + "/bin"),
 		})
 	} else {
 		install.AddCommands([]plan.Command{
@@ -159,6 +165,10 @@ func (p *PythonProvider) PlanPipenv(ctx *generate.GenerateContext) {
 			plan.NewExecCommand("pipenv install --skip-lock"),
 		})
 	}
+
+	install.AddCommands([]plan.Command{
+		plan.NewPathCommand(VENV_PATH + "/bin"),
+	})
 
 	build := ctx.NewCommandStep("build")
 	build.AddInput(plan.NewStepInput(install.Name()))
@@ -294,7 +304,7 @@ func (p *PythonProvider) PlanPip(ctx *generate.GenerateContext) {
 func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) *generate.AptStepBuilder {
 	aptStep := ctx.NewAptStepBuilder("python-runtime-deps")
 	aptStep.Inputs = []plan.Input{
-		plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE),
+		ctx.DefaultRuntimeInput(),
 	}
 
 	for dep, requiredPkgs := range pythonRuntimeDepRequirements {
@@ -306,15 +316,11 @@ func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) 
 	return aptStep
 }
 
-func (p *PythonProvider) GetBuilderDeps(ctx *generate.GenerateContext) *generate.AptStepBuilder {
-	aptStep := ctx.NewAptStepBuilder("python-builder-deps")
-	aptStep.Inputs = []plan.Input{
-		plan.NewStepInput(ctx.GetMiseStepBuilder().Name()),
-	}
+func (p *PythonProvider) GetBuilderDeps(ctx *generate.GenerateContext) *generate.MiseStepBuilder {
+	miseStep := ctx.GetMiseStepBuilder()
+	miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "python3-dev", "libpq-dev")
 
-	aptStep.Packages = []string{"python3-dev", "libpq-dev"}
-
-	return aptStep
+	return miseStep
 }
 
 func (p *PythonProvider) InstallPythonDeps(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) {

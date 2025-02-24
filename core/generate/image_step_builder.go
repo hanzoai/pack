@@ -10,6 +10,7 @@ type ImageStepBuilder struct {
 	Resolver         *resolver.Resolver
 	Packages         []*resolver.PackageRef
 	ResolveStepImage func(options *BuildStepOptions) string
+	AptPackages      []string
 }
 
 func (c *GenerateContext) NewImageStep(name string, resolveStepImage func(options *BuildStepOptions) string) *ImageStepBuilder {
@@ -48,11 +49,24 @@ func (b *ImageStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) 
 	step := plan.NewStep(b.DisplayName)
 
 	image := b.ResolveStepImage(options)
-	step.Inputs = []plan.Input{
-		plan.NewImageInput(image),
-	}
 
-	step.Secrets = []string{}
+	if len(b.AptPackages) > 0 {
+		runtimeAptStep := plan.NewStep("packages:apt")
+		runtimeAptStep.Inputs = []plan.Input{
+			plan.NewImageInput(image),
+		}
+		runtimeAptStep.Commands = []plan.Command{
+			options.NewAptInstallCommand(b.AptPackages),
+		}
+
+		step.Inputs = []plan.Input{
+			plan.NewStepInput(runtimeAptStep.Name),
+		}
+	} else {
+		step.Inputs = []plan.Input{
+			plan.NewImageInput(image),
+		}
+	}
 
 	return step, nil
 }

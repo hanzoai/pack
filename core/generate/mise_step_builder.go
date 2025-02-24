@@ -30,11 +30,13 @@ type MiseStepBuilder struct {
 }
 
 func (c *GenerateContext) newMiseStepBuilder() *MiseStepBuilder {
+	supportingAptPackages := c.Config.BuildAptPackages
+
 	step := &MiseStepBuilder{
 		DisplayName:           MisePackageStepName,
 		Resolver:              c.Resolver,
 		MisePackages:          []*resolver.PackageRef{},
-		SupportingAptPackages: []string{},
+		SupportingAptPackages: append(supportingAptPackages, c.Config.BuildAptPackages...),
 		Assets:                map[string]string{},
 		Inputs:                []plan.Input{},
 		Variables:             map[string]string{},
@@ -88,8 +90,6 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	if len(b.MisePackages) == 0 {
 		return step, nil
 	}
-
-	// step.StartingImage = BuilderBaseImage
 
 	step.Inputs = []plan.Input{
 		plan.NewImageInput(plan.RAILPACK_BUILDER_IMAGE),
