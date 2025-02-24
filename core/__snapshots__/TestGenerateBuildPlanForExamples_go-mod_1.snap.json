@@ -1,5 +1,13 @@
 {
  "caches": {
+  "apt": {
+   "directory": "/var/cache/apt",
+   "type": "locked"
+  },
+  "apt-lists": {
+   "directory": "/var/lib/apt/lists",
+   "type": "locked"
+  },
   "go-build": {
    "directory": "/root/.cache/go-build",
    "type": "shared"
@@ -8,7 +16,7 @@
  "deploy": {
   "inputs": [
    {
-    "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+    "step": "packages:runtime"
    },
    {
     "include": [
@@ -64,6 +72,9 @@
    ],
    "commands": [
     {
+     "path": "/go/bin"
+    },
+    {
      "dest": "go.mod",
      "src": "go.mod"
     },
@@ -85,7 +96,9 @@
     "*"
    ],
    "variables": {
-    "CGO_ENABLED": "0"
+    "CGO_ENABLED": "0",
+    "GOBIN": "/go/bin",
+    "GOPATH": "/go"
    }
   },
   {
@@ -110,6 +123,24 @@
    "secrets": [
     "*"
    ]
+  },
+  {
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
+   "commands": [
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y tzdata'",
+     "customName": "install apt packages: tzdata"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+    }
+   ],
+   "name": "packages:runtime"
   }
  ]
 }

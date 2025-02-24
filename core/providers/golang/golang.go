@@ -13,6 +13,7 @@ const (
 	DEFAULT_GO_VERSION = "1.23"
 	GO_BUILD_CACHE_KEY = "go-build"
 	GO_BINARY_NAME     = "out"
+	GO_PATH            = "/go"
 )
 
 type GoProvider struct{}
@@ -45,7 +46,7 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 
 	if p.hasCGOEnabled(ctx) {
 		runtimeAptStep := ctx.NewAptStepBuilder("runtime")
-		runtimeAptStep.AddInput(ctx.DefaultRuntimeInputWithPackages([]string{"libc6"}))
+		runtimeAptStep.AddInput(ctx.DefaultRuntimeInputWithPackages([]string{"libc6", "tzdata"}))
 
 		ctx.Deploy.Inputs = []plan.Input{
 			plan.NewStepInput(runtimeAptStep.Name()),
@@ -56,7 +57,7 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 		}
 	} else {
 		ctx.Deploy.Inputs = []plan.Input{
-			ctx.DefaultRuntimeInput(),
+			ctx.DefaultRuntimeInputWithPackages([]string{"tzdata"}),
 			plan.NewStepInput(build.Name(), plan.InputOptions{
 				Include: []string{"."},
 			}),
@@ -102,6 +103,14 @@ func (p *GoProvider) Build(ctx *generate.GenerateContext, build *generate.Comman
 }
 
 func (p *GoProvider) InstallGoDeps(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) {
+	install.AddEnvVars(map[string]string{
+		"GOPATH": GO_PATH,
+		"GOBIN":  fmt.Sprintf("%s/bin", GO_PATH),
+	})
+	install.AddCommands([]plan.Command{
+		plan.NewPathCommand(fmt.Sprintf("%s/bin", GO_PATH)),
+	})
+
 	if !p.isGoMod(ctx) {
 		return
 	}
