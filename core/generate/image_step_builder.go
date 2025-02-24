@@ -46,25 +46,16 @@ func (b *ImageStepBuilder) Name() string {
 }
 
 func (b *ImageStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
-	step := plan.NewStep(b.DisplayName)
-
 	image := b.ResolveStepImage(options)
 
-	if len(b.AptPackages) > 0 {
-		runtimeAptStep := plan.NewStep("packages:apt")
-		runtimeAptStep.Inputs = []plan.Input{
-			plan.NewImageInput(image),
-		}
-		runtimeAptStep.Commands = []plan.Command{
-			options.NewAptInstallCommand(b.AptPackages),
-		}
+	step := plan.NewStep(b.DisplayName)
+	step.Inputs = []plan.Input{
+		plan.NewImageInput(image),
+	}
 
-		step.Inputs = []plan.Input{
-			plan.NewStepInput(runtimeAptStep.Name),
-		}
-	} else {
-		step.Inputs = []plan.Input{
-			plan.NewImageInput(image),
+	if len(b.AptPackages) > 0 {
+		step.Commands = []plan.Command{
+			options.NewAptInstallCommand(b.AptPackages),
 		}
 	}
 
