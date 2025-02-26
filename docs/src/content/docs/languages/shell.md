@@ -7,7 +7,8 @@ Railpack can deploy applications that use shell scripts as their entry point.
 
 ## Detection
 
-Your project will be automatically detected as a shell script application if any of these conditions are met:
+Your project will be automatically detected as a shell script application if any
+of these conditions are met:
 
 - A `start.sh` script exists in the root directory
 - The `RAILPACK_SHELL_SCRIPT` environment variable is set to a valid script file
