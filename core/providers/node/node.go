@@ -87,12 +87,12 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 			Include: miseStep.GetOutputPaths(),
 		}),
+		plan.NewStepInput(prune.Name(), plan.InputOptions{
+			Include: []string{"/app/node_modules"}, // we only wanted the pruned node_modules
+		}),
 		plan.NewStepInput(build.Name(), plan.InputOptions{
 			Include: buildIncludeDirs,
 			Exclude: []string{"node_modules"},
-		}),
-		plan.NewStepInput(prune.Name(), plan.InputOptions{
-			Include: []string{"/app/node_modules"}, // we only wanted the pruned node_modules
 		}),
 		plan.NewLocalInput("."),
 	}
