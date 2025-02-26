@@ -56,7 +56,8 @@ func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.
 			Include: []string{DefaultCaddyfilePath},
 		}),
 		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{outputDir},
+			Include: []string{"."},
+			Exclude: []string{"node_modules"},
 		}),
 		plan.NewLocalInput("."),
 	}
