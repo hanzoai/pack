@@ -67,6 +67,7 @@ export default defineConfig({
             { label: "Go", link: "/languages/golang" },
             { label: "PHP", link: "/languages/php" },
             { label: "Staticfile", link: "/languages/staticfile" },
+            { label: "Shell Scripts", link: "/languages/shell" },
           ],
         },
         {
