@@ -33,6 +33,12 @@
     "step": "packages:mise"
    },
    {
+    "include": [
+     "/app/node_modules"
+    ],
+    "step": "prune"
+   },
+   {
     "exclude": [
      "node_modules"
     ],
@@ -41,12 +47,6 @@
      "/root/.cache"
     ],
     "step": "build"
-   },
-   {
-    "include": [
-     "/app/node_modules"
-    ],
-    "step": "prune"
    },
    {
     "include": [

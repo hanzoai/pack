@@ -29,6 +29,12 @@
     "step": "packages:mise"
    },
    {
+    "include": [
+     "/app/node_modules"
+    ],
+    "step": "prune"
+   },
+   {
     "exclude": [
      "node_modules"
     ],
@@ -36,12 +42,6 @@
      "."
     ],
     "step": "build"
-   },
-   {
-    "include": [
-     "/app/node_modules"
-    ],
-    "step": "prune"
    },
    {
     "include": [
