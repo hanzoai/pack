@@ -55,6 +55,8 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		return fmt.Errorf("package.json not loaded, did you call Initialize?")
 	}
 
+	isSPA := p.isVite(ctx)
+
 	miseStep := ctx.GetMiseStepBuilder()
 	p.InstallMisePackages(ctx, miseStep)
 
@@ -66,7 +68,9 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	// Prune
 	prune := ctx.NewCommandStep("prune")
 	prune.AddInput(plan.NewStepInput(install.Name()))
-	p.PruneNodeDeps(ctx, prune)
+	if !isSPA {
+		p.PruneNodeDeps(ctx, prune)
+	}
 
 	// Build
 	build := ctx.NewCommandStep("build")
@@ -82,19 +86,24 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		buildIncludeDirs = append(buildIncludeDirs, "/root/.cache")
 	}
 
-	ctx.Deploy.Inputs = []plan.Input{
-		ctx.DefaultRuntimeInput(),
-		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
-			Include: miseStep.GetOutputPaths(),
-		}),
-		plan.NewStepInput(prune.Name(), plan.InputOptions{
-			Include: []string{"/app/node_modules"}, // we only wanted the pruned node_modules
-		}),
-		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: buildIncludeDirs,
-			Exclude: []string{"node_modules"},
-		}),
-		plan.NewLocalInput("."),
+	if isSPA {
+		p.DeploySPA(ctx, build)
+	} else {
+		ctx.Deploy.Inputs = []plan.Input{
+			ctx.DefaultRuntimeInput(),
+			plan.NewStepInput(miseStep.Name(), plan.InputOptions{
+				Include: miseStep.GetOutputPaths(),
+			}),
+			plan.NewStepInput(prune.Name(), plan.InputOptions{
+				Include: []string{"/app/node_modules"}, // we only wanted the pruned node_modules
+			}),
+			plan.NewStepInput(build.Name(), plan.InputOptions{
+				Include: buildIncludeDirs,
+				Exclude: []string{"node_modules"},
+			}),
+			plan.NewLocalInput("."),
+		}
+
 	}
 
 	return nil
@@ -286,4 +295,20 @@ func (p *NodeProvider) filterPackageJson(ctx *generate.GenerateContext, filterFu
 	}
 
 	return filteredPaths, nil
+}
+
+func (p *NodeProvider) hasDependency(dependency string) bool {
+	if p.packageJson.Dependencies != nil {
+		if _, ok := p.packageJson.Dependencies[dependency]; ok {
+			return true
+		}
+	}
+
+	if p.packageJson.DevDependencies != nil {
+		if _, ok := p.packageJson.DevDependencies[dependency]; ok {
+			return true
+		}
+	}
+
+	return false
 }

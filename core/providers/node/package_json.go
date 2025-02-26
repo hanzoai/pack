@@ -23,3 +23,11 @@ func NewPackageJson() *PackageJson {
 func (p *PackageJson) HasScript(name string) bool {
 	return p.Scripts != nil && p.Scripts[name] != ""
 }
+
+func (p *PackageJson) GetScript(name string) string {
+	if p.Scripts == nil {
+		return ""
+	}
+
+	return p.Scripts[name]
+}
