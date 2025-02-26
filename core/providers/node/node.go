@@ -87,15 +87,29 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 			Include: miseStep.GetOutputPaths(),
 		}),
-		plan.NewStepInput(prune.Name(), plan.InputOptions{
-			Include: []string{"/app/node_modules"}, // we only wanted the pruned node_modules
-		}),
-		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: buildIncludeDirs,
-			Exclude: []string{"node_modules"},
-		}),
-		plan.NewLocalInput("."),
 	}
+
+	if p.shouldPrune(ctx) {
+		// If we are pruning, we want to grab the pruned node_modules
+		// and ignore the node_modules from the install/build steps
+		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+			plan.NewStepInput(prune.Name(), plan.InputOptions{
+				Include: []string{"/app/node_modules"},
+			}),
+			plan.NewStepInput(build.Name(), plan.InputOptions{
+				Include: buildIncludeDirs,
+				Exclude: []string{"node_modules"},
+			}),
+		)
+	} else {
+		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+			plan.NewStepInput(build.Name(), plan.InputOptions{
+				Include: buildIncludeDirs,
+			}),
+		)
+	}
+
+	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, plan.NewLocalInput("."))
 
 	return nil
 }
@@ -135,8 +149,12 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.Comm
 	}
 }
 
+func (p *NodeProvider) shouldPrune(ctx *generate.GenerateContext) bool {
+	return !ctx.Env.IsConfigVariableTruthy("NO_PRUNE")
+}
+
 func (p *NodeProvider) PruneNodeDeps(ctx *generate.GenerateContext, prune *generate.CommandStepBuilder) {
-	if ctx.Env.IsConfigVariableTruthy("NO_PRUNE") {
+	if !p.shouldPrune(ctx) {
 		return
 	}
 
