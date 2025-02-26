@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"github.com/charmbracelet/log"
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
 )
@@ -9,41 +10,38 @@ const (
 	StartScriptName = "start.sh"
 )
 
-type ShellProvider struct{}
+type ShellProvider struct {
+	scriptName string
+}
 
 func (p *ShellProvider) Name() string {
 	return "shell"
 }
 
 func (p *ShellProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
-	// Check if start.sh exists at the root
-	return ctx.App.HasMatch(StartScriptName), nil
+	return getScript(ctx) != "", nil
 }
 
 func (p *ShellProvider) Initialize(ctx *generate.GenerateContext) error {
-	// No initialization needed
+	p.scriptName = getScript(ctx)
 	return nil
 }
 
 func (p *ShellProvider) Plan(ctx *generate.GenerateContext) error {
-	// Set the start command to run the start.sh script
-	ctx.Deploy.StartCmd = "sh " + StartScriptName
+	ctx.Deploy.StartCmd = "sh " + p.scriptName
 
-	// Add metadata
-	ctx.Metadata.Set("shellScript", StartScriptName)
+	ctx.Metadata.Set("shellScript", p.scriptName)
 
-	// Make sure the script is executable
 	setup := ctx.NewCommandStep("setup")
 	setup.AddInput(ctx.DefaultRuntimeInput())
 	setup.AddCommands(
 		[]plan.Command{
-			plan.NewCopyCommand(StartScriptName),
-			plan.NewExecCommand("chmod +x " + StartScriptName),
-			plan.NewExecCommand("sh " + StartScriptName),
+			plan.NewCopyCommand(p.scriptName),
+			plan.NewExecCommand("chmod +x " + p.scriptName),
+			plan.NewExecCommand("sh " + p.scriptName),
 		},
 	)
 
-	// Add the script to the deploy inputs
 	ctx.Deploy.Inputs = []plan.Input{
 		plan.NewStepInput(setup.Name()),
 		plan.NewStepInput(setup.Name(), plan.InputOptions{
@@ -53,4 +51,22 @@ func (p *ShellProvider) Plan(ctx *generate.GenerateContext) error {
 	}
 
 	return nil
+}
+
+func getScript(ctx *generate.GenerateContext) string {
+	if scriptName, envVarName := ctx.Env.GetConfigVariable("SHELL_SCRIPT"); scriptName != "" {
+		hasScript := ctx.App.HasMatch(scriptName)
+		if hasScript {
+			return scriptName
+		}
+
+		log.Warnf("%s %s script not found", envVarName, scriptName)
+	}
+
+	hasScript := ctx.App.HasMatch(StartScriptName)
+	if hasScript {
+		return StartScriptName
+	}
+
+	return ""
 }

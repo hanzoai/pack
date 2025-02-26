@@ -1,0 +1,58 @@
+{
+ "deploy": {
+  "inputs": [
+   {
+    "step": "setup"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "step": "setup"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
+  ],
+  "startCommand": "sh start.sh"
+ },
+ "steps": [
+  {
+   "commands": [
+    {
+     "dest": "start.sh",
+     "src": "start.sh"
+    },
+    {
+     "cmd": "chmod +x start.sh"
+    },
+    {
+     "cmd": "sh start.sh"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+    }
+   ],
+   "name": "setup",
+   "secrets": [
+    "*"
+   ]
+  },
+  {
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+    }
+   ],
+   "name": "packages:mise",
+   "secrets": [
+    "*"
+   ]
+  }
+ ]
+}
