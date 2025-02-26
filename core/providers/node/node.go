@@ -82,7 +82,7 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		buildIncludeDirs = append(buildIncludeDirs, "/root/.cache")
 	}
 
-	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
+	ctx.Deploy.Inputs = []plan.Input{
 		ctx.DefaultRuntimeInput(),
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 			Include: miseStep.GetOutputPaths(),
@@ -95,7 +95,7 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 			Include: []string{"/app/node_modules"}, // we only wanted the pruned node_modules
 		}),
 		plan.NewLocalInput("."),
-	}...)
+	}
 
 	return nil
 }
