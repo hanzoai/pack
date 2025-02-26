@@ -29,7 +29,7 @@ The provider determines the root directory in this order:
 
 ### Staticfile
 
-Create a `Staticfile` in your project root to configure the provider:
+You can create a `Staticfile` in your project root to configure the provider:
 
 ```yaml
 root: dist # the directory containing your files to serve
