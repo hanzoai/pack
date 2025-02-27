@@ -222,7 +222,7 @@ func (p *NodeProvider) InstallMisePackages(ctx *generate.GenerateContext, miseSt
 		}
 	}
 
-	p.packageManager.GetPackageManagerPackages(ctx, miseStep)
+	p.packageManager.GetPackageManagerPackages(ctx, p.packageJson, miseStep)
 
 	if p.usesCorepack() {
 		miseStep.Variables["MISE_NODE_COREPACK"] = "true"

@@ -14,6 +14,7 @@ func TestNode(t *testing.T) {
 		detected       bool
 		packageManager PackageManager
 		nodeVersion    string
+		pnpmVersion    string
 	}{
 		{
 			name:           "npm",
@@ -34,6 +35,7 @@ func TestNode(t *testing.T) {
 			detected:       true,
 			packageManager: PackageManagerPnpm,
 			nodeVersion:    "20",
+			pnpmVersion:    "9.9.0",
 		},
 		{
 			name:           "pnpm",
@@ -70,12 +72,17 @@ func TestNode(t *testing.T) {
 				packageManager := provider.getPackageManager(ctx.App)
 				require.Equal(t, tt.packageManager, packageManager)
 
-				provider.Plan(ctx)
-
-				nodeVersion := ctx.Resolver.Get("node")
+				err = provider.Plan(ctx)
+				require.NoError(t, err)
 
 				if tt.nodeVersion != "" {
+					nodeVersion := ctx.Resolver.Get("node")
 					require.Equal(t, tt.nodeVersion, nodeVersion.Version)
+				}
+
+				if tt.pnpmVersion != "" {
+					pnpmVersion := ctx.Resolver.Get("pnpm")
+					require.Equal(t, tt.pnpmVersion, pnpmVersion.Version)
 				}
 			}
 		})

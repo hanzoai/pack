@@ -161,7 +161,7 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 }
 
 // GetPackageManagerPackages installs specific versions of package managers by analyzing the users code
-func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext, packages *generate.MiseStepBuilder) {
+func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext, packageJson *PackageJson, packages *generate.MiseStepBuilder) {
 	// Pnpm
 	if p == PackageManagerPnpm {
 		pnpm := packages.Default("pnpm", "latest")
@@ -176,15 +176,43 @@ func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext,
 				packages.Version(pnpm, "8", "pnpm-lock.yaml")
 			}
 		}
+
+		name, version := p.parsePackageManagerField(packageJson)
+		if name == "pnpm" && version != "" {
+			packages.Version(pnpm, version, "package.json > packageManager")
+		}
 	}
 
 	// Yarn
-	if p == PackageManagerYarn1 {
-		packages.Default("yarn", "1")
-		packages.AddSupportingAptPackage("tar")
-		packages.AddSupportingAptPackage("gpg")
-	} else if p == PackageManagerYarn2 {
-		packages.Default("yarn", "2")
+	if p == PackageManagerYarn1 || p == PackageManagerYarn2 {
+		if p == PackageManagerYarn1 {
+			packages.Default("yarn", "1")
+			packages.AddSupportingAptPackage("tar")
+			packages.AddSupportingAptPackage("gpg")
+		} else {
+			packages.Default("yarn", "2")
+		}
+
+		name, version := p.parsePackageManagerField(packageJson)
+		if name == "yarn" && version != "" {
+			majorVersion := strings.Split(version, ".")[0]
+
+			// Only apply version if it matches the expected yarn version
+			if (majorVersion == "1" && p == PackageManagerYarn1) ||
+				(majorVersion != "1" && p == PackageManagerYarn2) {
+				packages.Version(packages.Default("yarn", majorVersion), version, "package.json > packageManager")
+			}
+		}
+	}
+
+	// Bun
+	if p == PackageManagerBun {
+		bun := packages.Default("bun", "latest")
+
+		name, version := p.parsePackageManagerField(packageJson)
+		if name == "bun" && version != "" {
+			packages.Version(bun, version, "package.json > packageManager")
+		}
 	}
 }
 
@@ -204,4 +232,20 @@ func (p PackageManager) requiresNode(packageJson *PackageJson) bool {
 	}
 
 	return false
+}
+
+// parsePackageManagerField parses the packageManager field from package.json
+// and returns the name and version as a tuple
+func (p PackageManager) parsePackageManagerField(packageJson *PackageJson) (string, string) {
+	if packageJson.PackageManager != nil {
+		pmString := *packageJson.PackageManager
+
+		// Parse packageManager field which is in format "name@version"
+		parts := strings.Split(pmString, "@")
+		if len(parts) == 2 {
+			return parts[0], parts[1]
+		}
+	}
+
+	return "", ""
 }
