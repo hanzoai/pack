@@ -7,6 +7,10 @@ import (
 	"github.com/railwayapp/railpack/core/generate"
 )
 
+const (
+	DefaultViteOutputDirectory = "dist"
+)
+
 func (p *NodeProvider) isVite(ctx *generate.GenerateContext) bool {
 	hasViteConfig := ctx.App.HasMatch("vite.config.js") || ctx.App.HasMatch("vite.config.ts")
 	hasViteBuildCommand := strings.Contains(strings.ToLower(p.packageJson.GetScript("build")), "vite build")
@@ -49,5 +53,5 @@ func (p *NodeProvider) getViteOutputDirectory(ctx *generate.GenerateContext) str
 		}
 	}
 
-	return ""
+	return DefaultViteOutputDirectory
 }

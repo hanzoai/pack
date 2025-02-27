@@ -150,12 +150,17 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.Comm
 	// Generic node_modules cache
 	build.AddCache(ctx.Caches.AddCache("node-modules", "/app/node_modules/.cache"))
 
-	// Add caches for Next.JS apps
+	// Add caches for NextJS apps
 	if nextApps, err := p.getNextApps(ctx); err == nil {
 		for _, nextApp := range nextApps {
 			nextCacheDir := path.Join("/app", nextApp, ".next/cache")
 			build.AddCache(ctx.Caches.AddCache(fmt.Sprintf("next-%s", nextApp), nextCacheDir))
 		}
+	}
+
+	// Add cache for Astro apps
+	if p.isAstro(ctx) {
+		build.AddCache(p.getAstroCache(ctx))
 	}
 }
 
@@ -226,6 +231,10 @@ func (p *NodeProvider) GetNodeEnvVars(ctx *generate.GenerateContext) map[string]
 		"CI":                         "true",
 	}
 
+	if p.isAstro(ctx) && !p.isAstroSPA(ctx) {
+		maps.Copy(envVars, p.getAstroEnvVars(ctx))
+	}
+
 	return envVars
 }
 
@@ -279,7 +288,7 @@ func (p *NodeProvider) getScripts(packageJson *PackageJson, name string) string 
 
 func (p *NodeProvider) SetNodeMetadata(ctx *generate.GenerateContext) {
 	runtime := p.getRuntime(ctx)
-	framework := p.getFramework()
+	framework := p.getFramework(ctx)
 
 	ctx.Metadata.Set("nodeRuntime", runtime)
 	ctx.Metadata.Set("nodeFramework", framework)
@@ -328,7 +337,15 @@ func (p *NodeProvider) filterPackageJson(ctx *generate.GenerateContext, filterFu
 }
 
 func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
-	if p.isNext() {
+	if p.isSPA(ctx) {
+		if p.isAstro(ctx) {
+			return "astro"
+		} else if p.isVite(ctx) {
+			return "vite"
+		}
+
+		return "static"
+	} else if p.isNext() {
 		return "next"
 	} else if p.isRemix() {
 		return "remix"
@@ -341,8 +358,10 @@ func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
 	return "node"
 }
 
-func (p *NodeProvider) getFramework() string {
-	if p.isReact() {
+func (p *NodeProvider) getFramework(ctx *generate.GenerateContext) string {
+	if p.isAstro(ctx) {
+		return "astro"
+	} else if p.isReact() {
 		return "react"
 	} else if p.isVue() {
 		return "vue"

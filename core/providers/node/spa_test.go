@@ -12,22 +12,40 @@ func TestVite(t *testing.T) {
 		name      string
 		path      string
 		isSPA     bool
+		isVite    bool
+		isAstro   bool
 		outputDir string
 	}{
 		{
-			name:      "npm",
+			name:      "vite-react",
 			path:      "../../../examples/node-vite-react",
 			isSPA:     true,
+			isVite:    true,
 			outputDir: "dist",
 		},
 		{
-			name:      "bun",
+			name:      "vite-svelte",
 			path:      "../../../examples/node-vite-svelte",
 			isSPA:     true,
+			isVite:    true,
 			outputDir: "theoutput",
 		},
 		{
-			name:      "pnpm",
+			name:      "astro-static",
+			path:      "../../../examples/node-astro",
+			isSPA:     true,
+			isAstro:   true,
+			outputDir: "dist",
+		},
+		{
+			name:      "astro-server",
+			path:      "../../../examples/node-astro-server",
+			isSPA:     false,
+			isAstro:   true,
+			outputDir: "dist",
+		},
+		{
+			name:      "corepack",
 			path:      "../../../examples/node-corepack",
 			isSPA:     false,
 			outputDir: "",
@@ -55,6 +73,12 @@ func TestVite(t *testing.T) {
 			require.NoError(t, err)
 			isSPA := provider.isSPA(ctx)
 			require.Equal(t, tt.isSPA, isSPA)
+
+			isVite := provider.isVite(ctx)
+			require.Equal(t, tt.isVite, isVite)
+
+			isAstro := provider.isAstro(ctx)
+			require.Equal(t, tt.isAstro, isAstro)
 
 			if tt.isSPA {
 				require.Equal(t, tt.outputDir, provider.getOutputDirectory(ctx))

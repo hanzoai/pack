@@ -11,19 +11,20 @@ import (
 
 const (
 	DefaultCaddyfilePath = "/Caddyfile"
-	DefaultDistDir       = "dist"
 )
 
 //go:embed Caddyfile.template
 var caddyfileTemplate string
 
 func (p *NodeProvider) isSPA(ctx *generate.GenerateContext) bool {
-	return p.isVite(ctx)
+	isVite := p.isVite(ctx)
+	isAstro := p.isAstroSPA(ctx)
+
+	return (isVite || isAstro) && p.getOutputDirectory(ctx) != ""
 }
 
 func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.CommandStepBuilder) error {
 	outputDir := p.getOutputDirectory(ctx)
-	fmt.Println("outputDir", outputDir)
 
 	data := map[string]interface{}{
 		"DIST_DIR": path.Join("/app", outputDir),
@@ -74,10 +75,8 @@ func (p *NodeProvider) getOutputDirectory(ctx *generate.GenerateContext) string 
 		outputDir = dir
 	} else if p.isVite(ctx) {
 		outputDir = p.getViteOutputDirectory(ctx)
-	}
-
-	if outputDir == "" {
-		outputDir = DefaultDistDir
+	} else if p.isAstroSPA(ctx) {
+		outputDir = p.getAstroOutputDirectory(ctx)
 	}
 
 	return outputDir
