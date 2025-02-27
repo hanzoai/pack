@@ -55,7 +55,7 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		return fmt.Errorf("package.json not loaded, did you call Initialize?")
 	}
 
-	isSPA := p.isVite(ctx)
+	isSPA := p.isSPA(ctx)
 
 	miseStep := ctx.GetMiseStepBuilder()
 	p.InstallMisePackages(ctx, miseStep)

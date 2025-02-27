@@ -19,7 +19,7 @@
 
 	respond /health 200
 
-# Security headers
+	# Security headers
 	header {
 		# Enable cross-site filter (XSS) and tell browsers to block detected attacks
 		X-XSS-Protection "1; mode=block"

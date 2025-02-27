@@ -1,33 +1,35 @@
 package node
 
 import (
-	"bytes"
 	_ "embed"
 	"fmt"
-	"regexp"
-	"strings"
-	"text/template"
+	"path"
 
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
 )
 
 const (
-	DefaultCaddyfilePath = "Caddyfile"
+	DefaultCaddyfilePath = "/Caddyfile"
 	DefaultDistDir       = "dist"
 )
 
 //go:embed Caddyfile.template
 var caddyfileTemplate string
 
+func (p *NodeProvider) isSPA(ctx *generate.GenerateContext) bool {
+	return p.isVite(ctx)
+}
+
 func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.CommandStepBuilder) error {
 	outputDir := p.getOutputDirectory(ctx)
+	fmt.Println("outputDir", outputDir)
 
 	data := map[string]interface{}{
-		"DIST_DIR": outputDir,
+		"DIST_DIR": path.Join("/app", outputDir),
 	}
 
-	caddyfile, err := p.getCaddyfile(data)
+	caddyfileTemplate, err := ctx.TemplateFiles([]string{"Caddyfile.template", "Caddyfile"}, caddyfileTemplate, data)
 	if err != nil {
 		return err
 	}
@@ -39,10 +41,10 @@ func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.
 	caddy.AddInput(plan.NewStepInput(installCaddyStep.Name()))
 	caddy.AddCommands([]plan.Command{
 		plan.NewFileCommand(DefaultCaddyfilePath, "Caddyfile"),
-		plan.NewExecCommand("caddy fmt --overwrite Caddyfile"),
+		plan.NewExecCommand(fmt.Sprintf("caddy fmt --overwrite %s", DefaultCaddyfilePath)),
 	})
 	caddy.Assets = map[string]string{
-		"Caddyfile": caddyfile,
+		"Caddyfile": caddyfileTemplate.Contents,
 	}
 
 	ctx.Deploy.StartCmd = fmt.Sprintf("caddy run --config %s --adapter caddyfile 2>&1", DefaultCaddyfilePath)
@@ -52,12 +54,12 @@ func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.
 		plan.NewStepInput(installCaddyStep.Name(), plan.InputOptions{
 			Include: installCaddyStep.GetOutputPaths(),
 		}),
-		plan.NewStepInput(caddy.Name(), plan.InputOptions{
-			Include: []string{DefaultCaddyfilePath},
-		}),
 		plan.NewStepInput(build.Name(), plan.InputOptions{
 			Include: []string{"."},
 			Exclude: []string{"node_modules"},
+		}),
+		plan.NewStepInput(caddy.Name(), plan.InputOptions{
+			Include: []string{DefaultCaddyfilePath},
 		}),
 		plan.NewLocalInput("."),
 	}
@@ -65,82 +67,24 @@ func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.
 	return nil
 }
 
+func (p *NodeProvider) getOutputDirectory(ctx *generate.GenerateContext) string {
+	outputDir := ""
+
+	if dir, _ := ctx.Env.GetConfigVariable("SPA_OUTPUT_DIR"); dir != "" {
+		outputDir = dir
+	} else if p.isVite(ctx) {
+		outputDir = p.getViteOutputDirectory(ctx)
+	}
+
+	if outputDir == "" {
+		outputDir = DefaultDistDir
+	}
+
+	return outputDir
+}
+
 func (p *NodeProvider) caddyAllowlist() bool {
 	return p.isReact() || p.isVue() || p.isSvelte() || p.isPreact() || p.isLit() || p.isSolidJs() || p.isQwik()
-}
-
-func (p *NodeProvider) getOutputDirectory(ctx *generate.GenerateContext) string {
-	// Check for outDir in vite.config.js or vite.config.ts
-	configContent := ""
-
-	if ctx.App.HasMatch("vite.config.js") {
-		content, err := ctx.App.ReadFile("vite.config.js")
-		if err == nil {
-			configContent = content
-		}
-	} else if ctx.App.HasMatch("vite.config.ts") {
-		content, err := ctx.App.ReadFile("vite.config.ts")
-		if err == nil {
-			configContent = content
-		}
-	}
-
-	if configContent != "" {
-		// Look for outDir in config
-		outDirRegex := regexp.MustCompile(`outDir:\s*['"](.+?)['"]`)
-		matches := outDirRegex.FindStringSubmatch(configContent)
-		if len(matches) > 1 {
-			return matches[1]
-		}
-	}
-
-	// Check for outDir in build script
-	if p.packageJson.Scripts != nil {
-		if buildScript, ok := p.packageJson.Scripts["build"]; ok {
-			outDirRegex := regexp.MustCompile(`vite\s+build(?:\s+-[^\s]*)*\s+(?:--outDir)\s+([^-\s;]+)`)
-			matches := outDirRegex.FindStringSubmatch(buildScript)
-			if len(matches) > 1 {
-				return matches[1]
-			}
-		}
-	}
-
-	return DefaultDistDir
-}
-
-func (p *NodeProvider) getCaddyfile(data map[string]interface{}) (string, error) {
-	tmpl, err := template.New(DefaultCaddyfilePath).Parse(caddyfileTemplate)
-	if err != nil {
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
-}
-
-func (p *NodeProvider) isVite(ctx *generate.GenerateContext) bool {
-	// Check if vite is in dependencies or devDependencies
-	if p.hasDependency("vite") {
-		return true
-	}
-
-	// Check for vite config files
-	if ctx.App.HasMatch("vite.config.js") || ctx.App.HasMatch("vite.config.ts") {
-		return true
-	}
-
-	// Check if build script contains "vite build"
-	if buildScript := p.packageJson.GetScript("build"); buildScript != "" {
-		if strings.Contains(strings.ToLower(buildScript), "vite build") {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (p *NodeProvider) isReact() bool {
