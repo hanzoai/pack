@@ -92,34 +92,34 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		return nil
 	}
 
-		ctx.Deploy.Inputs = []plan.Input{
-			ctx.DefaultRuntimeInput(),
-			plan.NewStepInput(miseStep.Name(), plan.InputOptions{
-				Include: miseStep.GetOutputPaths(),
+	ctx.Deploy.Inputs = []plan.Input{
+		ctx.DefaultRuntimeInput(),
+		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
+			Include: miseStep.GetOutputPaths(),
+		}),
+	}
+
+	if p.shouldPrune(ctx) {
+		// If we are pruning, we want to grab the pruned node_modules
+		// and ignore the node_modules from the install/build steps
+		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+			plan.NewStepInput(prune.Name(), plan.InputOptions{
+				Include: []string{"/app/node_modules"},
 			}),
-		}
+			plan.NewStepInput(build.Name(), plan.InputOptions{
+				Include: buildIncludeDirs,
+				Exclude: []string{"node_modules"},
+			}),
+		)
+	} else {
+		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+			plan.NewStepInput(build.Name(), plan.InputOptions{
+				Include: buildIncludeDirs,
+			}),
+		)
+	}
 
-		if p.shouldPrune(ctx) {
-			// If we are pruning, we want to grab the pruned node_modules
-			// and ignore the node_modules from the install/build steps
-			ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
-				plan.NewStepInput(prune.Name(), plan.InputOptions{
-					Include: []string{"/app/node_modules"},
-				}),
-				plan.NewStepInput(build.Name(), plan.InputOptions{
-					Include: buildIncludeDirs,
-					Exclude: []string{"node_modules"},
-				}),
-			)
-		} else {
-			ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
-				plan.NewStepInput(build.Name(), plan.InputOptions{
-					Include: buildIncludeDirs,
-				}),
-			)
-		}
-
-		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, plan.NewLocalInput("."))
+	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, plan.NewLocalInput("."))
 
 	return nil
 }
