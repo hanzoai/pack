@@ -7,65 +7,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDetect(t *testing.T) {
-	tests := []struct {
-		name string
-		path string
-		want bool
-	}{
-		{
-			name: "npm",
-			path: "../../../examples/node-npm",
-			want: true,
-		},
-		{
-			name: "bun",
-			path: "../../../examples/node-bun",
-			want: true,
-		},
-		{
-			name: "pnpm",
-			path: "../../../examples/node-corepack",
-			want: true,
-		},
-		{
-			name: "golang",
-			path: "../../../examples/go-mod",
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := testingUtils.CreateGenerateContext(t, tt.path)
-			provider := NodeProvider{}
-			got, err := provider.Detect(ctx)
-			require.NoError(t, err)
-			require.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func TestPackageManager(t *testing.T) {
+func TestNode(t *testing.T) {
 	tests := []struct {
 		name           string
 		path           string
+		detected       bool
 		packageManager PackageManager
 	}{
 		{
-			name:           "npm project",
+			name:           "npm",
 			path:           "../../../examples/node-npm",
+			detected:       true,
 			packageManager: PackageManagerNpm,
 		},
 		{
-			name:           "bun project",
+			name:           "bun",
 			path:           "../../../examples/node-bun",
+			detected:       true,
 			packageManager: PackageManagerBun,
 		},
 		{
-			name:           "pnpm project",
+			name:           "pnpm",
 			path:           "../../../examples/node-corepack",
+			detected:       true,
 			packageManager: PackageManagerPnpm,
+		},
+		{
+			name:           "pnpm",
+			path:           "../../../examples/node-astro",
+			detected:       true,
+			packageManager: PackageManagerNpm,
+		},
+		{
+			name:     "golang",
+			path:     "../../../examples/go-mod",
+			detected: false,
 		},
 	}
 
@@ -73,9 +49,14 @@ func TestPackageManager(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := testingUtils.CreateGenerateContext(t, tt.path)
 			provider := NodeProvider{}
+			detected, err := provider.Detect(ctx)
+			require.NoError(t, err)
+			require.Equal(t, tt.detected, detected)
 
-			packageManager := provider.getPackageManager(ctx.App)
-			require.Equal(t, tt.packageManager, packageManager)
+			if detected {
+				packageManager := provider.getPackageManager(ctx.App)
+				require.Equal(t, tt.packageManager, packageManager)
+			}
 		})
 	}
 }
