@@ -13,12 +13,14 @@ func TestNode(t *testing.T) {
 		path           string
 		detected       bool
 		packageManager PackageManager
+		nodeVersion    string
 	}{
 		{
 			name:           "npm",
 			path:           "../../../examples/node-npm",
 			detected:       true,
 			packageManager: PackageManagerNpm,
+			nodeVersion:    "23.5.0",
 		},
 		{
 			name:           "bun",
@@ -31,6 +33,14 @@ func TestNode(t *testing.T) {
 			path:           "../../../examples/node-corepack",
 			detected:       true,
 			packageManager: PackageManagerPnpm,
+			nodeVersion:    "20",
+		},
+		{
+			name:           "pnpm",
+			path:           "../../../examples/node-pnpm-workspaces",
+			detected:       true,
+			packageManager: PackageManagerPnpm,
+			nodeVersion:    "22.2.0",
 		},
 		{
 			name:           "pnpm",
@@ -54,8 +64,19 @@ func TestNode(t *testing.T) {
 			require.Equal(t, tt.detected, detected)
 
 			if detected {
+				err = provider.Initialize(ctx)
+				require.NoError(t, err)
+
 				packageManager := provider.getPackageManager(ctx.App)
 				require.Equal(t, tt.packageManager, packageManager)
+
+				provider.Plan(ctx)
+
+				nodeVersion := ctx.Resolver.Get("node")
+
+				if tt.nodeVersion != "" {
+					require.Equal(t, tt.nodeVersion, nodeVersion.Version)
+				}
 			}
 		})
 	}
