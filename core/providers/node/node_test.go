@@ -7,65 +7,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDetect(t *testing.T) {
-	tests := []struct {
-		name string
-		path string
-		want bool
-	}{
-		{
-			name: "npm",
-			path: "../../../examples/node-npm",
-			want: true,
-		},
-		{
-			name: "bun",
-			path: "../../../examples/node-bun",
-			want: true,
-		},
-		{
-			name: "pnpm",
-			path: "../../../examples/node-corepack",
-			want: true,
-		},
-		{
-			name: "golang",
-			path: "../../../examples/go-mod",
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := testingUtils.CreateGenerateContext(t, tt.path)
-			provider := NodeProvider{}
-			got, err := provider.Detect(ctx)
-			require.NoError(t, err)
-			require.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func TestPackageManager(t *testing.T) {
+func TestNode(t *testing.T) {
 	tests := []struct {
 		name           string
 		path           string
+		detected       bool
 		packageManager PackageManager
+		nodeVersion    string
+		pnpmVersion    string
 	}{
 		{
-			name:           "npm project",
+			name:           "npm",
 			path:           "../../../examples/node-npm",
+			detected:       true,
 			packageManager: PackageManagerNpm,
+			nodeVersion:    "23.5.0",
 		},
 		{
-			name:           "bun project",
+			name:           "bun",
 			path:           "../../../examples/node-bun",
+			detected:       true,
 			packageManager: PackageManagerBun,
 		},
 		{
-			name:           "pnpm project",
+			name:           "pnpm",
 			path:           "../../../examples/node-corepack",
+			detected:       true,
 			packageManager: PackageManagerPnpm,
+			nodeVersion:    "20",
+			pnpmVersion:    "9.9.0",
+		},
+		{
+			name:           "pnpm",
+			path:           "../../../examples/node-pnpm-workspaces",
+			detected:       true,
+			packageManager: PackageManagerPnpm,
+			nodeVersion:    "22.2.0",
+		},
+		{
+			name:           "pnpm",
+			path:           "../../../examples/node-astro",
+			detected:       true,
+			packageManager: PackageManagerNpm,
+		},
+		{
+			name:     "golang",
+			path:     "../../../examples/go-mod",
+			detected: false,
 		},
 	}
 
@@ -73,9 +61,30 @@ func TestPackageManager(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := testingUtils.CreateGenerateContext(t, tt.path)
 			provider := NodeProvider{}
+			detected, err := provider.Detect(ctx)
+			require.NoError(t, err)
+			require.Equal(t, tt.detected, detected)
 
-			packageManager := provider.getPackageManager(ctx.App)
-			require.Equal(t, tt.packageManager, packageManager)
+			if detected {
+				err = provider.Initialize(ctx)
+				require.NoError(t, err)
+
+				packageManager := provider.getPackageManager(ctx.App)
+				require.Equal(t, tt.packageManager, packageManager)
+
+				err = provider.Plan(ctx)
+				require.NoError(t, err)
+
+				if tt.nodeVersion != "" {
+					nodeVersion := ctx.Resolver.Get("node")
+					require.Equal(t, tt.nodeVersion, nodeVersion.Version)
+				}
+
+				if tt.pnpmVersion != "" {
+					pnpmVersion := ctx.Resolver.Get("pnpm")
+					require.Equal(t, tt.pnpmVersion, pnpmVersion.Version)
+				}
+			}
 		})
 	}
 }

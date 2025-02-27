@@ -203,6 +203,14 @@ func (p *NodeProvider) InstallMisePackages(ctx *generate.GenerateContext, miseSt
 		if p.packageJson.Engines != nil && p.packageJson.Engines["node"] != "" {
 			miseStep.Version(node, p.packageJson.Engines["node"], "package.json > engines > node")
 		}
+
+		if nvmrc, err := ctx.App.ReadFile(".nvmrc"); err == nil {
+			if len(nvmrc) > 0 && nvmrc[0] == 'v' {
+				nvmrc = nvmrc[1:]
+			}
+
+			miseStep.Version(node, string(nvmrc), ".nvmrc")
+		}
 	}
 
 	// Bun
@@ -214,7 +222,7 @@ func (p *NodeProvider) InstallMisePackages(ctx *generate.GenerateContext, miseSt
 		}
 	}
 
-	p.packageManager.GetPackageManagerPackages(ctx, miseStep)
+	p.packageManager.GetPackageManagerPackages(ctx, p.packageJson, miseStep)
 
 	if p.usesCorepack() {
 		miseStep.Variables["MISE_NODE_COREPACK"] = "true"

@@ -20,7 +20,8 @@
      "/mise/installs",
      "/usr/local/bin/mise",
      "/etc/mise/config.toml",
-     "/root/.local/state/mise"
+     "/root/.local/state/mise",
+     ".nvmrc"
     ],
     "step": "packages:mise"
    },
@@ -55,6 +56,10 @@
    "commands": [
     {
      "path": "/mise/shims"
+    },
+    {
+     "dest": "/app/.nvmrc",
+     "src": ".nvmrc"
     },
     {
      "customName": "create mise config",
@@ -107,6 +112,10 @@
     {
      "dest": "pnpm-lock.yaml",
      "src": "pnpm-lock.yaml"
+    },
+    {
+     "dest": ".nvmrc",
+     "src": ".nvmrc"
     },
     {
      "cmd": "pnpm install --frozen-lockfile --prod=false"
