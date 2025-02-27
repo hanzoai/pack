@@ -62,7 +62,7 @@ func (p *NodeProvider) getAstroConfigFileContents(ctx *generate.GenerateContext)
 	return configFile
 }
 
-func (p *NodeProvider) getAstroEnvVars(ctx *generate.GenerateContext) map[string]string {
+func (p *NodeProvider) getAstroEnvVars() map[string]string {
 	envVars := map[string]string{
 		"HOST": "0.0.0.0",
 	}

@@ -232,7 +232,7 @@ func (p *NodeProvider) GetNodeEnvVars(ctx *generate.GenerateContext) map[string]
 	}
 
 	if p.isAstro(ctx) && !p.isAstroSPA(ctx) {
-		maps.Copy(envVars, p.getAstroEnvVars(ctx))
+		maps.Copy(envVars, p.getAstroEnvVars())
 	}
 
 	return envVars
