@@ -121,10 +121,7 @@
      "step": "install"
     }
    ],
-   "name": "prune",
-   "secrets": [
-    "*"
-   ]
+   "name": "prune"
   },
   {
    "caches": [

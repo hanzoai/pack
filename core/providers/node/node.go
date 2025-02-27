@@ -66,6 +66,7 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	// Prune
 	prune := ctx.NewCommandStep("prune")
 	prune.AddInput(plan.NewStepInput(install.Name()))
+	prune.Secrets = []string{}
 	if p.shouldPrune(ctx) {
 		p.PruneNodeDeps(ctx, prune)
 	}
