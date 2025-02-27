@@ -1,3 +1,4 @@
+# global options
 {
 	admin off
 	persist_config off
@@ -8,10 +9,11 @@
 	}
 
 	servers {
-		trusted_proxies static private_ranges
+		trusted_proxies static private_ranges 100.0.0.0/8 # trust railway's proxy
 	}
 }
 
+# site block, listens on the $PORT environment variable, automatically assigned by railway
 :{$PORT:80} {
 	log {
 		format json
@@ -33,7 +35,8 @@
 		-Server
 	}
 
-	root * {{.STATIC_FILE_ROOT}}
+	# serve from the 'dist' folder (Vite builds into the 'dist' folder)
+	root * {{.DIST_DIR}}
 
 	# Handle static files
 	file_server {
@@ -49,10 +52,4 @@
 
 	# Try files with HTML extension and handle SPA routing
 	try_files {path} {path}.html {path}/index.html /index.html
-
-	# Handle 404 errors
-	handle_errors {
-		rewrite * /{err.status_code}.html
-		file_server
-	}
 }

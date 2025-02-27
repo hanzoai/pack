@@ -1,10 +1,8 @@
 package php
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
-	"text/template"
 
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
@@ -163,19 +161,19 @@ func (p *PhpProvider) getConfigFiles(ctx *generate.GenerateContext) (*ConfigFile
 		"IS_LARAVEL":            p.usesLaravel(ctx),
 	}
 
-	nginxConf, err := readFileOrTemplateWithDefault(ctx, "nginx.conf", "nginx.template.conf", nginxConfTemplateAsset, data)
+	nginxConfTemplate, err := ctx.TemplateFiles([]string{"nginx.template.conf", "nginx.conf"}, nginxConfTemplateAsset, data)
 	if err != nil {
 		return nil, err
 	}
 
-	phpFpmConf, err := readFileOrTemplateWithDefault(ctx, "php-fpm.conf", "php-fpm.template.conf", phpFpmConfTemplateAsset, data)
+	phpFpmConf, err := ctx.TemplateFiles([]string{"php-fpm.template.conf", "php-fpm.conf"}, phpFpmConfTemplateAsset, data)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ConfigFiles{
-		NginxConf:  nginxConf,
-		PhpFpmConf: phpFpmConf,
+		NginxConf:  nginxConfTemplate.Contents,
+		PhpFpmConf: phpFpmConf.Contents,
 	}, nil
 }
 
@@ -210,43 +208,6 @@ func (p *PhpProvider) phpImagePackage(ctx *generate.GenerateContext) (*generate.
 	}
 
 	return imageStep, nil
-}
-
-// readFileOrTemplateWithDefault reads a file or template from the app, or fallsback to a static default
-// the template is then rendered with the data and returned
-func readFileOrTemplateWithDefault(ctx *generate.GenerateContext, filename string, templateFilename string, defaultContents string, data map[string]interface{}) (string, error) {
-	var conf string
-	var confTemplate string
-
-	// The user has a custom nginx.conf file that we should use
-	if userConf, err := ctx.App.ReadFile(filename); err == nil {
-		conf = userConf
-	}
-
-	// The user has a custom nginx.template.conf file that we should use
-	if userTemplateConf, err := ctx.App.ReadFile(templateFilename); err == nil {
-		confTemplate = userTemplateConf
-	} else {
-		// Otherwise, use the default nginx.template.conf file
-		confTemplate = defaultContents
-	}
-
-	// We need to render the nginx.conf template if the user has a custom one
-	if conf == "" && confTemplate != "" {
-		tmpl, err := template.New(filename).Parse(confTemplate)
-		if err != nil {
-			return "", fmt.Errorf("failed to parse %s template: %w", filename, err)
-		}
-
-		var buf bytes.Buffer
-		if err := tmpl.Execute(&buf, data); err != nil {
-			return "", fmt.Errorf("failed to execute nginx template: %w", err)
-		}
-
-		conf = buf.String()
-	}
-
-	return conf, nil
 }
 
 func getPhpImage(phpVersion string) string {

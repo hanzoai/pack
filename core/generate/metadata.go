@@ -11,6 +11,10 @@ func NewMetadata() *Metadata {
 }
 
 func (m *Metadata) Set(key string, value string) {
+	if value == "" {
+		return
+	}
+
 	m.Properties[key] = value
 }
 
