@@ -150,7 +150,7 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.Comm
 }
 
 func (p *NodeProvider) shouldPrune(ctx *generate.GenerateContext) bool {
-	return !ctx.Env.IsConfigVariableTruthy("NO_PRUNE")
+	return ctx.Env.IsConfigVariableTruthy("PRUNE_DEPS")
 }
 
 func (p *NodeProvider) PruneNodeDeps(ctx *generate.GenerateContext, prune *generate.CommandStepBuilder) {
