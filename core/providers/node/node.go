@@ -66,7 +66,9 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	// Prune
 	prune := ctx.NewCommandStep("prune")
 	prune.AddInput(plan.NewStepInput(install.Name()))
-	p.PruneNodeDeps(ctx, prune)
+	if p.shouldPrune(ctx) {
+		p.PruneNodeDeps(ctx, prune)
+	}
 
 	// Build
 	build := ctx.NewCommandStep("build")
@@ -154,10 +156,6 @@ func (p *NodeProvider) shouldPrune(ctx *generate.GenerateContext) bool {
 }
 
 func (p *NodeProvider) PruneNodeDeps(ctx *generate.GenerateContext, prune *generate.CommandStepBuilder) {
-	if !p.shouldPrune(ctx) {
-		return
-	}
-
 	prune.Variables["NPM_CONFIG_PRODUCTION"] = "true"
 	prune.Secrets = []string{}
 	p.packageManager.PruneDeps(ctx, prune)

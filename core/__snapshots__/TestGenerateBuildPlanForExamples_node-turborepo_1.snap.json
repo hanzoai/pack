@@ -34,15 +34,6 @@
    },
    {
     "include": [
-     "/app/node_modules"
-    ],
-    "step": "prune"
-   },
-   {
-    "exclude": [
-     "node_modules"
-    ],
-    "include": [
      ".",
      "/root/.cache"
     ],
@@ -168,23 +159,15 @@
    }
   },
   {
-   "caches": [
-    "npm-install"
-   ],
-   "commands": [
-    {
-     "cmd": "npm prune --omit=dev"
-    }
-   ],
    "inputs": [
     {
      "step": "install"
     }
    ],
    "name": "prune",
-   "variables": {
-    "NPM_CONFIG_PRODUCTION": "true"
-   }
+   "secrets": [
+    "*"
+   ]
   },
   {
    "caches": [
