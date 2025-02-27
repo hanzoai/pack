@@ -26,15 +26,6 @@
    },
    {
     "include": [
-     "/app/node_modules"
-    ],
-    "step": "prune"
-   },
-   {
-    "exclude": [
-     "node_modules"
-    ],
-    "include": [
      "."
     ],
     "step": "build"
@@ -137,23 +128,12 @@
    }
   },
   {
-   "caches": [
-    "pnpm-install"
-   ],
-   "commands": [
-    {
-     "cmd": "pnpm prune --prod"
-    }
-   ],
    "inputs": [
     {
      "step": "install"
     }
    ],
-   "name": "prune",
-   "variables": {
-    "NPM_CONFIG_PRODUCTION": "true"
-   }
+   "name": "prune"
   },
   {
    "caches": [
