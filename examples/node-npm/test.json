@@ -1,5 +1,8 @@
 [
   {
-    "expectedOutput": "hello from Node v23.5.0"
+    "expectedOutput": "hello from Node v23.5.0",
+    "envs": {
+      "RAILPACK_PRUNE_DEPS": "true"
+    }
   }
 ]

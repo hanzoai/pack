@@ -30,6 +30,20 @@ func main() {
 		lipgloss.SetColorProfile(termenv.TrueColor)
 	}
 
+	commands := []*urfave.Command{
+		cli.BuildCommand,
+		cli.PrepareCommand,
+		cli.InfoCommand,
+		cli.PlanCommand,
+		cli.SchemaCommand,
+		cli.FrontendCommand,
+	}
+
+	// Disable the slice flag separator for all commands
+	for _, command := range commands {
+		command.DisableSliceFlagSeparator = true
+	}
+
 	cmd := &urfave.Command{
 		Name:                  "railpack",
 		Usage:                 "Automatically analyze and generate build plans for applications",
@@ -48,14 +62,7 @@ func main() {
 
 			return ctx, nil
 		},
-		Commands: []*urfave.Command{
-			cli.BuildCommand,
-			cli.PrepareCommand,
-			cli.InfoCommand,
-			cli.PlanCommand,
-			cli.SchemaCommand,
-			cli.FrontendCommand,
-		},
+		Commands: commands,
 	}
 
 	if err := cmd.Run(context.Background(), os.Args); err != nil {

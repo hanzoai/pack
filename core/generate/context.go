@@ -109,14 +109,6 @@ func (c *GenerateContext) ResolvePackages() (map[string]*resolver.ResolvedPackag
 
 // Generate a build plan from the context
 func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.ResolvedPackage, error) {
-	// Add all packages from the config to the mise step
-	miseStep := c.GetMiseStepBuilder()
-	for _, pkg := range slices.Sorted(maps.Keys(c.Config.Packages)) {
-		version := c.Config.Packages[pkg]
-		pkgRef := miseStep.Default(pkg, version)
-		miseStep.Version(pkgRef, version, "custom config")
-	}
-
 	c.applyConfig()
 
 	// Resolve all package versions into a fully qualified and valid version
@@ -179,6 +171,11 @@ func (o *BuildStepOptions) NewAptInstallCommand(pkgs []string) plan.Command {
 
 func (c *GenerateContext) applyConfig() {
 	miseStep := c.GetMiseStepBuilder()
+	for _, pkg := range slices.Sorted(maps.Keys(c.Config.Packages)) {
+		version := c.Config.Packages[pkg]
+		pkgRef := miseStep.Default(pkg, version)
+		miseStep.Version(pkgRef, version, "custom config")
+	}
 
 	// Apply the cache config to the context
 	maps.Copy(c.Caches.Caches, c.Config.Caches)

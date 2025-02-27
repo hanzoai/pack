@@ -68,7 +68,8 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	// Prune
 	prune := ctx.NewCommandStep("prune")
 	prune.AddInput(plan.NewStepInput(install.Name()))
-	if !isSPA {
+	prune.Secrets = []string{}
+	if p.shouldPrune(ctx) && !isSPA {
 		p.PruneNodeDeps(ctx, prune)
 	}
 
@@ -88,23 +89,37 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 
 	if isSPA {
 		p.DeploySPA(ctx, build)
-	} else {
+		return nil
+	}
+
 		ctx.Deploy.Inputs = []plan.Input{
 			ctx.DefaultRuntimeInput(),
 			plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 				Include: miseStep.GetOutputPaths(),
 			}),
-			plan.NewStepInput(prune.Name(), plan.InputOptions{
-				Include: []string{"/app/node_modules"}, // we only wanted the pruned node_modules
-			}),
-			plan.NewStepInput(build.Name(), plan.InputOptions{
-				Include: buildIncludeDirs,
-				Exclude: []string{"node_modules"},
-			}),
-			plan.NewLocalInput("."),
 		}
 
-	}
+		if p.shouldPrune(ctx) {
+			// If we are pruning, we want to grab the pruned node_modules
+			// and ignore the node_modules from the install/build steps
+			ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+				plan.NewStepInput(prune.Name(), plan.InputOptions{
+					Include: []string{"/app/node_modules"},
+				}),
+				plan.NewStepInput(build.Name(), plan.InputOptions{
+					Include: buildIncludeDirs,
+					Exclude: []string{"node_modules"},
+				}),
+			)
+		} else {
+			ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+				plan.NewStepInput(build.Name(), plan.InputOptions{
+					Include: buildIncludeDirs,
+				}),
+			)
+		}
+
+		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, plan.NewLocalInput("."))
 
 	return nil
 }
@@ -144,11 +159,11 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.Comm
 	}
 }
 
-func (p *NodeProvider) PruneNodeDeps(ctx *generate.GenerateContext, prune *generate.CommandStepBuilder) {
-	if ctx.Env.IsConfigVariableTruthy("NO_PRUNE") {
-		return
-	}
+func (p *NodeProvider) shouldPrune(ctx *generate.GenerateContext) bool {
+	return ctx.Env.IsConfigVariableTruthy("PRUNE_DEPS")
+}
 
+func (p *NodeProvider) PruneNodeDeps(ctx *generate.GenerateContext, prune *generate.CommandStepBuilder) {
 	prune.Variables["NPM_CONFIG_PRODUCTION"] = "true"
 	prune.Secrets = []string{}
 	p.packageManager.PruneDeps(ctx, prune)
