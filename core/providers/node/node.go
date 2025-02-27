@@ -55,6 +55,8 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		return fmt.Errorf("package.json not loaded, did you call Initialize?")
 	}
 
+	p.SetNodeMetadata(ctx)
+
 	isSPA := p.isSPA(ctx)
 
 	miseStep := ctx.GetMiseStepBuilder()
@@ -88,8 +90,8 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	}
 
 	if isSPA {
-		p.DeploySPA(ctx, build)
-		return nil
+		err := p.DeploySPA(ctx, build)
+		return err
 	}
 
 	ctx.Deploy.Inputs = []plan.Input{
@@ -150,8 +152,6 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.Comm
 
 	// Add caches for Next.JS apps
 	if nextApps, err := p.getNextApps(ctx); err == nil {
-		ctx.Metadata.SetBool("nextjs", len(nextApps) > 0)
-
 		for _, nextApp := range nextApps {
 			nextCacheDir := path.Join("/app", nextApp, ".next/cache")
 			build.AddCache(ctx.Caches.AddCache(fmt.Sprintf("next-%s", nextApp), nextCacheDir))
@@ -229,6 +229,10 @@ func (p *NodeProvider) GetNodeEnvVars(ctx *generate.GenerateContext) map[string]
 	return envVars
 }
 
+func (p *NodeProvider) hasDependency(dependency string) bool {
+	return p.packageJson.hasDependency(dependency)
+}
+
 func (p *NodeProvider) usesCorepack() bool {
 	return p.packageJson.PackageManager != nil
 }
@@ -273,6 +277,17 @@ func (p *NodeProvider) getScripts(packageJson *PackageJson, name string) string 
 	return ""
 }
 
+func (p *NodeProvider) SetNodeMetadata(ctx *generate.GenerateContext) {
+	runtime := p.getRuntime(ctx)
+	framework := p.getFramework()
+
+	ctx.Metadata.Set("nodeRuntime", runtime)
+	ctx.Metadata.Set("nodeFramework", framework)
+	ctx.Metadata.Set("nodePackageManager", string(p.packageManager))
+	ctx.Metadata.SetBool("nodeIsSPA", p.isSPA(ctx))
+	ctx.Metadata.SetBool("nodeUsesCorepack", p.usesCorepack())
+}
+
 func (p *NodeProvider) getNextApps(ctx *generate.GenerateContext) ([]string, error) {
 	nextPaths, err := p.filterPackageJson(ctx, func(packageJson *PackageJson) bool {
 		if packageJson.HasScript("build") {
@@ -312,18 +327,44 @@ func (p *NodeProvider) filterPackageJson(ctx *generate.GenerateContext, filterFu
 	return filteredPaths, nil
 }
 
-func (p *NodeProvider) hasDependency(dependency string) bool {
-	if p.packageJson.Dependencies != nil {
-		if _, ok := p.packageJson.Dependencies[dependency]; ok {
-			return true
-		}
+func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
+	if p.isNext() {
+		return "next"
+	} else if p.isRemix() {
+		return "remix"
+	} else if p.isVite(ctx) {
+		return "vite"
+	} else if p.packageManager == PackageManagerBun {
+		return "bun"
 	}
 
-	if p.packageJson.DevDependencies != nil {
-		if _, ok := p.packageJson.DevDependencies[dependency]; ok {
-			return true
-		}
+	return "node"
+}
+
+func (p *NodeProvider) getFramework() string {
+	if p.isReact() {
+		return "react"
+	} else if p.isVue() {
+		return "vue"
+	} else if p.isSvelte() {
+		return "svelte"
+	} else if p.isPreact() {
+		return "preact"
+	} else if p.isLit() {
+		return "lit"
+	} else if p.isSolidJs() {
+		return "solid"
+	} else if p.isQwik() {
+		return "qwik"
 	}
 
-	return false
+	return ""
+}
+
+func (p *NodeProvider) isNext() bool {
+	return p.hasDependency("next")
+}
+
+func (p *NodeProvider) isRemix() bool {
+	return p.hasDependency("remix") && p.hasDependency("@remix-run/node")
 }

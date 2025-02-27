@@ -83,10 +83,6 @@ func (p *NodeProvider) getOutputDirectory(ctx *generate.GenerateContext) string 
 	return outputDir
 }
 
-func (p *NodeProvider) caddyAllowlist() bool {
-	return p.isReact() || p.isVue() || p.isSvelte() || p.isPreact() || p.isLit() || p.isSolidJs() || p.isQwik()
-}
-
 func (p *NodeProvider) isReact() bool {
 	return p.hasDependency("react")
 }

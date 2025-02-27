@@ -44,7 +44,14 @@ func TestVite(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := testingUtils.CreateGenerateContext(t, tt.path)
 			provider := NodeProvider{}
-			err := provider.Initialize(ctx)
+
+			detected, err := provider.Detect(ctx)
+			require.NoError(t, err)
+			if !detected {
+				return
+			}
+
+			err = provider.Initialize(ctx)
 			require.NoError(t, err)
 			isSPA := provider.isSPA(ctx)
 			require.Equal(t, tt.isSPA, isSPA)

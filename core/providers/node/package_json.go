@@ -31,3 +31,19 @@ func (p *PackageJson) GetScript(name string) string {
 
 	return p.Scripts[name]
 }
+
+func (p *PackageJson) hasDependency(dependency string) bool {
+	if p.Dependencies != nil {
+		if _, ok := p.Dependencies[dependency]; ok {
+			return true
+		}
+	}
+
+	if p.DevDependencies != nil {
+		if _, ok := p.DevDependencies[dependency]; ok {
+			return true
+		}
+	}
+
+	return false
+}
