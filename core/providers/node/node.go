@@ -57,6 +57,12 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 
 	p.SetNodeMetadata(ctx)
 
+	ctx.Logger.LogInfo("Using %s package manager", p.packageManager)
+
+	if p.workspace != nil {
+		ctx.Logger.LogInfo("Found workspace with %d packages", len(p.workspace.Packages))
+	}
+
 	isSPA := p.isSPA(ctx)
 
 	miseStep := ctx.GetMiseStepBuilder()
@@ -169,6 +175,7 @@ func (p *NodeProvider) shouldPrune(ctx *generate.GenerateContext) bool {
 }
 
 func (p *NodeProvider) PruneNodeDeps(ctx *generate.GenerateContext, prune *generate.CommandStepBuilder) {
+	ctx.Logger.LogInfo("Pruning node dependencies")
 	prune.Variables["NPM_CONFIG_PRODUCTION"] = "true"
 	prune.Secrets = []string{}
 	p.packageManager.PruneDeps(ctx, prune)
@@ -181,6 +188,8 @@ func (p *NodeProvider) InstallNodeDeps(ctx *generate.GenerateContext, install *g
 	install.AddPaths([]string{"/app/node_modules/.bin"})
 
 	if p.usesCorepack() {
+		ctx.Logger.LogInfo("Using Corepack")
+
 		install.AddCommands([]plan.Command{
 			plan.NewCopyCommand("package.json"),
 			plan.NewExecCommand("corepack enable"),

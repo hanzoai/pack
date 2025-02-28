@@ -30,7 +30,7 @@ func (p *ShellProvider) Initialize(ctx *generate.GenerateContext) error {
 func (p *ShellProvider) Plan(ctx *generate.GenerateContext) error {
 	ctx.Deploy.StartCmd = "sh " + p.scriptName
 
-	ctx.Metadata.Set("shellScript", p.scriptName)
+	ctx.Logger.LogInfo("Using shell script: %s", p.scriptName)
 
 	setup := ctx.NewCommandStep("setup")
 	setup.AddInput(ctx.DefaultRuntimeInput())

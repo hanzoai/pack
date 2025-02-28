@@ -45,6 +45,8 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 	ctx.Deploy.StartCmd = fmt.Sprintf("./%s", GO_BINARY_NAME)
 
 	if p.hasCGOEnabled(ctx) {
+		ctx.Logger.LogInfo("CGO is enabled")
+
 		runtimeAptStep := ctx.NewAptStepBuilder("runtime")
 		runtimeAptStep.AddInput(ctx.DefaultRuntimeInputWithPackages([]string{"libc6", "tzdata"}))
 
@@ -56,6 +58,8 @@ func (p *GoProvider) Plan(ctx *generate.GenerateContext) error {
 			plan.NewLocalInput("."),
 		}
 	} else {
+		ctx.Logger.LogInfo("Building static binary")
+
 		ctx.Deploy.Inputs = []plan.Input{
 			ctx.DefaultRuntimeInputWithPackages([]string{"tzdata"}),
 			plan.NewStepInput(build.Name(), plan.InputOptions{
@@ -123,6 +127,8 @@ func (p *GoProvider) InstallGoDeps(ctx *generate.GenerateContext, install *gener
 	}
 
 	install.AddCommand(plan.NewExecCommand("go mod download"))
+
+	ctx.Logger.LogInfo("Using go mod")
 
 	if !p.hasCGOEnabled(ctx) {
 		install.AddEnvVars(map[string]string{"CGO_ENABLED": "0"})

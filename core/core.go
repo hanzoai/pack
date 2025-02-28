@@ -8,10 +8,13 @@ import (
 	"github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/config"
 	"github.com/railwayapp/railpack/core/generate"
+	"github.com/railwayapp/railpack/core/logger"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/providers"
 	"github.com/railwayapp/railpack/core/providers/procfile"
 	"github.com/railwayapp/railpack/core/resolver"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 const (
@@ -30,18 +33,24 @@ type BuildResult struct {
 	ResolvedPackages  map[string]*resolver.ResolvedPackage `json:"resolvedPackages,omitempty"`
 	Metadata          map[string]string                    `json:"metadata,omitempty"`
 	DetectedProviders []string                             `json:"detectedProviders,omitempty"`
+	Logs              []logger.Msg                         `json:"logs,omitempty"`
+	Success           bool                                 `json:"success,omitempty"`
 }
 
-func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*BuildResult, error) {
+func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) *BuildResult {
+	logger := logger.NewLogger()
+
 	// Get the full user config based on file config, env config, and options
 	config, err := GetConfig(app, env, options)
 	if err != nil {
-		return nil, err
+		logger.LogError(err.Error())
+		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
-	ctx, err := generate.NewGenerateContext(app, env, config)
+	ctx, err := generate.NewGenerateContext(app, env, config, logger)
 	if err != nil {
-		return nil, err
+		logger.LogError(err.Error())
+		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
 	// Set the preivous versions
@@ -52,49 +61,38 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	}
 
 	// Figure out what providers to use
-	providersToUse, detectedProviderNames := getProviders(ctx, config)
-	providerNames := make([]string, len(providersToUse))
-	for i, provider := range providersToUse {
-		providerNames[i] = provider.Name()
-	}
-	ctx.Metadata.Set("providers", strings.Join(providerNames, ","))
+	providerToUse, detectedProviderName := getProviders(ctx, config)
+	ctx.Metadata.Set("providers", detectedProviderName)
 
-	// Run the providers to update the context with how to build the app
-	for i, provider := range providersToUse {
-		// If this is not the first provider, we need to enter a subcontext so that step names are unique
-		if i > 0 {
-			ctx.EnterSubContext(provider.Name())
-		}
-
-		err := provider.Plan(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to run provider: %w", err)
-		}
-
-		if i > 0 {
-			ctx.ExitSubContext()
-		}
+	err = providerToUse.Plan(ctx)
+	if err != nil {
+		logger.LogError(err.Error())
+		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
 	// Run the procfile provider to support apps that have a Procfile with a start command
 	procfileProvider := &procfile.ProcfileProvider{}
 	if _, err := procfileProvider.Plan(ctx); err != nil {
-		return nil, fmt.Errorf("failed to run procfile provider: %w", err)
+		logger.LogError(err.Error())
+		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
 	buildPlan, resolvedPackages, err := ctx.Generate()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate build plan: %w", err)
+		logger.LogError(err.Error())
+		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
 	buildResult := &BuildResult{
 		Plan:              buildPlan,
 		ResolvedPackages:  resolvedPackages,
 		Metadata:          ctx.Metadata.Properties,
-		DetectedProviders: detectedProviderNames,
+		DetectedProviders: []string{detectedProviderName},
+		Logs:              logger.Logs,
+		Success:           true,
 	}
 
-	return buildResult, nil
+	return buildResult
 }
 
 // GetConfig merges the options, environment, and file config into a single config
@@ -206,11 +204,11 @@ func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config
 	return config
 }
 
-func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]providers.Provider, []string) {
-	var providersToUse []providers.Provider
-
+func getProviders(ctx *generate.GenerateContext, config *config.Config) (providers.Provider, string) {
 	allProviders := providers.GetLanguageProviders()
-	detectedProviders := []string{}
+
+	var providerToUse providers.Provider
+	var detectedProvider string
 
 	// Even if there are providers manually specified, we want to detect to see what type of app this is
 	for _, provider := range allProviders {
@@ -221,15 +219,18 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 		}
 
 		if matched {
-			detectedProviders = append(detectedProviders, provider.Name())
+			detectedProvider = provider.Name()
 
 			// If there are no providers manually specified in the config,
 			if config.Provider == nil {
 				if err := provider.Initialize(ctx); err != nil {
-					log.Warnf("Failed to initialize provider `%s`: %s", provider.Name(), err.Error())
+					ctx.Logger.LogWarn("Failed to initialize provider `%s`: %s", provider.Name(), err.Error())
 					continue
 				}
-				providersToUse = append(providersToUse, provider)
+
+				ctx.Logger.LogInfo("Detected %s", cases.Title(language.English).String(provider.Name()))
+
+				providerToUse = provider
 			}
 
 			break
@@ -238,17 +239,20 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 
 	if config.Provider != nil {
 		provider := providers.GetProvider(*config.Provider)
+
 		if provider == nil {
-			log.Warnf("Provider `%s` not found", *config.Provider)
-			return providersToUse, detectedProviders
+			ctx.Logger.LogWarn("Provider `%s` not found", *config.Provider)
+			return providerToUse, detectedProvider
 		}
 
 		if err := provider.Initialize(ctx); err != nil {
-			log.Warnf("Failed to initialize provider `%s`: %s", *config.Provider, err.Error())
-			return providersToUse, detectedProviders
+			ctx.Logger.LogWarn("Failed to initialize provider `%s`: %s", *config.Provider, err.Error())
+			return providerToUse, detectedProvider
 		}
-		providersToUse = append(providersToUse, provider)
+
+		ctx.Logger.LogInfo("Using provider %s from config", *config.Provider)
+		providerToUse = provider
 	}
 
-	return providersToUse, detectedProviders
+	return providerToUse, detectedProvider
 }

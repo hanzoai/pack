@@ -67,10 +67,7 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 		ConfigFilePath:   cmd.String("config-file"),
 	}
 
-	buildResult, err := core.GenerateBuildPlan(app, env, generateOptions)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("error generating build plan: %w", err)
-	}
+	buildResult := core.GenerateBuildPlan(app, env, generateOptions)
 
 	return buildResult, app, env, nil
 }

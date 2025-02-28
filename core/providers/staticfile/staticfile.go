@@ -1,10 +1,8 @@
 package staticfile
 
 import (
-	"bytes"
 	_ "embed"
 	"fmt"
-	"text/template"
 
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
@@ -82,13 +80,19 @@ func (p *StaticfileProvider) CaddyStartCommand(ctx *generate.GenerateContext) st
 }
 
 func (p *StaticfileProvider) Setup(ctx *generate.GenerateContext, setup *generate.CommandStepBuilder) error {
+	ctx.Logger.LogInfo("Using root dir: %s", p.RootDir)
+
 	data := map[string]interface{}{
 		"STATIC_FILE_ROOT": p.RootDir,
 	}
 
-	caddyfile, err := p.getCaddyfile(data)
+	caddyfileTemplate, err := ctx.TemplateFiles([]string{"Caddyfile.template", "Caddyfile"}, caddyfileTemplate, data)
 	if err != nil {
 		return err
+	}
+
+	if caddyfileTemplate.Filename != "" {
+		ctx.Logger.LogInfo("Using custom Caddyfile: %s", caddyfileTemplate.Filename)
 	}
 
 	setup.AddCommands([]plan.Command{
@@ -97,24 +101,10 @@ func (p *StaticfileProvider) Setup(ctx *generate.GenerateContext, setup *generat
 	})
 
 	setup.Assets = map[string]string{
-		"Caddyfile": caddyfile,
+		"Caddyfile": caddyfileTemplate.Contents,
 	}
 
 	return nil
-}
-
-func (p *StaticfileProvider) getCaddyfile(data map[string]interface{}) (string, error) {
-	tmpl, err := template.New("Caddyfile").Parse(caddyfileTemplate)
-	if err != nil {
-		return "", err
-	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
 }
 
 func getRootDir(ctx *generate.GenerateContext) (string, error) {

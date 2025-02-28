@@ -55,7 +55,6 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	}
 
 	nginx.Assets["nginx.conf"] = configFiles.NginxConf
-	nginx.Assets["nginx.conf"] = configFiles.NginxConf
 	nginx.Assets["php-fpm.conf"] = configFiles.PhpFpmConf
 
 	// Composer
@@ -85,6 +84,8 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		if err != nil {
 			return err
 		}
+
+		ctx.Logger.LogInfo("Installing Node")
 
 		miseStep := ctx.GetMiseStepBuilder()
 		nodeProvider.InstallMisePackages(ctx, miseStep)
@@ -133,6 +134,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	ctx.Deploy.StartCmd = "bash /start-nginx.sh"
 
 	if p.usesLaravel(ctx) {
+		ctx.Logger.LogInfo("Found Laravel app")
 		ctx.Deploy.Variables["IS_LARAVEL"] = "true"
 	}
 
@@ -169,6 +171,14 @@ func (p *PhpProvider) getConfigFiles(ctx *generate.GenerateContext) (*ConfigFile
 	phpFpmConf, err := ctx.TemplateFiles([]string{"php-fpm.template.conf", "php-fpm.conf"}, phpFpmConfTemplateAsset, data)
 	if err != nil {
 		return nil, err
+	}
+
+	if nginxConfTemplate.Filename != "" {
+		ctx.Logger.LogInfo("Using custom nginx config: %s", nginxConfTemplate.Filename)
+	}
+
+	if phpFpmConf.Filename != "" {
+		ctx.Logger.LogInfo("Using custom php-fpm config: %s", phpFpmConf.Filename)
 	}
 
 	return &ConfigFiles{
