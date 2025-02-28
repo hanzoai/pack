@@ -70,7 +70,7 @@
      "path": "/mise/shims"
     },
     {
-     "dest": "/app/.python-version",
+     "dest": ".python-version",
      "src": ".python-version"
     },
     {
@@ -85,7 +85,7 @@
    ],
    "inputs": [
     {
-     "image": "ghcr.io/railwayapp/railpack-builder-base:latest"
+     "image": "ghcr.io/railwayapp/railpack-builder:latest"
     }
    ],
    "name": "packages:mise",
@@ -176,7 +176,7 @@
    ],
    "inputs": [
     {
-     "image": "ghcr.io/railwayapp/railpack-runtime-base:latest"
+     "image": "ghcr.io/railwayapp/railpack-runtime:latest"
     }
    ],
    "name": "packages:python-runtime-deps"
