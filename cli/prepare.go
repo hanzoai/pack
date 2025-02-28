@@ -36,6 +36,11 @@ var PrepareCommand = &cli.Command{
 		// Pretty print the result to stdout
 		core.PrettyPrintBuildResult(buildResult, core.PrintOptions{Version: Version})
 
+		if !buildResult.Success {
+			os.Exit(1)
+			return nil
+		}
+
 		// Save plan if requested
 		if planOut := cmd.String("plan-out"); planOut != "" {
 			if err := writeJSONFile(planOut, buildResult.Plan, "Build plan written to %s"); err != nil {

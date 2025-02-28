@@ -34,6 +34,10 @@ func commonPlanFlags() []cli.Flag {
 			Name:  "config-file",
 			Usage: "path to config file to use",
 		},
+		&cli.BoolFlag{
+			Name:  "error-missing-start",
+			Usage: "error if no start command is found",
+		},
 	}
 }
 
@@ -61,16 +65,14 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 	previousVersions := getPreviousVersions(cmd.StringSlice("previous"))
 
 	generateOptions := &core.GenerateBuildPlanOptions{
-		BuildCommand:     cmd.String("build-cmd"),
-		StartCommand:     cmd.String("start-cmd"),
-		PreviousVersions: previousVersions,
-		ConfigFilePath:   cmd.String("config-file"),
+		BuildCommand:             cmd.String("build-cmd"),
+		StartCommand:             cmd.String("start-cmd"),
+		PreviousVersions:         previousVersions,
+		ConfigFilePath:           cmd.String("config-file"),
+		ErrorMissingStartCommand: cmd.Bool("error-missing-start"),
 	}
 
-	buildResult, err := core.GenerateBuildPlan(app, env, generateOptions)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("error generating build plan: %w", err)
-	}
+	buildResult := core.GenerateBuildPlan(app, env, generateOptions)
 
 	return buildResult, app, env, nil
 }

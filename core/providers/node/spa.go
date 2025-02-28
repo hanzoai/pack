@@ -26,6 +26,9 @@ func (p *NodeProvider) isSPA(ctx *generate.GenerateContext) bool {
 func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.CommandStepBuilder) error {
 	outputDir := p.getOutputDirectory(ctx)
 
+	ctx.Logger.LogInfo("Deploying as SPA")
+	ctx.Logger.LogInfo("Output directory: %s", outputDir)
+
 	data := map[string]interface{}{
 		"DIST_DIR": path.Join("/app", outputDir),
 	}
@@ -33,6 +36,10 @@ func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.
 	caddyfileTemplate, err := ctx.TemplateFiles([]string{"Caddyfile.template", "Caddyfile"}, caddyfileTemplate, data)
 	if err != nil {
 		return err
+	}
+
+	if caddyfileTemplate.Filename != "" {
+		ctx.Logger.LogInfo("Using custom Caddyfile: %s", caddyfileTemplate.Filename)
 	}
 
 	installCaddyStep := ctx.NewInstallBinStepBuilder("packages:caddy")

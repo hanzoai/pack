@@ -8,10 +8,12 @@ import (
 	"github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/config"
 	"github.com/railwayapp/railpack/core/generate"
+	"github.com/railwayapp/railpack/core/logger"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/providers"
 	"github.com/railwayapp/railpack/core/providers/procfile"
 	"github.com/railwayapp/railpack/core/resolver"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
 const (
@@ -19,10 +21,11 @@ const (
 )
 
 type GenerateBuildPlanOptions struct {
-	BuildCommand     string
-	StartCommand     string
-	PreviousVersions map[string]string
-	ConfigFilePath   string
+	BuildCommand             string
+	StartCommand             string
+	PreviousVersions         map[string]string
+	ConfigFilePath           string
+	ErrorMissingStartCommand bool
 }
 
 type BuildResult struct {
@@ -30,18 +33,24 @@ type BuildResult struct {
 	ResolvedPackages  map[string]*resolver.ResolvedPackage `json:"resolvedPackages,omitempty"`
 	Metadata          map[string]string                    `json:"metadata,omitempty"`
 	DetectedProviders []string                             `json:"detectedProviders,omitempty"`
+	Logs              []logger.Msg                         `json:"logs,omitempty"`
+	Success           bool                                 `json:"success,omitempty"`
 }
 
-func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*BuildResult, error) {
+func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) *BuildResult {
+	logger := logger.NewLogger()
+
 	// Get the full user config based on file config, env config, and options
-	config, err := GetConfig(app, env, options)
+	config, err := GetConfig(app, env, options, logger)
 	if err != nil {
-		return nil, err
+		logger.LogError("%s", err.Error())
+		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
-	ctx, err := generate.NewGenerateContext(app, env, config)
+	ctx, err := generate.NewGenerateContext(app, env, config, logger)
 	if err != nil {
-		return nil, err
+		logger.LogError("%s", err.Error())
+		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
 	// Set the preivous versions
@@ -52,58 +61,73 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	}
 
 	// Figure out what providers to use
-	providersToUse, detectedProviderNames := getProviders(ctx, config)
-	providerNames := make([]string, len(providersToUse))
-	for i, provider := range providersToUse {
-		providerNames[i] = provider.Name()
-	}
-	ctx.Metadata.Set("providers", strings.Join(providerNames, ","))
+	providerToUse, detectedProviderName := getProviders(ctx, config)
+	ctx.Metadata.Set("providers", detectedProviderName)
 
-	// Run the providers to update the context with how to build the app
-	for i, provider := range providersToUse {
-		// If this is not the first provider, we need to enter a subcontext so that step names are unique
-		if i > 0 {
-			ctx.EnterSubContext(provider.Name())
-		}
-
-		err := provider.Plan(ctx)
+	if providerToUse != nil {
+		err = providerToUse.Plan(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to run provider: %w", err)
-		}
-
-		if i > 0 {
-			ctx.ExitSubContext()
+			logger.LogError("%s", err.Error())
+			return &BuildResult{Success: false, Logs: logger.Logs}
 		}
 	}
 
 	// Run the procfile provider to support apps that have a Procfile with a start command
 	procfileProvider := &procfile.ProcfileProvider{}
 	if _, err := procfileProvider.Plan(ctx); err != nil {
-		return nil, fmt.Errorf("failed to run procfile provider: %w", err)
+		logger.LogError("%s", err.Error())
+		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
 	buildPlan, resolvedPackages, err := ctx.Generate()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate build plan: %w", err)
+		logger.LogError("%s", err.Error())
+		return &BuildResult{Success: false, Logs: logger.Logs}
+	}
+
+	// Error if there are no commands in the build plan
+	var atLeastOneCommand = false
+	for _, step := range buildPlan.Steps {
+		if len(step.Commands) > 0 {
+			atLeastOneCommand = true
+		}
+	}
+
+	if !atLeastOneCommand {
+		logger.LogError("%s", getNoProviderError(app))
+		return &BuildResult{Success: false, Logs: logger.Logs}
+	}
+
+	// Error if there is no start command and we are configured to error on it
+	if options.ErrorMissingStartCommand && ctx.Deploy.StartCmd == "" {
+		startCmdHelp := "No start command was found."
+		if providerHelp := providerToUse.StartCommandHelp(); providerHelp != "" {
+			startCmdHelp += "\n\n" + providerHelp
+		}
+		logger.LogError("%s", startCmdHelp)
+
+		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
 	buildResult := &BuildResult{
 		Plan:              buildPlan,
 		ResolvedPackages:  resolvedPackages,
 		Metadata:          ctx.Metadata.Properties,
-		DetectedProviders: detectedProviderNames,
+		DetectedProviders: []string{detectedProviderName},
+		Logs:              logger.Logs,
+		Success:           true,
 	}
 
-	return buildResult, nil
+	return buildResult
 }
 
 // GetConfig merges the options, environment, and file config into a single config
-func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*config.Config, error) {
+func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions, logger *logger.Logger) (*config.Config, error) {
 	optionsConfig := GenerateConfigFromOptions(options)
 
 	envConfig := GenerateConfigFromEnvironment(app, env)
 
-	fileConfig, err := GenerateConfigFromFile(app, env, options)
+	fileConfig, err := GenerateConfigFromFile(app, env, options, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +138,7 @@ func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOpt
 }
 
 // GenerateConfigFromFile generates a config from the config file
-func GenerateConfigFromFile(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions) (*config.Config, error) {
+func GenerateConfigFromFile(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions, logger *logger.Logger) (*config.Config, error) {
 	configFileName := defaultConfigFileName
 	if options.ConfigFilePath != "" {
 		configFileName = options.ConfigFilePath
@@ -126,7 +150,7 @@ func GenerateConfigFromFile(app *app.App, env *app.Environment, options *Generat
 
 	if !app.HasMatch(configFileName) {
 		if configFileName != defaultConfigFileName {
-			log.Debugf("Config file `%s` not found", configFileName)
+			logger.LogWarn("Config file `%s` not found", configFileName)
 		}
 
 		return config.EmptyConfig(), nil
@@ -136,6 +160,8 @@ func GenerateConfigFromFile(app *app.App, env *app.Environment, options *Generat
 	if err := app.ReadJSON(configFileName, config); err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
+
+	logger.LogInfo("Using config file `%s`", configFileName)
 
 	return config, nil
 }
@@ -206,11 +232,11 @@ func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config
 	return config
 }
 
-func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]providers.Provider, []string) {
-	var providersToUse []providers.Provider
-
+func getProviders(ctx *generate.GenerateContext, config *config.Config) (providers.Provider, string) {
 	allProviders := providers.GetLanguageProviders()
-	detectedProviders := []string{}
+
+	var providerToUse providers.Provider
+	var detectedProvider string
 
 	// Even if there are providers manually specified, we want to detect to see what type of app this is
 	for _, provider := range allProviders {
@@ -221,15 +247,18 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 		}
 
 		if matched {
-			detectedProviders = append(detectedProviders, provider.Name())
+			detectedProvider = provider.Name()
 
 			// If there are no providers manually specified in the config,
 			if config.Provider == nil {
 				if err := provider.Initialize(ctx); err != nil {
-					log.Warnf("Failed to initialize provider `%s`: %s", provider.Name(), err.Error())
+					ctx.Logger.LogWarn("Failed to initialize provider `%s`: %s", provider.Name(), err.Error())
 					continue
 				}
-				providersToUse = append(providersToUse, provider)
+
+				ctx.Logger.LogInfo("Detected %s", utils.CapitalizeFirst(provider.Name()))
+
+				providerToUse = provider
 			}
 
 			break
@@ -238,17 +267,61 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) ([]provi
 
 	if config.Provider != nil {
 		provider := providers.GetProvider(*config.Provider)
+
 		if provider == nil {
-			log.Warnf("Provider `%s` not found", *config.Provider)
-			return providersToUse, detectedProviders
+			ctx.Logger.LogWarn("Provider `%s` not found", *config.Provider)
+			return providerToUse, detectedProvider
 		}
 
 		if err := provider.Initialize(ctx); err != nil {
-			log.Warnf("Failed to initialize provider `%s`: %s", *config.Provider, err.Error())
-			return providersToUse, detectedProviders
+			ctx.Logger.LogWarn("Failed to initialize provider `%s`: %s", *config.Provider, err.Error())
+			return providerToUse, detectedProvider
 		}
-		providersToUse = append(providersToUse, provider)
+
+		ctx.Logger.LogInfo("Using provider %s from config", utils.CapitalizeFirst(*config.Provider))
+		providerToUse = provider
 	}
 
-	return providersToUse, detectedProviders
+	return providerToUse, detectedProvider
+}
+
+func getNoProviderError(app *app.App) string {
+	providerNames := []string{}
+	for _, provider := range providers.GetLanguageProviders() {
+		providerNames = append(providerNames, utils.CapitalizeFirst(provider.Name()))
+	}
+
+	files, _ := app.FindFiles("*")
+	dirs, _ := app.FindDirectories("*")
+
+	fileTree := "./\n"
+
+	for i, dir := range dirs {
+		prefix := "├── "
+		if i == len(dirs)-1 && len(files) == 0 {
+			prefix = "└── "
+		}
+		fileTree += fmt.Sprintf("%s%s/\n", prefix, dir)
+	}
+
+	for i, file := range files {
+		prefix := "├── "
+		if i == len(files)-1 {
+			prefix = "└── "
+		}
+		fileTree += fmt.Sprintf("%s%s\n", prefix, file)
+	}
+
+	errorMsg := "Railpack could not determine how to build the app.\n\n"
+	errorMsg += "The following languages are supported:\n"
+	for _, provider := range providerNames {
+		errorMsg += fmt.Sprintf("- %s\n", provider)
+	}
+
+	errorMsg += "\nThe app contents that Railpack analyzed contains:\n\n"
+	errorMsg += fileTree
+	errorMsg += "\n"
+	errorMsg += "Check out the docs for more information: https://railpack.com"
+
+	return errorMsg
 }

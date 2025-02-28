@@ -54,30 +54,6 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 		p.PlanPipenv(ctx)
 	}
 
-	// Install dependencies
-	// install := ctx.NewCommandStep("install")
-	// install.AddInput(plan.NewStepInput(miseStep.Name()))
-	// p.InstallPythonDeps(ctx, install)
-
-	// // Build step (if needed)
-	// build := ctx.NewCommandStep("build")
-	// build.AddInput(plan.NewStepInput(install.Name()))
-
-	// // Deploy configuration
-	// ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
-	// maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
-
-	// ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, []plan.Input{
-	// 	plan.NewImageInput(plan.RAILPACK_RUNTIME_IMAGE),
-	// 	plan.NewStepInput(miseStep.Name(), plan.InputOptions{
-	// 		Include: miseStep.GetOutputPaths(),
-	// 	}),
-	// 	plan.NewStepInput(build.Name(), plan.InputOptions{
-	// 		Include: []string{"."},
-	// 	}),
-	// 	plan.NewLocalInput("."),
-	// }...)
-
 	p.addMetadata(ctx)
 
 	return nil
@@ -87,10 +63,17 @@ func (p *PythonProvider) GetStartCommand(ctx *generate.GenerateContext) string {
 	if ctx.App.HasMatch("main.py") {
 		return "python main.py"
 	}
+
 	return ""
 }
 
+func (p *PythonProvider) StartCommandHelp() string {
+	return "Railpack will automatically run the main.py file in the root directory as the start command."
+}
+
 func (p *PythonProvider) PlanUv(ctx *generate.GenerateContext) {
+	ctx.Logger.LogInfo("Using uv")
+
 	install := ctx.NewCommandStep("install")
 	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
@@ -132,6 +115,8 @@ func (p *PythonProvider) PlanUv(ctx *generate.GenerateContext) {
 }
 
 func (p *PythonProvider) PlanPipenv(ctx *generate.GenerateContext) {
+	ctx.Logger.LogInfo("Using pipenv")
+
 	install := ctx.NewCommandStep("install")
 	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
@@ -189,6 +174,8 @@ func (p *PythonProvider) PlanPipenv(ctx *generate.GenerateContext) {
 }
 
 func (p *PythonProvider) PlanPDM(ctx *generate.GenerateContext) {
+	ctx.Logger.LogInfo("Using pdm")
+
 	install := ctx.NewCommandStep("install")
 	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
@@ -227,6 +214,8 @@ func (p *PythonProvider) PlanPDM(ctx *generate.GenerateContext) {
 }
 
 func (p *PythonProvider) PlanPoetry(ctx *generate.GenerateContext) {
+	ctx.Logger.LogInfo("Using poetry")
+
 	install := ctx.NewCommandStep("install")
 	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
@@ -267,6 +256,8 @@ func (p *PythonProvider) PlanPoetry(ctx *generate.GenerateContext) {
 }
 
 func (p *PythonProvider) PlanPip(ctx *generate.GenerateContext) {
+	ctx.Logger.LogInfo("Using pip")
+
 	install := ctx.NewCommandStep("install")
 	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
@@ -309,6 +300,7 @@ func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) 
 
 	for dep, requiredPkgs := range pythonRuntimeDepRequirements {
 		if p.usesDep(ctx, dep) {
+			ctx.Logger.LogInfo("Installing apt packages for %s", dep)
 			aptStep.Packages = append(aptStep.Packages, requiredPkgs...)
 		}
 	}
@@ -321,87 +313,6 @@ func (p *PythonProvider) GetBuilderDeps(ctx *generate.GenerateContext) *generate
 	miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "python3-dev", "libpq-dev")
 
 	return miseStep
-}
-
-func (p *PythonProvider) InstallPythonDeps(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) {
-	maps.Copy(install.Variables, p.GetPythonEnvVars(ctx))
-	install.Secrets = []string{}
-	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP", "PIPX", "PIPENV", "UV", "POETRY", "PDM"})
-	install.AddPaths([]string{"/root/.local/bin", "/app/.venv/bin"})
-
-	hasRequirements := p.hasRequirements(ctx)
-	hasPyproject := p.hasPyproject(ctx)
-	hasPipfile := p.hasPipfile(ctx)
-	hasPoetry := p.hasPoetry(ctx)
-	hasPdm := p.hasPdm(ctx)
-	hasUv := p.hasUv(ctx)
-
-	if hasRequirements {
-		install.AddCache(ctx.Caches.AddCache("pip", PIP_CACHE_DIR))
-		install.AddCommands([]plan.Command{
-			plan.NewCopyCommand("requirements.txt"),
-			plan.NewExecCommand("pip install -r requirements.txt"),
-		})
-	} else if hasPyproject && hasPoetry {
-		install.AddCommands([]plan.Command{
-			plan.NewExecCommand("pipx install poetry"),
-			plan.NewExecCommand("poetry config virtualenvs.create false"),
-			plan.NewCopyCommand("pyproject.toml"),
-			plan.NewCopyCommand("poetry.lock"),
-			plan.NewExecCommand("poetry install --no-interaction --no-ansi --no-root"),
-		})
-	} else if hasPyproject && hasPdm {
-		install.AddEnvVars(map[string]string{"PDM_CHECK_UPDATE": "false"})
-		install.AddCommands([]plan.Command{
-			plan.NewExecCommand("pipx install pdm"),
-			plan.NewCopyCommand("pyproject.toml"),
-			plan.NewCopyCommand("pdm.lock"),
-			plan.NewCopyCommand("."),
-			plan.NewExecCommand("pdm install --check --prod --no-editable"),
-			plan.NewPathCommand("/app/.venv/bin"),
-		})
-	} else if hasPyproject && hasUv {
-		install.AddEnvVars(map[string]string{
-			"UV_COMPILE_BYTECODE": "1",
-			"UV_LINK_MODE":        "copy",
-			"UV_CACHE_DIR":        UV_CACHE_DIR,
-		})
-
-		install.AddCommands([]plan.Command{
-			plan.NewExecCommand("pipx install uv"),
-			plan.NewCopyCommand("pyproject.toml"),
-			plan.NewCopyCommand("uv.lock"),
-			plan.NewExecCommand("uv sync --frozen --no-install-project --no-install-workspace --no-dev"),
-			plan.NewCopyCommand("."),
-			plan.NewExecCommand("uv sync --frozen --no-dev"),
-			plan.NewPathCommand("/app/.venv/bin"),
-		})
-	} else if hasPipfile {
-		install.AddCommands([]plan.Command{
-			plan.NewCopyCommand("Pipfile"),
-		})
-
-		if ctx.App.HasMatch("Pipfile.lock") {
-			install.AddCommands([]plan.Command{
-				plan.NewCopyCommand("Pipfile.lock"),
-				plan.NewExecCommand("pipenv install --deploy"),
-			})
-		} else {
-			install.AddCommands([]plan.Command{
-				plan.NewExecCommand("pipenv install --skip-lock"),
-			})
-		}
-	}
-
-	// Handle system dependencies
-	aptStep := ctx.NewAptStepBuilder("python-system-deps")
-	aptStep.Packages = []string{"pkg-config"}
-
-	for dep, requiredPkgs := range pythonRuntimeDepRequirements {
-		if p.usesDep(ctx, dep) {
-			aptStep.Packages = append(aptStep.Packages, requiredPkgs...)
-		}
-	}
 }
 
 func (p *PythonProvider) InstallMisePackages(ctx *generate.GenerateContext, miseStep *generate.MiseStepBuilder) {

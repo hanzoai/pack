@@ -22,8 +22,10 @@ func (p *ProcfileProvider) Plan(ctx *generate.GenerateContext) (bool, error) {
 	workerCommand := parsedProcfile["worker"]
 
 	if webCommand != "" {
+		ctx.Logger.LogInfo("Found web command in Procfile")
 		ctx.Deploy.StartCmd = webCommand
 	} else if workerCommand != "" {
+		ctx.Logger.LogInfo("Found worker command in Procfile")
 		ctx.Deploy.StartCmd = workerCommand
 	}
 

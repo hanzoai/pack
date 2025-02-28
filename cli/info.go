@@ -69,6 +69,11 @@ var InfoCommand = &cli.Command{
 			log.Infof("Plan written to %s", output)
 		}
 
+		if !buildResult.Success {
+			os.Exit(1)
+			return nil
+		}
+
 		return nil
 	},
 }

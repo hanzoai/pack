@@ -23,6 +23,10 @@ type Mise struct {
 	cacheDir   string
 }
 
+const (
+	ErrMiseGetLatestVersion = "failed to resolve version %s of %s"
+)
+
 func New(cacheDir string) (*Mise, error) {
 	binaryPath, err := ensureInstalled(cacheDir)
 	if err != nil {
@@ -51,7 +55,7 @@ func (m *Mise) GetLatestVersion(pkg, version string) (string, error) {
 
 	latestVersion := strings.TrimSpace(output)
 	if latestVersion == "" {
-		return "", fmt.Errorf("failed to get latest version for %s", query)
+		return "", fmt.Errorf(ErrMiseGetLatestVersion, version, pkg)
 	}
 
 	return latestVersion, nil

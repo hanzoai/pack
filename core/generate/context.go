@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/log"
 	a "github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/config"
+	"github.com/railwayapp/railpack/core/logger"
 	"github.com/railwayapp/railpack/core/mise"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/resolver"
@@ -43,9 +44,11 @@ type GenerateContext struct {
 	Metadata        *Metadata
 	Resolver        *resolver.Resolver
 	MiseStepBuilder *MiseStepBuilder
+
+	Logger *logger.Logger
 }
 
-func NewGenerateContext(app *a.App, env *a.Environment, config *config.Config) (*GenerateContext, error) {
+func NewGenerateContext(app *a.App, env *a.Environment, config *config.Config, logger *logger.Logger) (*GenerateContext, error) {
 	resolver, err := resolver.NewResolver(mise.InstallDir)
 	if err != nil {
 		return nil, err
@@ -61,6 +64,7 @@ func NewGenerateContext(app *a.App, env *a.Environment, config *config.Config) (
 		Secrets:  []string{},
 		Metadata: NewMetadata(),
 		Resolver: resolver,
+		Logger:   logger,
 	}
 
 	// The default runtime image should include the runtime apt packages
@@ -114,7 +118,7 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 	// Resolve all package versions into a fully qualified and valid version
 	resolvedPackages, err := c.ResolvePackages()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to resolve packages: %w", err)
+		return nil, nil, err
 	}
 
 	// Create the actual build plan

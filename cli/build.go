@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/railwayapp/railpack/buildkit"
 	"github.com/railwayapp/railpack/core"
@@ -50,6 +51,11 @@ var BuildCommand = &cli.Command{
 		}
 
 		core.PrettyPrintBuildResult(buildResult, core.PrintOptions{Version: Version})
+
+		if !buildResult.Success {
+			os.Exit(1)
+			return nil
+		}
 
 		serializedPlan, err := json.MarshalIndent(buildResult.Plan, "", "  ")
 		if err != nil {

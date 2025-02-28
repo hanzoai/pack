@@ -5,11 +5,28 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/railwayapp/railpack/core/logger"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/resolver"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
-// Define styles
+const (
+	AnsiRed           = "1"
+	AnsiYellow        = "3"
+	AnsiBlue          = "4"
+	AnsiMagenta       = "5"
+	AnsiCyan          = "6"
+	AnsiWhite         = "7"
+	AnsiGray          = "8"
+	AnsiBrightBlue    = "12"
+	AnsiBrightCyan    = "14"
+	AnsiBrightWhite   = "15"
+	AnsiBrightMagenta = "13"
+	AnsiDarkGray      = "238"
+	AnsiMediumGray    = "245"
+)
+
 var (
 	highlight = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 
@@ -22,34 +39,58 @@ var (
 	sectionHeaderStyle = lipgloss.NewStyle().
 				Bold(true).
 				Width(10).
-				MarginLeft(1).
+				MarginLeft(2).
 				MarginTop(2).
 				BorderStyle(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("238")).
+				BorderForeground(lipgloss.Color(AnsiDarkGray)).
 				BorderBottom(true)
 
 	packageNameStyle = lipgloss.NewStyle().
-				MarginLeft(1).
-				Foreground(lipgloss.Color("13"))
+				MarginLeft(2).
+				Foreground(lipgloss.Color(AnsiBrightMagenta))
 
 	versionStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("14"))
+			Foreground(lipgloss.Color(AnsiBrightCyan))
 
 	sourceStyle = lipgloss.NewStyle()
 
 	separatorStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("238")).
+			Foreground(lipgloss.Color(AnsiDarkGray)).
 			Margin(0, 2)
 
-	stepHeaderStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("13"))
+	indentedStepHeaderStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color(AnsiBrightMagenta)).
+				MarginLeft(2)
 
 	commandPrefixStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("245")).
-				MarginLeft(2)
+				Foreground(lipgloss.Color(AnsiMediumGray)).
+				MarginLeft(4)
 
 	commandStyle = lipgloss.NewStyle().
 			Bold(true)
+
+	logInfoStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color(AnsiBrightWhite)).
+			MarginLeft(2)
+
+	logWarnStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color(AnsiYellow)).
+			MarginLeft(2)
+
+	logErrorStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color(AnsiRed)).
+			Bold(true).
+			MarginLeft(2)
+
+	metadataStyle = lipgloss.NewStyle().
+			MarginLeft(2)
+
+	metadataSeparatorStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color(AnsiMediumGray)).
+				MarginRight(1)
+
+	metadataValueStyle = lipgloss.NewStyle().
+				Bold(true)
 )
 
 type PrintOptions struct {
@@ -69,118 +110,165 @@ func FormatBuildResult(br *BuildResult, options ...PrintOptions) string {
 	}
 	var output strings.Builder
 
-	// Header section
-	header := fmt.Sprintf("Railpack %s", opts.Version)
-	output.WriteString(headerStyle.Render(header))
-	output.WriteString("\n")
-
-	// Packages section
-	if len(br.ResolvedPackages) > 0 {
-		output.WriteString(sectionHeaderStyle.MarginTop(1).Render("Packages"))
-		output.WriteString("\n")
-
-		// Calculate column widths
-		nameWidth := 1
-		versionWidth := 1
-		for _, pkg := range br.ResolvedPackages {
-			nameWidth = max(nameWidth, len(pkg.Name))
-			if pkg.ResolvedVersion != nil {
-				versionWidth = max(versionWidth, len(*pkg.ResolvedVersion))
-			}
-		}
-
-		// Adjust styles with calculated widths
-		packageNameStyle = packageNameStyle.Width(nameWidth).MaxWidth(20)
-		versionStyle = versionStyle.Width(versionWidth).MaxWidth(20)
-
-		separator := separatorStyle.Render("│")
-
-		// Sort and format packages
-		for _, pkg := range br.ResolvedPackages {
-			name := packageNameStyle.Render(pkg.Name)
-
-			version := "-"
-			if pkg.ResolvedVersion != nil {
-				version = *pkg.ResolvedVersion
-			}
-			version = versionStyle.Render(version)
-			source := sourceStyle.Render(formatSource(pkg))
-			output.WriteString(fmt.Sprintf("%s%s%s%s%s", name, separator, version, separator, source))
-			output.WriteString("\n")
-		}
-	}
-
-	// Steps section
-	stepsToPrint := getStepsToPrint(br)
-	if len(stepsToPrint) > 0 {
-		output.WriteString(sectionHeaderStyle.MarginTop(1).Render("Steps"))
-		output.WriteString("\n")
-
-		stepCount := 0
-		for _, step := range stepsToPrint {
-			commands := getCommandsToPrint(step.Commands)
-
-			if len(commands) > 0 {
-				customStepHeaderStyle := stepHeaderStyle
-				if stepCount > 0 {
-					customStepHeaderStyle = customStepHeaderStyle.MarginTop(1)
-				}
-
-				output.WriteString(customStepHeaderStyle.Render(fmt.Sprintf("▸ %s", step.Name)))
-				output.WriteString("\n")
-
-				for _, cmd := range commands {
-					cmdText := cmd.Cmd
-					if cmd.CustomName != "" {
-						cmdText = cmd.CustomName
-					}
-
-					output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(cmdText)))
-					output.WriteString("\n")
-				}
-			}
-
-			stepCount++
-		}
-	}
-
-	if br.Plan.Deploy.StartCmd != "" {
-		output.WriteString(sectionHeaderStyle.MarginTop(1).Render("Deploy"))
-		output.WriteString("\n")
-		output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(br.Plan.Deploy.StartCmd)))
-	}
-
-	if opts.Metadata && br.Metadata != nil && len(br.Metadata) > 0 {
-		output.WriteString(sectionHeaderStyle.MarginTop(2).Render("Metadata"))
-		output.WriteString("\n")
-
-		metadataStyle := lipgloss.NewStyle().MarginLeft(2)
-		separator := lipgloss.NewStyle().Foreground(lipgloss.Color("245")).MarginRight(1).Render(":")
-		valueStyle := lipgloss.NewStyle().Bold(true)
-
-		for key, value := range br.Metadata {
-			output.WriteString(metadataStyle.Render(fmt.Sprintf("%s%s%s", key, separator, valueStyle.Render(value))))
-			output.WriteString("\n")
-		}
-	}
+	formatHeader(&output, opts.Version)
+	formatLogs(&output, br.Logs)
+	formatPackages(&output, br.ResolvedPackages)
+	formatSteps(&output, br)
+	formatDeploy(&output, br)
+	formatMetadata(&output, br.Metadata, opts.Metadata)
 
 	output.WriteString("\n\n")
 	return output.String()
 }
 
+func formatHeader(output *strings.Builder, version string) {
+	header := fmt.Sprintf("Railpack %s", version)
+	output.WriteString(headerStyle.Render(header))
+	output.WriteString("\n")
+}
+
+func formatLogs(output *strings.Builder, logs []logger.Msg) {
+	if len(logs) == 0 {
+		return
+	}
+
+	output.WriteString("\n")
+
+	for _, log := range logs {
+		msg := utils.CapitalizeFirst(log.Msg)
+
+		switch log.Level {
+		case logger.Info:
+			output.WriteString(logInfoStyle.Render(fmt.Sprintf("↳ %s", msg)))
+		case logger.Warn:
+			output.WriteString(logWarnStyle.Render(fmt.Sprintf("⚠ %s", msg)))
+		case logger.Error:
+			lines := strings.Split(msg, "\n")
+			for i, line := range lines {
+				if i == 0 {
+					output.WriteString(logErrorStyle.Render(fmt.Sprintf("✖ %s", line)))
+				} else {
+					output.WriteString(fmt.Sprintf("  %s", line))
+				}
+				if i < len(lines)-1 {
+					output.WriteString("\n")
+				}
+			}
+		default:
+			output.WriteString(logInfoStyle.Render(fmt.Sprintf("• %s", msg)))
+		}
+		output.WriteString("\n")
+	}
+
+	output.WriteString("\n")
+}
+
+func formatPackages(output *strings.Builder, packages map[string]*resolver.ResolvedPackage) {
+	if len(packages) == 0 {
+		return
+	}
+
+	output.WriteString(sectionHeaderStyle.MarginTop(1).Render("Packages"))
+	output.WriteString("\n")
+
+	nameWidth, versionWidth := 1, 1
+	for _, pkg := range packages {
+		nameWidth = max(nameWidth, len(pkg.Name))
+		if pkg.ResolvedVersion != nil {
+			versionWidth = max(versionWidth, len(*pkg.ResolvedVersion))
+		}
+	}
+
+	localPackageNameStyle := packageNameStyle.Width(nameWidth).MaxWidth(20)
+	localVersionStyle := versionStyle.Width(versionWidth).MaxWidth(20)
+	separator := separatorStyle.Render("│")
+
+	for _, pkg := range packages {
+		name := localPackageNameStyle.Render(pkg.Name)
+
+		version := "-"
+		if pkg.ResolvedVersion != nil {
+			version = *pkg.ResolvedVersion
+		}
+		version = localVersionStyle.Render(version)
+		source := sourceStyle.Render(formatSource(pkg))
+		output.WriteString(fmt.Sprintf("%s%s%s%s%s", name, separator, version, separator, source))
+		output.WriteString("\n")
+	}
+}
+
+func formatSteps(output *strings.Builder, br *BuildResult) {
+	stepsToPrint := getStepsToPrint(br)
+	if len(stepsToPrint) == 0 {
+		return
+	}
+
+	output.WriteString(sectionHeaderStyle.MarginTop(1).Render("Steps"))
+	output.WriteString("\n")
+
+	for i, step := range stepsToPrint {
+		commands := getCommandsToPrint(step.Commands)
+		if len(commands) == 0 {
+			continue
+		}
+
+		currentStepStyle := indentedStepHeaderStyle
+		if i > 0 {
+			currentStepStyle = currentStepStyle.MarginTop(1)
+		}
+
+		output.WriteString(currentStepStyle.Render(fmt.Sprintf("▸ %s", step.Name)))
+		output.WriteString("\n")
+
+		for _, cmd := range commands {
+			cmdText := cmd.Cmd
+			if cmd.CustomName != "" {
+				cmdText = cmd.CustomName
+			}
+			output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(cmdText)))
+			output.WriteString("\n")
+		}
+	}
+}
+
+func formatDeploy(output *strings.Builder, br *BuildResult) {
+	if br.Plan != nil && br.Plan.Deploy.StartCmd != "" {
+		output.WriteString(sectionHeaderStyle.MarginTop(1).Render("Deploy"))
+		output.WriteString("\n")
+		output.WriteString(fmt.Sprintf("%s %s", commandPrefixStyle.Render("$"), commandStyle.Render(br.Plan.Deploy.StartCmd)))
+	}
+}
+
+func formatMetadata(output *strings.Builder, metadata map[string]string, showMetadata bool) {
+	if !showMetadata || metadata == nil || len(metadata) == 0 {
+		return
+	}
+
+	output.WriteString(sectionHeaderStyle.MarginTop(2).Render("Metadata"))
+	output.WriteString("\n")
+
+	separator := metadataSeparatorStyle.Render(":")
+
+	for key, value := range metadata {
+		output.WriteString(metadataStyle.Render(fmt.Sprintf("%s%s%s", key, separator, metadataValueStyle.Render(value))))
+		output.WriteString("\n")
+	}
+}
+
 func getStepsToPrint(br *BuildResult) []*plan.Step {
 	execSteps := []*plan.Step{}
+	if br.Plan == nil {
+		return execSteps
+	}
 
 	for _, step := range br.Plan.Steps {
-		if !strings.HasPrefix(step.Name, "packages") && step.Commands != nil { // Skip the packages step
+		if !strings.HasPrefix(step.Name, "packages") && step.Commands != nil {
 			commands := getCommandsToPrint(step.Commands)
-
 			if len(commands) > 0 {
 				execSteps = append(execSteps, &step)
 			}
 		}
 	}
-
 	return execSteps
 }
 
