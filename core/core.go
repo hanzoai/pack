@@ -21,6 +21,7 @@ const (
 )
 
 type GenerateBuildPlanOptions struct {
+	RailpackVersion          string
 	BuildCommand             string
 	StartCommand             string
 	PreviousVersions         map[string]string
@@ -29,6 +30,7 @@ type GenerateBuildPlanOptions struct {
 }
 
 type BuildResult struct {
+	RailpackVersion   string                               `json:"railpackVersion,omitempty"`
 	Plan              *plan.BuildPlan                      `json:"plan,omitempty"`
 	ResolvedPackages  map[string]*resolver.ResolvedPackage `json:"resolvedPackages,omitempty"`
 	Metadata          map[string]string                    `json:"metadata,omitempty"`
@@ -110,6 +112,7 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	}
 
 	buildResult := &BuildResult{
+		RailpackVersion:   options.RailpackVersion,
 		Plan:              buildPlan,
 		ResolvedPackages:  resolvedPackages,
 		Metadata:          ctx.Metadata.Properties,
