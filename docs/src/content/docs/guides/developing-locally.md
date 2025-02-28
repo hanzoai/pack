@@ -16,7 +16,6 @@ Install and use all versions of tools needed for Railpack
 
 ```bash
 # Assuming you are cd'd into the repo root
-mise trust .
 mise install
 ```
 
