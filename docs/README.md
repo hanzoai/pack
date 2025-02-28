@@ -22,4 +22,4 @@ To start the development server:
 bun run dev
 ```
 
-Visit [http://localhost:4321](localhost:4321) to view the documentation.
+Visit [localhost:4321](http://localhost:4321) to view the documentation.
