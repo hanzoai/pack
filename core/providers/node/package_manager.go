@@ -216,24 +216,6 @@ func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext,
 	}
 }
 
-// Check is Node is required for the package manager
-// If the package manager is Bun, we avoid using Node unless it's specified in the package.json
-func (p PackageManager) requiresNode(packageJson *PackageJson) bool {
-	if p != PackageManagerBun || packageJson == nil || packageJson.PackageManager != nil {
-		return true
-	}
-
-	scripts := packageJson.Scripts
-
-	for _, script := range scripts {
-		if strings.Contains(script, "node") {
-			return true
-		}
-	}
-
-	return false
-}
-
 // parsePackageManagerField parses the packageManager field from package.json
 // and returns the name and version as a tuple
 func (p PackageManager) parsePackageManagerField(packageJson *PackageJson) (string, string) {

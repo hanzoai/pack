@@ -215,7 +215,7 @@ func (p *NodeProvider) InstallNodeDeps(ctx *generate.GenerateContext, install *g
 
 func (p *NodeProvider) InstallMisePackages(ctx *generate.GenerateContext, miseStep *generate.MiseStepBuilder) {
 	// Node
-	if p.packageManager.requiresNode(p.packageJson) {
+	if p.requiresNode(ctx) {
 		node := miseStep.Default("node", DEFAULT_NODE_VERSION)
 
 		if envVersion, varName := ctx.Env.GetConfigVariable("NODE_VERSION"); envVersion != "" {
@@ -318,10 +318,10 @@ func (p *NodeProvider) getScripts(packageJson *PackageJson, name string) string 
 
 func (p *NodeProvider) SetNodeMetadata(ctx *generate.GenerateContext) {
 	runtime := p.getRuntime(ctx)
-	framework := p.getFramework(ctx)
+	staticFramework := p.getStaticFramework(ctx)
 
 	ctx.Metadata.Set("nodeRuntime", runtime)
-	ctx.Metadata.Set("nodeFramework", framework)
+	ctx.Metadata.Set("nodeStaticFramework", staticFramework)
 	ctx.Metadata.Set("nodePackageManager", string(p.packageManager))
 	ctx.Metadata.SetBool("nodeIsSPA", p.isSPA(ctx))
 	ctx.Metadata.SetBool("nodeUsesCorepack", p.usesCorepack())
@@ -366,6 +366,22 @@ func (p *NodeProvider) filterPackageJson(ctx *generate.GenerateContext, filterFu
 	return filteredPaths, nil
 }
 
+func (p *NodeProvider) requiresNode(ctx *generate.GenerateContext) bool {
+	if p.packageManager != PackageManagerBun || p.packageJson == nil || p.packageJson.PackageManager != nil {
+		return true
+	}
+
+	scripts := p.packageJson.Scripts
+
+	for _, script := range scripts {
+		if strings.Contains(script, "node") {
+			return true
+		}
+	}
+
+	return p.isAstro(ctx)
+}
+
 func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
 	if p.isSPA(ctx) {
 		if p.isAstro(ctx) {
@@ -388,23 +404,11 @@ func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
 	return "node"
 }
 
-func (p *NodeProvider) getFramework(ctx *generate.GenerateContext) string {
+func (p *NodeProvider) getStaticFramework(ctx *generate.GenerateContext) string {
 	if p.isAstro(ctx) {
 		return "astro"
-	} else if p.isReact() {
-		return "react"
-	} else if p.isVue() {
-		return "vue"
-	} else if p.isSvelte() {
-		return "svelte"
-	} else if p.isPreact() {
-		return "preact"
-	} else if p.isLit() {
-		return "lit"
-	} else if p.isSolidJs() {
-		return "solid"
-	} else if p.isQwik() {
-		return "qwik"
+	} else if p.isVite(ctx) {
+		return "vite"
 	}
 
 	return ""
