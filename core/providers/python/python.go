@@ -132,9 +132,6 @@ func (p *PythonProvider) PlanPipenv(ctx *generate.GenerateContext) {
 	install.AddCommands([]plan.Command{
 		plan.NewExecCommand("pipx install pipenv"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
-		plan.NewCopyCommand("Pipfile"),
-		plan.NewCopyCommand("Pipfile.lock"),
-		plan.NewExecCommand("pipenv install --deploy --ignore-pipfile"),
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
