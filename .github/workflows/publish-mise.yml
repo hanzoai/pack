@@ -1,4 +1,4 @@
-name: Publish Runtime Base Image
+name: Publish Mise Image
 
 on:
   push:
