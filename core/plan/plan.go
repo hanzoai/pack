@@ -1,8 +1,8 @@
 package plan
 
 const (
-	RAILPACK_BUILDER_IMAGE = "ghcr.io/railwayapp/railpack-builder-base:latest"
-	RAILPACK_RUNTIME_IMAGE = "ghcr.io/railwayapp/railpack-runtime-base:latest"
+	RAILPACK_BUILDER_IMAGE = "ghcr.io/railwayapp/railpack-builder:latest"
+	RAILPACK_RUNTIME_IMAGE = "ghcr.io/railwayapp/railpack-runtime:latest"
 )
 
 type BuildPlan struct {
