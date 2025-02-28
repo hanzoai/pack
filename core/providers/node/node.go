@@ -52,14 +52,14 @@ func (p *NodeProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 
 func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	if p.packageJson == nil {
-		return fmt.Errorf("package.json not loaded, did you call Initialize?")
+		return fmt.Errorf("package.json not found")
 	}
 
 	p.SetNodeMetadata(ctx)
 
 	ctx.Logger.LogInfo("Using %s package manager", p.packageManager)
 
-	if p.workspace != nil {
+	if p.workspace != nil && len(p.workspace.Packages) > 0 {
 		ctx.Logger.LogInfo("Found workspace with %d packages", len(p.workspace.Packages))
 	}
 
@@ -130,6 +130,19 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, plan.NewLocalInput("."))
 
 	return nil
+}
+
+func (p *NodeProvider) StartCommandHelp() string {
+	return "To configure your start command, Railpack will check:\n\n" +
+		"1. A \"start\" script in your package.json:\n" +
+		"   \"scripts\": {\n" +
+		"     \"start\": \"node index.js\"\n" +
+		"   }\n\n" +
+		"2. A \"main\" field in your package.json pointing to your entry file:\n" +
+		"   \"main\": \"src/server.js\"\n\n" +
+		"3. An index.js or index.ts file in your project root\n\n" +
+		"If you have a static site, you can set the RAILPACK_SPA_OUTPUT_DIR environment variable\n" +
+		"containing the directory of your built static files."
 }
 
 func (p *NodeProvider) GetStartCommand(ctx *generate.GenerateContext) string {

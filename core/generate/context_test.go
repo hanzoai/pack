@@ -7,6 +7,7 @@ import (
 	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/config"
+	"github.com/railwayapp/railpack/core/logger"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/stretchr/testify/require"
 )
@@ -51,7 +52,7 @@ func CreateTestContext(t *testing.T, path string) *GenerateContext {
 	env := app.NewEnvironment(nil)
 	config := config.EmptyConfig()
 
-	ctx, err := NewGenerateContext(userApp, env, config)
+	ctx, err := NewGenerateContext(userApp, env, config, logger.NewLogger())
 	require.NoError(t, err)
 
 	return ctx

@@ -53,6 +53,10 @@ func (p *ShellProvider) Plan(ctx *generate.GenerateContext) error {
 	return nil
 }
 
+func (p *ShellProvider) StartCommandHelp() string {
+	return ""
+}
+
 func getScript(ctx *generate.GenerateContext) string {
 	if scriptName, envVarName := ctx.Env.GetConfigVariable("SHELL_SCRIPT"); scriptName != "" {
 		hasScript := ctx.App.HasMatch(scriptName)

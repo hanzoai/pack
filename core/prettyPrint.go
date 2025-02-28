@@ -8,6 +8,7 @@ import (
 	"github.com/railwayapp/railpack/core/logger"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/resolver"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
 const (
@@ -134,25 +135,27 @@ func formatLogs(output *strings.Builder, logs []logger.Msg) {
 	output.WriteString("\n")
 
 	for _, log := range logs {
+		msg := utils.CapitalizeFirst(log.Msg)
+
 		switch log.Level {
 		case logger.Info:
-			output.WriteString(logInfoStyle.Render(fmt.Sprintf("↳ %s", log.Msg)))
+			output.WriteString(logInfoStyle.Render(fmt.Sprintf("↳ %s", msg)))
 		case logger.Warn:
-			output.WriteString(logWarnStyle.Render(fmt.Sprintf("⚠ %s", log.Msg)))
+			output.WriteString(logWarnStyle.Render(fmt.Sprintf("⚠ %s", msg)))
 		case logger.Error:
-			lines := strings.Split(log.Msg, "\n")
+			lines := strings.Split(msg, "\n")
 			for i, line := range lines {
 				if i == 0 {
 					output.WriteString(logErrorStyle.Render(fmt.Sprintf("✖ %s", line)))
 				} else {
-					output.WriteString(logErrorStyle.Render(fmt.Sprintf("  %s", line)))
+					output.WriteString(fmt.Sprintf("  %s", line))
 				}
 				if i < len(lines)-1 {
 					output.WriteString("\n")
 				}
 			}
 		default:
-			output.WriteString(logInfoStyle.Render(fmt.Sprintf("• %s", log.Msg)))
+			output.WriteString(logInfoStyle.Render(fmt.Sprintf("• %s", msg)))
 		}
 		output.WriteString("\n")
 	}

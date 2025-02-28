@@ -204,3 +204,10 @@ func (p *GoProvider) hasCGOEnabled(ctx *generate.GenerateContext) bool {
 func (p *GoProvider) isGoMod(ctx *generate.GenerateContext) bool {
 	return ctx.App.HasMatch("go.mod")
 }
+
+func (p *GoProvider) StartCommandHelp() string {
+	return "To configure your start command, Railpack will check:\n\n" +
+		"1. Create a main.go file in your project root\n\n" +
+		"2. Create a command in the cmd directory (e.g., cmd/server/main.go)\n\n" +
+		"3. Set the GO_BIN environment variable to specify which command to build"
+}

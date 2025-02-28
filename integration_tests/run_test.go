@@ -74,11 +74,11 @@ func TestExamplesIntegration(t *testing.T) {
 				}
 
 				env := app.NewEnvironment(&testCase.Envs)
-				buildResult, err := core.GenerateBuildPlan(userApp, env, &core.GenerateBuildPlanOptions{
+				buildResult := core.GenerateBuildPlan(userApp, env, &core.GenerateBuildPlanOptions{
 					ConfigFilePath: testCase.ConfigFilePath,
 				})
-				if err != nil {
-					t.Fatalf("failed to generate build plan: %v", err)
+				if !buildResult.Success {
+					t.Fatalf("failed to generate build plan: %v", buildResult.Logs)
 				}
 				if buildResult == nil {
 					t.Fatal("build result is nil")

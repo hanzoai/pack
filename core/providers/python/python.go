@@ -63,7 +63,12 @@ func (p *PythonProvider) GetStartCommand(ctx *generate.GenerateContext) string {
 	if ctx.App.HasMatch("main.py") {
 		return "python main.py"
 	}
+
 	return ""
+}
+
+func (p *PythonProvider) StartCommandHelp() string {
+	return "Railpack will automatically run the main.py file in the root directory as the start command."
 }
 
 func (p *PythonProvider) PlanUv(ctx *generate.GenerateContext) {

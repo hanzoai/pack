@@ -39,8 +39,11 @@ func TestGenerateBuildPlanForExamples(t *testing.T) {
 
 			env := app.NewEnvironment(nil)
 
-			buildResult, err := GenerateBuildPlan(userApp, env, &GenerateBuildPlanOptions{})
-			require.NoError(t, err)
+			buildResult := GenerateBuildPlan(userApp, env, &GenerateBuildPlanOptions{})
+
+			if !buildResult.Success {
+				t.Fatalf("failed to generate build plan for %s: %s", entry.Name(), buildResult.Logs)
+			}
 
 			plan := buildResult.Plan
 

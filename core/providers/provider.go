@@ -15,6 +15,7 @@ type Provider interface {
 	Detect(ctx *generate.GenerateContext) (bool, error)
 	Initialize(ctx *generate.GenerateContext) error
 	Plan(ctx *generate.GenerateContext) error
+	StartCommandHelp() string
 }
 
 func GetLanguageProviders() []Provider {

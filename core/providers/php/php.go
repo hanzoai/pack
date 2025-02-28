@@ -79,6 +79,10 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		return err
 	}
 
+	if p.usesLaravel(ctx) {
+		ctx.Logger.LogInfo("Found Laravel app")
+	}
+
 	if isNode {
 		err = nodeProvider.Initialize(ctx)
 		if err != nil {
@@ -134,7 +138,6 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	ctx.Deploy.StartCmd = "bash /start-nginx.sh"
 
 	if p.usesLaravel(ctx) {
-		ctx.Logger.LogInfo("Found Laravel app")
 		ctx.Deploy.Variables["IS_LARAVEL"] = "true"
 	}
 
@@ -232,4 +235,8 @@ func (p *PhpProvider) readComposerJson(ctx *generate.GenerateContext) (map[strin
 	}
 
 	return composerJson, nil
+}
+
+func (p *PhpProvider) StartCommandHelp() string {
+	return ""
 }

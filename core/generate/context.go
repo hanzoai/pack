@@ -118,7 +118,7 @@ func (c *GenerateContext) Generate() (*plan.BuildPlan, map[string]*resolver.Reso
 	// Resolve all package versions into a fully qualified and valid version
 	resolvedPackages, err := c.ResolvePackages()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to resolve packages: %w", err)
+		return nil, nil, err
 	}
 
 	// Create the actual build plan

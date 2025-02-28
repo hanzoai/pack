@@ -1,6 +1,9 @@
 package utils
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 func RemoveDuplicates[T comparable](sliceList []T) []T {
 	allKeys := make(map[T]bool)
@@ -42,4 +45,14 @@ func MergeStringSlicePointers(slices ...*[]string) *[]string {
 	}
 	sort.Strings(uniqueStrings)
 	return &uniqueStrings
+}
+
+func CapitalizeFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+
+	runes := []rune(s)
+	runes[0] = []rune(strings.ToUpper(string(runes[0])))[0]
+	return string(runes)
 }

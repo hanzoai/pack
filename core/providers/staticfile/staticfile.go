@@ -75,6 +75,10 @@ func (p *StaticfileProvider) Plan(ctx *generate.GenerateContext) error {
 	return nil
 }
 
+func (p *StaticfileProvider) StartCommandHelp() string {
+	return ""
+}
+
 func (p *StaticfileProvider) CaddyStartCommand(ctx *generate.GenerateContext) string {
 	return "caddy run --config " + CaddyfilePath + " --adapter caddyfile 2>&1"
 }
