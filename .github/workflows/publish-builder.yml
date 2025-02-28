@@ -1,16 +1,16 @@
-name: Publish Runtime Base Image
+name: Publish Builder Image
 
 on:
   push:
     branches: [main]
     paths:
-      - "images/debian/runtime/Dockerfile"
-      - ".github/workflows/publish-runtime-base.yml"
+      - "images/debian/build/Dockerfile"
+      - ".github/workflows/publish-builder.yml"
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-runtime-base
+  IMAGE_NAME: ${{ github.repository }}-builder
 
 jobs:
   build:
@@ -50,7 +50,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: images/debian/runtime
+          context: images/debian/build
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
