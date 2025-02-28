@@ -166,6 +166,11 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.Input) llb.State {
 						destPath = filepath.Join("/app", include)
 					}
 
+					opts := []llb.ConstraintsOpt{}
+					if srcPath == destPath {
+						opts = append(opts, llb.WithCustomName(fmt.Sprintf("copy %s", srcPath)))
+					}
+
 					state = state.File(llb.Copy(inputState, srcPath, destPath, &llb.CopyInfo{
 						CopyDirContentsOnly: true,
 						CreateDestPath:      true,
@@ -173,7 +178,7 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.Input) llb.State {
 						AllowWildcard:       true,
 						AllowEmptyWildcard:  true,
 						ExcludePatterns:     input.Exclude,
-					}))
+					}), opts...)
 				}
 			}
 		} else {
@@ -387,13 +392,19 @@ func (g *BuildGraph) convertCopyCommandToLLB(cmd plan.CopyCommand, state llb.Sta
 		src = *g.LocalState
 	}
 
+	opts := []llb.ConstraintsOpt{}
+
+	if cmd.Src == cmd.Dest {
+		opts = append(opts, llb.WithCustomName(fmt.Sprintf("copy %s", cmd.Src)))
+	}
+
 	s := state.File(llb.Copy(src, cmd.Src, cmd.Dest, &llb.CopyInfo{
 		CreateDestPath:      true,
 		FollowSymlinks:      true,
 		CopyDirContentsOnly: false,
 		AllowWildcard:       true,
 		AllowEmptyWildcard:  true,
-	}))
+	}), opts...)
 
 	return s, nil
 }

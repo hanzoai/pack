@@ -124,7 +124,7 @@ func (b *MiseStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) {
 	supportingMiseConfigFiles := b.GetSupportingMiseConfigFiles(b.app.Source)
 	for _, file := range supportingMiseConfigFiles {
 		step.AddCommands([]plan.Command{
-			plan.NewCopyCommand(file, "/app/"+file),
+			plan.NewCopyCommand(file),
 		})
 	}
 
