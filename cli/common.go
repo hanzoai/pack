@@ -65,6 +65,7 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 	previousVersions := getPreviousVersions(cmd.StringSlice("previous"))
 
 	generateOptions := &core.GenerateBuildPlanOptions{
+		RailpackVersion:          Version,
 		BuildCommand:             cmd.String("build-cmd"),
 		StartCommand:             cmd.String("start-cmd"),
 		PreviousVersions:         previousVersions,
