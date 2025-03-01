@@ -11,7 +11,7 @@ GHCR](https://github.com/railwayapp/railpack/pkgs/container/railpack-frontend).
 
 ## Curl
 
-Download Nixpacks from GH releases and install automatically
+Download Railpack from GH releases and install automatically
 
 ```sh
 curl -sSL https://railpack.com/install.sh | bash
