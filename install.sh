@@ -77,7 +77,6 @@ has() {
   command -v "$1" 1>/dev/null 2>&1
 }
 
-# Update the temp file function to use railpack instead of nixpacks
 get_tmpfile() {
   local suffix
   suffix="$1"
@@ -210,7 +209,6 @@ detect_platform() {
   printf '%s' "${platform}"
 }
 
-# Simplify arch detection since we only support x86_64 for now
 detect_arch() {
   local arch
   arch="$(uname -m | tr '[:upper:]' '[:lower:]')"
@@ -218,7 +216,7 @@ detect_arch() {
   case "${arch}" in
     amd64|x86_64) printf 'x86_64' ;;
     arm64|aarch64) printf 'arm64' ;;
-    *) printf 'x86_64' ;; # default to x86_64 for unknown architectures
+    *) printf 'x86_64' ;;
   esac
 }
 

@@ -17,6 +17,11 @@ const (
 var caddyfileTemplate string
 
 func (p *NodeProvider) isSPA(ctx *generate.GenerateContext) bool {
+	if ctx.Env.IsConfigVariableTruthy("NO_SPA") {
+		ctx.Logger.LogInfo("Skipping SPA deployment because NO_SPA is set")
+		return false
+	}
+
 	isVite := p.isVite(ctx)
 	isAstro := p.isAstroSPA(ctx)
 
@@ -63,8 +68,7 @@ func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.
 			Include: installCaddyStep.GetOutputPaths(),
 		}),
 		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{"."},
-			Exclude: []string{"node_modules"},
+			Include: []string{outputDir},
 		}),
 		plan.NewStepInput(caddy.Name(), plan.InputOptions{
 			Include: []string{DefaultCaddyfilePath},
