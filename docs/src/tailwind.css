@@ -14,3 +14,103 @@
 code {
   white-space: nowrap;
 }
+
+/* NAV BAR STYLES */
+.header {
+  @apply bg-white;
+}
+
+starlight-theme-select label {
+  @apply text-gray-600;
+}
+
+site-search {
+  @apply bg-red-50;
+}
+
+site-search button[data-open-modal] {
+  @apply border border-gray-300 bg-white text-gray-500;
+
+  kbd {
+    @apply bg-gray-50;
+  }
+}
+
+/* SIDEBAR STYLES */
+.sidebar-pane {
+  border-inline-end: 0;
+}
+
+@media (min-width: 50rem) {
+  :root {
+    --sl-sidebar-pad-x: 1.25rem;
+  }
+}
+
+.sidebar-content {
+  @apply pt-6;
+
+  summary {
+    @apply gap-1 px-0 flex flex-row justify-between font-bold;
+
+    .caret {
+      @apply hidden;
+    }
+
+    @media (min-width: 50rem) {
+      /* Tweak alignment of group label and caret icon */
+      --caret-adjustment: 0.5px;
+      transform: translateY(var(--caret-adjustment));
+
+      .group-label {
+        transform: translateY(calc(-1 * var(--caret-adjustment)));
+      }
+    }
+  }
+
+  li {
+    border: 0;
+    --sl-sidebar-item-padding-inline: 0.45rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .top-level>li+li {
+    padding: 0;
+    margin-block: 0;
+  }
+
+  .top-level>li:has(details) {
+    margin-block: 0.5rem;
+
+    &:first-child {
+      margin-top: 0;
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .large {
+    @apply px-3 text-sm text-gray-900;
+
+    @media (min-width: 50rem) {
+      font-size: var(--sl-text-sm);
+    }
+  }
+
+  a.large {
+    @apply text-sm text-gray-900 hover:text-violet-600;
+  }
+
+  a {
+    @apply px-3 py-2 text-sm text-gray-900 hover:bg-gray-50;
+
+    &[aria-current='page'] {
+      @apply bg-violet-50 text-violet-600 font-bold;
+    }
+  }
+}
+
+
