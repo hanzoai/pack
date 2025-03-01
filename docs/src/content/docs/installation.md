@@ -14,7 +14,7 @@ GHCR](https://github.com/railwayapp/railpack/pkgs/container/railpack-frontend).
 Download Railpack from GH releases and install automatically
 
 ```sh
-curl -sSL https://railpack.com/install.sh | bash
+curl -sSL https://railpack.com/install.sh | sh
 ```
 
 ## GitHub Releases
