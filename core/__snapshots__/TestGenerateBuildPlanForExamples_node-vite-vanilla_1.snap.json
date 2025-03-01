@@ -1,0 +1,191 @@
+{
+ "caches": {
+  "bun-install": {
+   "directory": "/root/.bun/install/cache",
+   "type": "shared"
+  },
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
+  }
+ },
+ "deploy": {
+  "inputs": [
+   {
+    "image": "ghcr.io/railwayapp/railpack-runtime:latest"
+   },
+   {
+    "include": [
+     "/bin/caddy"
+    ],
+    "step": "packages:caddy"
+   },
+   {
+    "include": [
+     "dist"
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "/Caddyfile"
+    ],
+    "step": "caddy"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
+  ],
+  "startCommand": "caddy run --config /Caddyfile --adapter caddyfile 2\u003e\u00261",
+  "variables": {
+   "CI": "true",
+   "NODE_ENV": "production",
+   "NPM_CONFIG_FUND": "false",
+   "NPM_CONFIG_PRODUCTION": "false",
+   "NPM_CONFIG_UPDATE_NOTIFIER": "false",
+   "YARN_PRODUCTION": "false"
+  }
+ },
+ "steps": [
+  {
+   "assets": {
+    "mise.toml": "[mise.toml]"
+   },
+   "commands": [
+    {
+     "path": "/mise/shims"
+    },
+    {
+     "customName": "create mise config",
+     "name": "mise.toml",
+     "path": "/etc/mise/config.toml"
+    },
+    {
+     "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
+     "customName": "install mise packages: bun"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder:latest"
+    }
+   ],
+   "name": "packages:mise",
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
+  },
+  {
+   "caches": [
+    "bun-install"
+   ],
+   "commands": [
+    {
+     "path": "/app/node_modules/.bin"
+    },
+    {
+     "dest": "package.json",
+     "src": "package.json"
+    },
+    {
+     "dest": "bun.lock",
+     "src": "bun.lock"
+    },
+    {
+     "cmd": "bun install --frozen-lockfile"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
+   ],
+   "name": "install",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_FUND": "false",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "NPM_CONFIG_UPDATE_NOTIFIER": "false",
+    "YARN_PRODUCTION": "false"
+   }
+  },
+  {
+   "inputs": [
+    {
+     "step": "install"
+    }
+   ],
+   "name": "prune"
+  },
+  {
+   "caches": [
+    "node-modules"
+   ],
+   "commands": [
+    {
+     "dest": ".",
+     "src": "."
+    },
+    {
+     "cmd": "bun run build"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "install"
+    }
+   ],
+   "name": "build",
+   "secrets": [
+    "*"
+   ]
+  },
+  {
+   "commands": [
+    {
+     "cmd": "mise install-into caddy@2.9.1 /bin"
+    },
+    {
+     "path": "/bin/caddy"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder:latest"
+    }
+   ],
+   "name": "packages:caddy"
+  },
+  {
+   "assets": {
+    "Caddyfile": "# global options\n{\n\tadmin off\n\tpersist_config off\n\tauto_https off\n\n\tlog {\n\t\tformat json\n\t}\n\n\tservers {\n\t\ttrusted_proxies static private_ranges 100.0.0.0/8 # trust railway's proxy\n\t}\n}\n\n# site block, listens on the $PORT environment variable, automatically assigned by railway\n:{$PORT:80} {\n\tlog {\n\t\tformat json\n\t}\n\n\trespond /health 200\n\n\t# Security headers\n\theader {\n\t\t# Enable cross-site filter (XSS) and tell browsers to block detected attacks\n\t\tX-XSS-Protection \"1; mode=block\"\n\t\t# Prevent some browsers from MIME-sniffing a response away from the declared Content-Type\n\t\tX-Content-Type-Options \"nosniff\"\n\t\t# Keep referrer data off of HTTP connections\n\t\tReferrer-Policy \"strict-origin-when-cross-origin\"\n\t\t# Enable strict Content Security Policy\n\t\tContent-Security-Policy \"default-src 'self'; img-src 'self' data: https: *; style-src 'self' 'unsafe-inline' https: *; script-src 'self' 'unsafe-inline' https: *; font-src 'self' data: https: *; connect-src 'self' https: *; media-src 'self' https: *; object-src 'none'; frame-src 'self' https: *;\"\n\t\t# Remove Server header\n\t\t-Server\n\t}\n\n\t# serve from the 'dist' folder (Vite builds into the 'dist' folder)\n\troot * /app/dist\n\n\t# Handle static files\n\tfile_server {\n\t\thide .git\n\t\thide .env*\n\t}\n\n\t# Compression with more formats\n\tencode {\n\t\tgzip\n\t\tzstd\n\t}\n\n\t# Try files with HTML extension and handle SPA routing\n\ttry_files {path} {path}.html {path}/index.html /index.html\n}\n"
+   },
+   "commands": [
+    {
+     "name": "Caddyfile",
+     "path": "/Caddyfile"
+    },
+    {
+     "cmd": "caddy fmt --overwrite /Caddyfile"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "packages:caddy"
+    }
+   ],
+   "name": "caddy",
+   "secrets": [
+    "*"
+   ]
+  }
+ ]
+}
