@@ -15,7 +15,7 @@ func (p *NodeProvider) isVite(ctx *generate.GenerateContext) bool {
 	hasViteConfig := ctx.App.HasMatch("vite.config.js") || ctx.App.HasMatch("vite.config.ts")
 	hasViteBuildCommand := strings.Contains(strings.ToLower(p.packageJson.GetScript("build")), "vite build")
 
-	return hasViteConfig && hasViteBuildCommand
+	return hasViteConfig || hasViteBuildCommand
 }
 
 func (p *NodeProvider) getViteOutputDirectory(ctx *generate.GenerateContext) string {
