@@ -21,11 +21,8 @@
     "step": "packages:caddy"
    },
    {
-    "exclude": [
-     "node_modules"
-    ],
     "include": [
-     "."
+     "theoutput"
     ],
     "step": "build"
    },
