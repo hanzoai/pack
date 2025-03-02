@@ -13,9 +13,7 @@ of these conditions are met:
 - A `start.sh` script exists in the root directory
 - The `RAILPACK_SHELL_SCRIPT` environment variable is set to a valid script file
 
-## Configuration
-
-### Script File
+## Script File
 
 Create a shell script in your project root (e.g., `start.sh`):
 
@@ -25,7 +23,7 @@ Create a shell script in your project root (e.g., `start.sh`):
 echo "Hello world..."
 ```
 
-### Environment Variables
+## Environment Variables
 
 | Variable                | Description                              | Example     |
 | ----------------------- | ---------------------------------------- | ----------- |

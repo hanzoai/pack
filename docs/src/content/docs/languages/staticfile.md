@@ -27,16 +27,15 @@ The provider determines the root directory in this order:
 
 ## Configuration
 
-### Staticfile
-
-You can create a `Staticfile` in your project root to configure the provider:
+You can configure the root directory with a `Staticfile` that contains the contents:
 
 ```yaml
-root: dist # the directory containing your files to serve
+# root directory to serve
+root: dist
 ```
 
-### Environment Variables
+Or with environment variables
 
-| Variable                    | Description                 | Example     |
-| --------------------------- | --------------------------- | ----------- |
-| `RAILPACK_STATIC_FILE_ROOT` | Override the root directory | `/app/dist` |
+| Variable                    | Description                 | Example  |
+| --------------------------- | --------------------------- | -------- |
+| `RAILPACK_STATIC_FILE_ROOT` | Override the root directory | `public` |

@@ -45,7 +45,7 @@ var BuildCommand = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "cache-key",
-			Usage: "key to use for cache",
+			Usage: "Unique id to prefix to cache keys",
 		},
 	}, commonPlanFlags()...),
 	Action: func(ctx context.Context, cmd *cli.Command) error {

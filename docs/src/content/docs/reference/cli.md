@@ -9,12 +9,14 @@ Complete reference documentation for all Railpack CLI commands.
 
 The following options are available across multiple commands:
 
-| Flag                  | Description                                                                                                                |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `--env`               | Environment variables to set. Format: `KEY=VALUE`                                                                          |
-| `--previous-versions` | Versions of packages used for previous builds. These versions will be used instead of the defaults. Format: `NAME@VERSION` |
-| `--build-cmd`         | Build command to use                                                                                                       |
-| `--start-cmd`         | Start command to use                                                                                                       |
+| Flag                    | Description                                                                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `--env`                 | Environment variables to set. Format: `KEY=VALUE`                                                                          |
+| `--previous`            | Versions of packages used for previous builds. These versions will be used instead of the defaults. Format: `NAME@VERSION` |
+| `--build-cmd`           | Build command to use                                                                                                       |
+| `--start-cmd`           | Start command to use                                                                                                       |
+| `--config-file`         | Path to config file to use                                                                                                 |
+| `--error-missing-start` | Error if no start command is found                                                                                         |
 
 ## Commands
 
@@ -30,20 +32,24 @@ railpack build [options] DIRECTORY
 
 **Options:**
 
-| Flag          | Description                                      | Default |
-| ------------- | ------------------------------------------------ | ------- |
-| `--name`      | Name of the image to build                       |         |
-| `--output`    | Output the final filesystem to a local directory |         |
-| `--progress`  | BuildKit progress output mode (auto, plain, tty) | `auto`  |
-| `--show-plan` | Show the build plan before building              | `false` |
+| Flag          | Description                                           | Default |
+| ------------- | ----------------------------------------------------- | ------- |
+| `--name`      | Name of the image to build                            |         |
+| `--output`    | Output the final filesystem to a local directory      |         |
+| `--platform`  | Platform to build for (e.g. linux/amd64, linux/arm64) |         |
+| `--progress`  | BuildKit progress output mode (auto, plain, tty)      | `auto`  |
+| `--show-plan` | Show the build plan before building                   | `false` |
+| `--cache-key` | Unique id to prefix to cache keys                     |         |
 
 ### prepare
 
-Generates build configuration files without performing the actual build. This is useful for platforms that want to
+Generates build configuration files without performing the actual build. This is
+useful for platforms that want to:
 
-- Build with a custom frontend and need to save the build plan to a `railpack-plan.json` file
+- Build with a custom frontend and need to save the build plan to a
+  `railpack-plan.json` file
 - Log the Railpack pretty output to stdout
-- Want to save the additional build information for later use
+- Save the additional build information for later use
 
 **Usage:**
 
@@ -76,7 +82,8 @@ railpack plan [options] DIRECTORY
 
 ### info
 
-Provides detailed information about a project's detected configuration, dependencies, and build requirements.
+Provides detailed information about a project's detected configuration,
+dependencies, and build requirements.
 
 **Usage:**
 
@@ -93,7 +100,8 @@ railpack info [options] DIRECTORY
 
 ### schema
 
-Outputs the JSON schema for Railpack configuration files, used by IDEs for autocompletion and validation.
+Outputs the JSON schema for Railpack configuration files, used by IDEs for
+autocompletion and validation.
 
 **Usage:**
 
@@ -119,3 +127,4 @@ These options can be used with any command:
 | ----------------- | ------------------------ |
 | `--help`, `-h`    | Show help information    |
 | `--version`, `-v` | Show version information |
+| `--verbose`       | Enable verbose logging   |

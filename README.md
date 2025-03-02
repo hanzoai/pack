@@ -15,8 +15,5 @@ both operators and users is available at [railpack.com](https://railpack.com).
 
 ## Contributing
 
-Railpack is open source and open to contributions. Keep in mind that the project
-is early and core architectural changes are still being made.
-
-Contributions are not being accepted at this time as we are still focusing on
-setting up the core architecture. Issues or questions are still welcome.
+Railpack is open source. This project is still early with large architecture
+changes still being made. Contributions are not being accepted at this time.
