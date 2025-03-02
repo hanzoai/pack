@@ -43,6 +43,10 @@ var BuildCommand = &cli.Command{
 			Usage: "Show the build plan before building. This is useful for development and debugging.",
 			Value: false,
 		},
+		&cli.StringFlag{
+			Name:  "cache-key",
+			Usage: "key to use for cache",
+		},
 	}, commonPlanFlags()...),
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		buildResult, app, env, err := GenerateBuildResultForCommand(cmd)
@@ -83,6 +87,7 @@ var BuildCommand = &cli.Command{
 			DumpLLB:      cmd.Bool("llb"),
 			OutputDir:    cmd.String("output"),
 			ProgressMode: cmd.String("progress"),
+			CacheKey:     cmd.String("cache-key"),
 			SecretsHash:  secretsHash,
 			Secrets:      env.Variables,
 			Platform:     platform,
