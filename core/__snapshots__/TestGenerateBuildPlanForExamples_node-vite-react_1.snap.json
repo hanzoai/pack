@@ -7,6 +7,10 @@
   "npm-install": {
    "directory": "/root/.npm",
    "type": "shared"
+  },
+  "vite": {
+   "directory": "node_modules/.vite",
+   "type": "shared"
   }
  },
  "deploy": {
@@ -127,7 +131,8 @@
   },
   {
    "caches": [
-    "node-modules"
+    "node-modules",
+    "vite"
    ],
    "commands": [
     {

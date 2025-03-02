@@ -7,6 +7,10 @@
   "pnpm-install": {
    "directory": "/root/.local/share/pnpm/store/v3",
    "type": "shared"
+  },
+  "vite": {
+   "directory": "node_modules/.vite",
+   "type": "shared"
   }
  },
  "deploy": {
@@ -99,7 +103,7 @@
      "src": "pnpm-lock.yaml"
     },
     {
-     "cmd": "pnpm install --frozen-lockfile --prod=false"
+     "cmd": "pnpm install --frozen-lockfile --prefer-offline --prod=false"
     }
    ],
    "inputs": [
@@ -127,7 +131,8 @@
   },
   {
    "caches": [
-    "node-modules"
+    "node-modules",
+    "vite"
    ],
    "commands": [
     {
