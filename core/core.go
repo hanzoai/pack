@@ -66,6 +66,9 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 	providerToUse, detectedProviderName := getProviders(ctx, config)
 	ctx.Metadata.Set("providers", detectedProviderName)
 
+	// TODO: We should indicate if we have packages specified in the config
+	// so that providers can determine if they should include mise in the final image (e.g. for shell script)
+
 	if providerToUse != nil {
 		err = providerToUse.Plan(ctx)
 		if err != nil {

@@ -38,15 +38,11 @@ func (p *ShellProvider) Plan(ctx *generate.GenerateContext) error {
 		[]plan.Command{
 			plan.NewCopyCommand(p.scriptName),
 			plan.NewExecCommand("chmod +x " + p.scriptName),
-			plan.NewExecCommand("sh " + p.scriptName),
 		},
 	)
 
 	ctx.Deploy.Inputs = []plan.Input{
 		plan.NewStepInput(setup.Name()),
-		plan.NewStepInput(setup.Name(), plan.InputOptions{
-			Include: []string{"."},
-		}),
 		plan.NewLocalInput("."),
 	}
 

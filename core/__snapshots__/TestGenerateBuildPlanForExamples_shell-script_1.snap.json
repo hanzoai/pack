@@ -8,12 +8,6 @@
     "include": [
      "."
     ],
-    "step": "setup"
-   },
-   {
-    "include": [
-     "."
-    ],
     "local": true
    }
   ],
@@ -28,9 +22,6 @@
     },
     {
      "cmd": "chmod +x start.sh"
-    },
-    {
-     "cmd": "sh start.sh"
     }
    ],
    "inputs": [
