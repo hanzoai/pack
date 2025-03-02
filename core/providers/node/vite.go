@@ -55,3 +55,7 @@ func (p *NodeProvider) getViteOutputDirectory(ctx *generate.GenerateContext) str
 
 	return DefaultViteOutputDirectory
 }
+
+func (p *NodeProvider) getViteCache(ctx *generate.GenerateContext) string {
+	return ctx.Caches.AddCache("vite", "node_modules/.vite")
+}

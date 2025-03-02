@@ -177,9 +177,12 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.Comm
 		}
 	}
 
-	// Add cache for Astro apps
+	// Add cache for Astro and Vite apps
 	if p.isAstro(ctx) {
 		build.AddCache(p.getAstroCache(ctx))
+	}
+	if p.isVite(ctx) {
+		build.AddCache(p.getViteCache(ctx))
 	}
 }
 
