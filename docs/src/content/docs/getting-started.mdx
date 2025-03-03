@@ -1,0 +1,60 @@
+---
+title: Getting Started
+description: How to get up and running with Railpack
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The easiest way to use Railpack is to deploy on a platform like Railway. Builds
+should work out of the box with minimal configuration. From there, you can see
+the docs for each language that Railpack supports.
+
+- [Node](languages/node)
+- [Python](languages/python)
+- [Go](languages/golang)
+- [PHP](languages/php)
+- [HTML](languages/staticfile)
+
+---
+
+If you want to run Railpack locally, follow the steps below.
+
+<Aside type="note" title="Windows">
+  Railpack does not currently support Windows.
+</Aside>
+
+## Installation
+
+Install Railpack from GH releases ([or install with another
+method](/installation))
+
+```sh
+curl -sSL https://railpack.com/install.sh | sh
+```
+
+Confirm that Railpack is installed correctly:
+
+```sh
+railpack --help
+```
+
+## Building
+
+Before building, you need to have a BuildKit instance running and available
+through the `BUILDKIT_HOST` environment variable. The easiest way to do this is
+to run a BuildKit instance as a container:
+
+```bash
+docker run --rm --privileged -d --name buildkit moby/buildkit
+export BUILDKIT_HOST=docker-container://buildkit
+```
+
+Now you can build your image using Railpack:
+
+```sh
+railpack build ./path/to/project
+```
+
+_(there are many examples in the [Railpack
+repo](https://github.com/railwayapp/railpack/tree/main/examples) that you can
+test with)_

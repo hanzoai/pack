@@ -8,8 +8,8 @@ PHP-FPM.
 
 ## Detection
 
-Your project will be detected as a PHP application if any of these
-conditions are met:
+Your project will be detected as a PHP application if any of these conditions
+are met:
 
 - An `index.php` file exists in the root directory
 - A `composer.json` file exists in the root directory
@@ -23,11 +23,10 @@ The PHP version is determined in the following order:
 
 ## Configuration
 
-Railpack will configure Nginx and PHP-FPM for your application.
-For Laravel applications, the document root is set to the `public`
-directory.
+Railpack will configure Nginx and PHP-FPM for your application. For Laravel
+applications, the document root is set to the `public` directory.
 
-### Environment Variables
+### Config Variables
 
 | Variable                | Description                          | Example       |
 | ----------------------- | ------------------------------------ | ------------- |
@@ -35,15 +34,17 @@ directory.
 
 ### Custom Configuration
 
-You can provide custom configuration files in your project root:
-
-- `nginx.conf` or `nginx.template.conf` - Custom Nginx configuration
-- `php-fpm.conf` or `php-fpm.template.conf` - Custom PHP-FPM configuration
+Railpack uses a custom [Nginx
+config](https://github.com/railwayapp/railpack/blob/main/core/providers/php/nginx.template.conf)
+file and [PHP-FPM
+config](https://github.com/railwayapp/railpack/blob/main/core/providers/php/php-fpm.template.conf)
+file. You can overwrite these files with your own configuration files in your
+project root.
 
 ## Laravel Support
 
-Laravel applications are detected by the presence of an `artisan`
-file. When detected:
+Laravel applications are detected by the presence of an `artisan` file. When
+detected:
 
 - The document root is set to the `/app/public` directory
 - Storage directory permissions are set to be writable
@@ -61,5 +62,5 @@ If a `package.json` file is detected in your PHP project:
 This is particularly useful for Laravel applications that use frontend
 frameworks like Vue.js or React.
 
-You can see the [node docs](/languages/node) for information on how to
-configure node.
+You can see the [node docs](/languages/node) for information on how to configure
+node.

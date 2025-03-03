@@ -37,7 +37,7 @@ Railpack determines the main package to build in the following order:
 3. The first subdirectory in the `cmd/` directory
 4. The `main.go` file in the root directory
 
-### Environment Variables
+### Config Variables
 
 | Variable              | Description                                  | Example  |
 | --------------------- | -------------------------------------------- | -------- |

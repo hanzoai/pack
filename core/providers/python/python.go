@@ -33,8 +33,7 @@ func (p *PythonProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 	hasPython := ctx.App.HasMatch("main.py") ||
 		p.hasRequirements(ctx) ||
 		p.hasPyproject(ctx) ||
-		p.hasPoetry(ctx) ||
-		p.hasPdm(ctx)
+		p.hasPipfile(ctx)
 
 	return hasPython, nil
 }

@@ -23,7 +23,7 @@ Create a shell script in your project root (e.g., `start.sh`):
 echo "Hello world..."
 ```
 
-## Environment Variables
+## Config Variables
 
 | Variable                | Description                              | Example     |
 | ----------------------- | ---------------------------------------- | ----------- |
