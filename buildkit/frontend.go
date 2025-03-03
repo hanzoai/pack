@@ -47,6 +47,7 @@ func Build(ctx context.Context, c client.Client) (*client.Result, error) {
 	cacheKey := buildArgs[cacheKey]
 	secretsHash := buildArgs[secretsHash]
 
+	// TODO: Support building for multiple platforms
 	buildPlatform, err := validatePlatform(opts)
 	if err != nil {
 		return nil, err
