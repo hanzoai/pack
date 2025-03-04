@@ -1,6 +1,0 @@
-{
-  "$schema": "../../test/schema.json",
-  "packages": {
-    "go": "1.23.5"
-  }
-}

@@ -35,12 +35,6 @@
      "/Caddyfile"
     ],
     "step": "caddy"
-   },
-   {
-    "include": [
-     "."
-    ],
-    "local": true
    }
   ],
   "startCommand": "caddy run --config /Caddyfile --adapter caddyfile 2\u003e\u00261",

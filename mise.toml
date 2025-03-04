@@ -31,21 +31,6 @@ run = "bun run build"
 dir = "docs"
 run = "bun run dev"
 
-[tasks.run-with-frontend]
-run = "bun scripts/run-with-frontend.ts"
-
-[tasks.build-and-push-frontend]
-run = """
-docker build -t railpack-frontend:latest \
-  --label "org.opencontainers.image.source=https://github.com/railwayapp/railpack" \
-  --label "org.opencontainers.image.description=BuildKit frontend for Railpack" \
-  --label "org.opencontainers.image.licenses=MIT" \
-  -f frontend.Dockerfile .
-
-docker tag railpack-frontend:latest ghcr.io/railwayapp/railpack:railpack-frontend
-docker push ghcr.io/railwayapp/railpack:railpack-frontend
-"""
-
 [tools]
 go = "1.23.4"
 golangci-lint = "1.63.4"

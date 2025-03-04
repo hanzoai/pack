@@ -56,3 +56,18 @@ func CapitalizeFirst(s string) string {
 	runes[0] = []rune(strings.ToUpper(string(runes[0])))[0]
 	return string(runes)
 }
+
+func ParseVersions(versions []string) map[string]string {
+	parsedVersions := make(map[string]string)
+
+	for _, version := range versions {
+		parts := strings.Split(version, "@")
+		if len(parts) == 1 {
+			parsedVersions[parts[0]] = "latest"
+		} else {
+			parsedVersions[parts[0]] = parts[1]
+		}
+	}
+
+	return parsedVersions
+}

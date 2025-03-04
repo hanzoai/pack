@@ -168,6 +168,7 @@ func GenerateConfigFromFile(app *app.App, env *app.Environment, options *Generat
 	}
 
 	logger.LogInfo("Using config file `%s`", configFileName)
+	logger.LogWarn("The config file format is not yet finalized and subject to change.")
 
 	return config, nil
 }
@@ -193,11 +194,7 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 	}
 
 	if envPackages, _ := env.GetConfigVariable("PACKAGES"); envPackages != "" {
-		config.Packages = make(map[string]string)
-		for _, pkg := range strings.Split(envPackages, " ") {
-			// TODO: We should support specifying a version here (e.g. "node@18" or just "node")
-			config.Packages[pkg] = "latest"
-		}
+		config.Packages = utils.ParseVersions(strings.Split(envPackages, " "))
 	}
 
 	if envAptPackages, _ := env.GetConfigVariable("BUILD_APT_PACKAGES"); envAptPackages != "" {

@@ -19,6 +19,7 @@ export default defineConfig({
       editLink: {
         baseUrl: "https://github.com/railwayapp/railpack/edit/main/docs/",
       },
+      favicon: "/favicon.svg?v=2",
       customCss: [
         "./src/tailwind.css",
 
@@ -37,13 +38,17 @@ export default defineConfig({
         {
           label: "Guides",
           items: [
+            // {
+            //   label: "Building with CLI and BuildKit",
+            //   link: "/guides/building-with-cli",
+            // },
+            // {
+            //   label: "Building with a Custom Frontend",
+            //   link: "/guides/custom-frontend",
+            // },
             {
-              label: "Building with CLI and BuildKit",
-              link: "/guides/building-with-cli",
-            },
-            {
-              label: "Building with a Custom Frontend",
-              link: "/guides/custom-frontend",
+              label: "Installing Additional Packages",
+              link: "/guides/installing-packages",
             },
             {
               label: "Developing Locally",
@@ -90,7 +95,7 @@ export default defineConfig({
             },
             { label: "BuildKit Generation", link: "/architecture/buildkit" },
             { label: "Caching", link: "/architecture/caching" },
-            { label: "User Config", link: "/architecture/user-config" },
+            // { label: "User Config", link: "/architecture/user-config" },
           ],
         },
         {
