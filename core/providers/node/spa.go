@@ -24,14 +24,28 @@ func (p *NodeProvider) isSPA(ctx *generate.GenerateContext) bool {
 
 	isVite := p.isVite(ctx)
 	isAstro := p.isAstroSPA(ctx)
+	isCRA := p.isCRA(ctx)
 
-	return (isVite || isAstro) && p.getOutputDirectory(ctx) != ""
+	return (isVite || isAstro || isCRA) && p.getOutputDirectory(ctx) != ""
+}
+
+func (p *NodeProvider) getSPAFramework(ctx *generate.GenerateContext) string {
+	if p.isVite(ctx) {
+		return "vite"
+	} else if p.isAstro(ctx) {
+		return "astro"
+	} else if p.isCRA(ctx) {
+		return "CRA"
+	}
+
+	return ""
 }
 
 func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.CommandStepBuilder) error {
 	outputDir := p.getOutputDirectory(ctx)
+	spaFramework := p.getSPAFramework(ctx)
 
-	ctx.Logger.LogInfo("Deploying as SPA")
+	ctx.Logger.LogInfo("Deploying as %s static site", spaFramework)
 	ctx.Logger.LogInfo("Output directory: %s", outputDir)
 
 	data := map[string]interface{}{
@@ -88,6 +102,8 @@ func (p *NodeProvider) getOutputDirectory(ctx *generate.GenerateContext) string 
 		outputDir = p.getViteOutputDirectory(ctx)
 	} else if p.isAstroSPA(ctx) {
 		outputDir = p.getAstroOutputDirectory(ctx)
+	} else if p.isCRA(ctx) {
+		outputDir = p.getCRAOutputDirectory(ctx)
 	}
 
 	return outputDir
