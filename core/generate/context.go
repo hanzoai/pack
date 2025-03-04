@@ -223,17 +223,10 @@ func (c *GenerateContext) applyConfig() {
 			}))
 		}
 
-		fmt.Printf("COMMANDS FROM CONFIG: %v\n", configStep.Commands)
-
 		commandStepBuilder.Commands = plan.Spread(configStep.Commands, commandStepBuilder.Commands)
 		commandStepBuilder.Inputs = plan.Spread(configStep.Inputs, commandStepBuilder.Inputs)
 
-		fmt.Printf("SECRETS FROM CONFIG: %v\n", configStep.Secrets)
-		fmt.Printf("SECRETS FROM COMMAND STEP BUILDER: %v\n", commandStepBuilder.Secrets)
-
 		commandStepBuilder.Secrets = plan.SpreadStrings(configStep.Secrets, commandStepBuilder.Secrets)
-
-		fmt.Printf("SECRETS AFTER SPREAD: %v\n", commandStepBuilder.Secrets)
 
 		commandStepBuilder.Caches = plan.SpreadStrings(configStep.Caches, commandStepBuilder.Caches)
 		commandStepBuilder.AddEnvVars(configStep.Variables)

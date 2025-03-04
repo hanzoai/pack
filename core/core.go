@@ -169,11 +169,6 @@ func GenerateConfigFromFile(app *app.App, env *app.Environment, options *Generat
 
 	logger.LogInfo("Using config file `%s`", configFileName)
 
-	fmt.Printf("CONFIG: %v\n", config)
-	for _, step := range config.Steps {
-		fmt.Printf("STEP: %v (nil? %v)\n", step.Secrets, step.Secrets == nil)
-	}
-
 	return config, nil
 }
 
