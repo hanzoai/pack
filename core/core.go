@@ -168,6 +168,7 @@ func GenerateConfigFromFile(app *app.App, env *app.Environment, options *Generat
 	}
 
 	logger.LogInfo("Using config file `%s`", configFileName)
+	logger.LogWarn("The config file format is not yet finalized and subject to change.")
 
 	return config, nil
 }
