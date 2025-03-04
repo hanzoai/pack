@@ -1,11 +1,11 @@
 ---
 title: Railpack
-description: Railpack is a tool building applications with zero config.
+description: Zero-config application builder that automatically analyzes and turns your code into an image.
 template: splash
 hero:
-  tagline: Zero-config application builder that automatically analyzes and builds your code
-  image:
-    file: ../../assets/houston.webp
+  tagline: Zero-config application builder that automatically analyzes and turns your code into an image
+  # image:
+  #   file: ../../assets/houston.webp
   actions:
     - text: Get Started
       link: /getting-started
@@ -15,3 +15,25 @@ hero:
       icon: external
       variant: minimal
 ---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Features
+
+<CardGrid stagger>
+	<Card title="Zero-config" icon="star">
+		Support for Node, Python, Go, and PHP out of the box. (more coming soon!). First class support for Vite, Astro, and CRA static sites.
+	</Card>
+
+	<Card title="Built on BuildKit" icon="rocket">
+		Efficient image construction using BuildKit LLB. Implemented as a custom frontend.
+	</Card>
+
+	<Card title="Configure your site" icon="setting">
+		Customizable through environment variables or a config file.
+	</Card>
+
+	<Card title="Read the docs" icon="open-book">
+		Learn more in [the Railpack Docs](https://starlight.astro.build/).
+	</Card>
+</CardGrid>

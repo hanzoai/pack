@@ -16,6 +16,9 @@ export default defineConfig({
       social: {
         github: "https://github.com/railwayapp/railpack",
       },
+      editLink: {
+        baseUrl: "https://github.com/railwayapp/railpack/edit/main/docs/",
+      },
       customCss: [
         "./src/tailwind.css",
 

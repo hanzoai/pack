@@ -27,6 +27,8 @@ The provider determines the root directory in this order:
 
 ## Configuration
 
+### Staticfile
+
 You can configure the root directory with a `Staticfile` that contains the contents:
 
 ```yaml
@@ -34,8 +36,15 @@ You can configure the root directory with a `Staticfile` that contains the conte
 root: dist
 ```
 
-Or with environment variables
+### Config Variables
 
 | Variable                    | Description                 | Example  |
 | --------------------------- | --------------------------- | -------- |
 | `RAILPACK_STATIC_FILE_ROOT` | Override the root directory | `public` |
+
+### Custom Caddyfile
+
+Railpack uses a custom
+[Caddyfile](https://github.com/railwayapp/railpack/blob/main/core/providers/staticfile/Caddyfile.template)
+that is used to serve the static files. You can overwrite this file with your
+own Caddyfile at the root of your project.
