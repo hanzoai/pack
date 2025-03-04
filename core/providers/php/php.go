@@ -2,6 +2,7 @@ package php
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/railwayapp/railpack/core/generate"
@@ -220,11 +221,23 @@ func (p *PhpProvider) phpImagePackage(ctx *generate.GenerateContext) (*generate.
 		}
 	}
 
+	// Ensure that the version is available on Docker Hub
+	imageStep.SetVersionAvailable(php, func(version string) bool {
+		image := getPhpImage(version)
+		url := fmt.Sprintf("https://registry.hub.docker.com/v2/repositories/library/php/tags/%s", strings.TrimPrefix(image, "php:"))
+		resp, err := http.Get(url)
+		if err != nil {
+			return false
+		}
+		defer resp.Body.Close()
+		return resp.StatusCode == http.StatusOK
+	})
+
 	return imageStep, nil
 }
 
 func getPhpImage(phpVersion string) string {
-	return fmt.Sprintf("php:%s-fpm", phpVersion)
+	return fmt.Sprintf("php:%s-fpm-bookworm", phpVersion)
 }
 
 func (p *PhpProvider) readComposerJson(ctx *generate.GenerateContext) (map[string]interface{}, error) {

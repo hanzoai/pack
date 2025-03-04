@@ -41,6 +41,10 @@ func (b *ImageStepBuilder) Version(name resolver.PackageRef, version string, sou
 	b.Resolver.Version(name, version, source)
 }
 
+func (b *ImageStepBuilder) SetVersionAvailable(ref resolver.PackageRef, isVersionAvailable func(version string) bool) {
+	b.Resolver.SetVersionAvailable(ref, isVersionAvailable)
+}
+
 func (b *ImageStepBuilder) Name() string {
 	return b.DisplayName
 }
