@@ -37,14 +37,14 @@ export default defineConfig({
         {
           label: "Guides",
           items: [
-            {
-              label: "Building with CLI and BuildKit",
-              link: "/guides/building-with-cli",
-            },
-            {
-              label: "Building with a Custom Frontend",
-              link: "/guides/custom-frontend",
-            },
+            // {
+            //   label: "Building with CLI and BuildKit",
+            //   link: "/guides/building-with-cli",
+            // },
+            // {
+            //   label: "Building with a Custom Frontend",
+            //   link: "/guides/custom-frontend",
+            // },
             {
               label: "Developing Locally",
               link: "/guides/developing-locally",
@@ -54,7 +54,7 @@ export default defineConfig({
         {
           label: "Configuration",
           items: [
-            { label: "Configuration File", link: "/config/file" },
+            // { label: "Configuration File", link: "/config/file" },
             {
               label: "Environment Variables",
               link: "/config/environment-variables",
@@ -90,7 +90,7 @@ export default defineConfig({
             },
             { label: "BuildKit Generation", link: "/architecture/buildkit" },
             { label: "Caching", link: "/architecture/caching" },
-            { label: "User Config", link: "/architecture/user-config" },
+            // { label: "User Config", link: "/architecture/user-config" },
           ],
         },
         {
