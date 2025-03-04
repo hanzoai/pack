@@ -3,7 +3,7 @@
   "buildAptPackages": ["cowsay"],
   "steps": {
     "build": {
-      "commands": [{ "path": "/usr/games" }, "cowsay hello"]
+      "commands": ["...", { "path": "/usr/games" }, "cowsay hello"]
     }
   },
   "deploy": {
