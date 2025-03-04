@@ -7,6 +7,10 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
+  },
+  "uv": {
+   "directory": "/opt/uv-cache",
+   "type": "shared"
   }
  },
  "deploy": {
@@ -20,7 +24,8 @@
      "/mise/installs",
      "/usr/local/bin/mise",
      "/etc/mise/config.toml",
-     "/root/.local/state/mise"
+     "/root/.local/state/mise",
+     ".python-version"
     ],
     "step": "packages:mise"
    },
@@ -37,7 +42,7 @@
     "local": true
    }
   ],
-  "startCommand": "python main.py",
+  "startCommand": "python manage.py migrate \u0026\u0026 gunicorn mysite.wsgi",
   "variables": {
    "PIP_DEFAULT_TIMEOUT": "100",
    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
@@ -65,6 +70,10 @@
      "path": "/mise/shims"
     },
     {
+     "dest": ".python-version",
+     "src": ".python-version"
+    },
+    {
      "customName": "create mise config",
      "name": "mise.toml",
      "path": "/etc/mise/config.toml"
@@ -89,30 +98,33 @@
    }
   },
   {
+   "caches": [
+    "uv"
+   ],
    "commands": [
     {
-     "cmd": "pipx install poetry"
+     "cmd": "pipx install uv"
     },
     {
      "path": "/root/.local/bin"
-    },
-    {
-     "cmd": "poetry config virtualenvs.in-project true"
     },
     {
      "dest": "pyproject.toml",
      "src": "pyproject.toml"
     },
     {
-     "dest": "poetry.lock",
-     "src": "poetry.lock"
+     "dest": "uv.lock",
+     "src": "uv.lock"
     },
     {
-     "cmd": "poetry install --no-interaction --no-ansi --only main --no-root"
+     "cmd": "uv sync --locked --no-dev --no-install-project"
     },
     {
      "dest": ".",
      "src": "."
+    },
+    {
+     "cmd": "uv sync --locked --no-dev --no-editable"
     },
     {
      "path": "/app/.venv/bin"
@@ -124,6 +136,9 @@
     }
    ],
    "name": "install",
+   "secrets": [
+    "*"
+   ],
    "variables": {
     "PIP_DEFAULT_TIMEOUT": "100",
     "PIP_DISABLE_PIP_VERSION_CHECK": "1",
@@ -131,7 +146,10 @@
     "PYTHONFAULTHANDLER": "1",
     "PYTHONHASHSEED": "random",
     "PYTHONUNBUFFERED": "1",
-    "VIRTUAL_ENV": "/app/.venv"
+    "UV_CACHE_DIR": "/opt/uv-cache",
+    "UV_COMPILE_BYTECODE": "1",
+    "UV_LINK_MODE": "copy",
+    "UV_PYTHON_DOWNLOADS": "never"
    }
   },
   {
