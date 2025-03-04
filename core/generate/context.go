@@ -207,9 +207,7 @@ func (c *GenerateContext) applyConfig() {
 			}))
 		}
 
-		if configStep.Commands != nil {
-			commandStepBuilder.Commands = configStep.Commands
-		}
+		commandStepBuilder.Commands = overwriteCommands(commandStepBuilder, configStep.Commands)
 
 		if configStep.Inputs != nil {
 			commandStepBuilder.Inputs = configStep.Inputs
@@ -258,4 +256,27 @@ func (c *GenerateContext) applyConfig() {
 		maps.Copy(c.Deploy.Variables, c.Config.Deploy.Variables)
 	}
 
+}
+
+func overwriteCommands(step *CommandStepBuilder, commands []plan.Command) []plan.Command {
+	if commands == nil {
+		return step.Commands
+	}
+
+	prevCommands := step.Commands
+	result := make([]plan.Command, 0, len(commands)+len(prevCommands))
+
+	for _, command := range commands {
+		if execCmd, ok := command.(plan.ExecCommand); ok {
+			if execCmd.Cmd == plan.ShellCommandString("...") || execCmd.Cmd == "..." {
+				result = append(result, prevCommands...)
+			} else {
+				result = append(result, command)
+			}
+		} else {
+			result = append(result, command)
+		}
+	}
+
+	return result
 }

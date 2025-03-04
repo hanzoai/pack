@@ -104,3 +104,23 @@ func TestGenerateContext(t *testing.T) {
 
 	snaps.MatchJSON(t, serializedPlan)
 }
+
+func TestOverwriteCommands(t *testing.T) {
+	ctx := CreateTestContext(t, "../../examples/node-npm")
+	step := ctx.NewCommandStep("test")
+	step.AddCommand(plan.NewExecCommand("echo hello", plan.ExecOptions{}))
+	step.AddCommand(plan.NewExecCommand("echo world", plan.ExecOptions{}))
+
+	newCommands := overwriteCommands(step, []plan.Command{
+		plan.NewExecCommand("echo foo", plan.ExecOptions{}),
+		plan.NewExecCommand("...", plan.ExecOptions{}),
+		plan.NewExecCommand("echo bar", plan.ExecOptions{}),
+	})
+
+	require.Equal(t, []plan.Command{
+		plan.NewExecCommand("echo foo", plan.ExecOptions{}),
+		plan.NewExecCommand("echo hello", plan.ExecOptions{}),
+		plan.NewExecCommand("echo world", plan.ExecOptions{}),
+		plan.NewExecCommand("echo bar", plan.ExecOptions{}),
+	}, newCommands)
+}
