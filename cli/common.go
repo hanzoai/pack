@@ -2,11 +2,11 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/railwayapp/railpack/core"
 	a "github.com/railwayapp/railpack/core/app"
+	"github.com/railwayapp/railpack/core/utils"
 	"github.com/urfave/cli/v3"
 )
 
@@ -62,7 +62,7 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 		return nil, nil, nil, fmt.Errorf("error creating env: %w", err)
 	}
 
-	previousVersions := getPreviousVersions(cmd.StringSlice("previous"))
+	previousVersions := utils.ParseVersions(cmd.StringSlice("previous"))
 
 	generateOptions := &core.GenerateBuildPlanOptions{
 		RailpackVersion:          Version,
@@ -76,15 +76,4 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 	buildResult := core.GenerateBuildPlan(app, env, generateOptions)
 
 	return buildResult, app, env, nil
-}
-
-func getPreviousVersions(previousVersionsArgs []string) map[string]string {
-	previousVersions := make(map[string]string)
-
-	for _, arg := range previousVersionsArgs {
-		parts := strings.Split(arg, "@")
-		previousVersions[parts[0]] = parts[1]
-	}
-
-	return previousVersions
 }
