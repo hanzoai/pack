@@ -25,8 +25,9 @@ func (p *NodeProvider) isSPA(ctx *generate.GenerateContext) bool {
 	isVite := p.isVite(ctx)
 	isAstro := p.isAstroSPA(ctx)
 	isCRA := p.isCRA(ctx)
+	isAngular := p.isAngular(ctx)
 
-	return (isVite || isAstro || isCRA) && p.getOutputDirectory(ctx) != ""
+	return (isVite || isAstro || isCRA || isAngular) && p.getOutputDirectory(ctx) != ""
 }
 
 func (p *NodeProvider) getSPAFramework(ctx *generate.GenerateContext) string {
@@ -36,6 +37,8 @@ func (p *NodeProvider) getSPAFramework(ctx *generate.GenerateContext) string {
 		return "astro"
 	} else if p.isCRA(ctx) {
 		return "CRA"
+	} else if p.isAngular(ctx) {
+		return "Angular"
 	}
 
 	return ""
@@ -104,6 +107,8 @@ func (p *NodeProvider) getOutputDirectory(ctx *generate.GenerateContext) string 
 		outputDir = p.getAstroOutputDirectory(ctx)
 	} else if p.isCRA(ctx) {
 		outputDir = p.getCRAOutputDirectory(ctx)
+	} else if p.isAngular(ctx) {
+		outputDir = p.getAngularOutputDirectory(ctx)
 	}
 
 	return outputDir
