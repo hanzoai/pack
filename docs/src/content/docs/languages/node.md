@@ -33,7 +33,7 @@ If Bun is used, Node will not be installed.
 
 These variables are available at runtime:
 
-```
+```sh
 NODE_ENV=production
 NPM_CONFIG_PRODUCTION=false
 NPM_CONFIG_UPDATE_NOTIFIER=false
@@ -70,13 +70,14 @@ Railpack detects your package manager based on lock files:
 
 ### Config Variables
 
-| Variable                  | Description                             | Example |
-| ------------------------- | --------------------------------------- | ------- |
-| `RAILPACK_NODE_VERSION`   | Override the Node.js version            | `22`    |
-| `RAILPACK_BUN_VERSION`    | Override the Bun version                | `1.2`   |
-| `RAILPACK_NO_SPA`         | Disable SPA mode                        | `true`  |
-| `RAILPACK_SPA_OUTPUT_DIR` | Directory containing built static files | `dist`  |
-| `PRUNE_DEPS`              | Remove development dependencies         | `true`  |
+| Variable                   | Description                             | Example  |
+| -------------------------- | --------------------------------------- | -------- |
+| `RAILPACK_NODE_VERSION`    | Override the Node.js version            | `22`     |
+| `RAILPACK_BUN_VERSION`     | Override the Bun version                | `1.2`    |
+| `RAILPACK_NO_SPA`          | Disable SPA mode                        | `true`   |
+| `RAILPACK_SPA_OUTPUT_DIR`  | Directory containing built static files | `dist`   |
+| `RAILPACK_PRUNE_DEPS`      | Remove development dependencies         | `true`   |
+| `RAILPACK_ANGULAR_PROJECT` | Name of the Angular project to build    | `my-app` |
 
 ## Static Sites
 
@@ -86,6 +87,8 @@ can disable this by setting the `RAILPACK_NO_SPA=1` environment variable.
 - **Vite**: Detects Vite projects by the presence of `vite.config.js` or
   `vite.config.ts` or a `vite build` in the `package.json` build script
 - **Astro**: Detects Astro projects by the presence of `astro.config.js`
+- **CRA**: Detects CRA projects by the presence of `react-scripts`
+- **Angular**: Detects Angular projects by the presence of `angular.json`
 
 For both frameworks, Railpack will try to detect the output directory and will
 default to `dist`. Set the `RAILPACK_SPA_OUTPUT_DIR` environment variable to

@@ -28,7 +28,7 @@ The Python version is determined in the following order:
 
 These variables are available at runtime:
 
-```
+```sh
 PYTHONFAULTHANDLER=1
 PYTHONUNBUFFERED=1
 PYTHONHASHSEED=random
