@@ -23,7 +23,7 @@
    ],
    "inputs": [
     {
-     "image": "php:8.4.3-fpm"
+     "image": "php:8.4.3-fpm-bookworm"
     }
    ],
    "name": "packages:image",
