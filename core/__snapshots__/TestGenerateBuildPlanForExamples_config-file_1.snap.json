@@ -7,6 +7,14 @@
   "apt-lists": {
    "directory": "/var/lib/apt/lists",
    "type": "locked"
+  },
+  "bun-install": {
+   "directory": "/root/.bun/install/cache",
+   "type": "shared"
+  },
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
   }
  },
  "deploy": {
@@ -16,12 +24,36 @@
    },
    {
     "include": [
+     "/mise/shims",
+     "/mise/installs",
+     "/usr/local/bin/mise",
+     "/etc/mise/config.toml",
+     "/root/.local/state/mise"
+    ],
+    "step": "packages:mise"
+   },
+   {
+    "include": [
      "."
     ],
     "step": "build"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
    }
   ],
-  "startCommand": "neofetch $HELLO"
+  "startCommand": "python --version \u0026\u0026 neofetch $HELLO",
+  "variables": {
+   "CI": "true",
+   "NODE_ENV": "production",
+   "NPM_CONFIG_FUND": "false",
+   "NPM_CONFIG_PRODUCTION": "false",
+   "NPM_CONFIG_UPDATE_NOTIFIER": "false",
+   "YARN_PRODUCTION": "false"
+  }
  },
  "steps": [
   {
@@ -65,7 +97,7 @@
     },
     {
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
-     "customName": "install mise packages: python"
+     "customName": "install mise packages: bun, python"
     }
    ],
    "inputs": [
@@ -83,6 +115,52 @@
    }
   },
   {
+   "caches": [
+    "bun-install"
+   ],
+   "commands": [
+    {
+     "path": "/app/node_modules/.bin"
+    },
+    {
+     "dest": "package.json",
+     "src": "package.json"
+    },
+    {
+     "dest": "bun.lockb",
+     "src": "bun.lockb"
+    },
+    {
+     "cmd": "bun install --frozen-lockfile"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
+   ],
+   "name": "install",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_FUND": "false",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "NPM_CONFIG_UPDATE_NOTIFIER": "false",
+    "YARN_PRODUCTION": "false"
+   }
+  },
+  {
+   "inputs": [
+    {
+     "step": "install"
+    }
+   ],
+   "name": "prune"
+  },
+  {
+   "caches": [
+    "node-modules"
+   ],
    "commands": [
     {
      "cmd": "sh -c 'neofetch'",
@@ -91,7 +169,7 @@
    ],
    "inputs": [
     {
-     "step": "packages:mise"
+     "step": "install"
     }
    ],
    "name": "build",
@@ -101,6 +179,24 @@
    "variables": {
     "HELLO": "world"
    }
+  },
+  {
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
+   "commands": [
+    {
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
+     "customName": "install apt packages: neofetch"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-runtime:latest"
+    }
+   ],
+   "name": "packages:runtime"
   }
  ]
 }

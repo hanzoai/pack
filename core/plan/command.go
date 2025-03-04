@@ -9,6 +9,7 @@ import (
 
 type Command interface {
 	CommandType() string
+	Spreadable
 }
 
 type ExecOptions struct {
@@ -59,6 +60,10 @@ func NewExecCommand(cmd string, options ...ExecOptions) Command {
 	return exec
 }
 
+func ShellCommandString(cmd string) string {
+	return "sh -c '" + cmd + "'"
+}
+
 func NewExecShellCommand(cmd string, options ...ExecOptions) Command {
 	if len(options) == 0 {
 		options = []ExecOptions{
@@ -66,7 +71,7 @@ func NewExecShellCommand(cmd string, options ...ExecOptions) Command {
 		}
 	}
 
-	exec := NewExecCommand("sh -c '"+cmd+"'", options...)
+	exec := NewExecCommand(ShellCommandString(cmd), options...)
 	return exec
 }
 
@@ -196,4 +201,20 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 		customName = cmdToRun
 	}
 	return NewExecShellCommand(cmdToRun, ExecOptions{CustomName: customName}), nil
+}
+
+func (e ExecCommand) IsSpread() bool {
+	return e.Cmd == ShellCommandString("...") || e.Cmd == "..."
+}
+
+func (p PathCommand) IsSpread() bool {
+	return false
+}
+
+func (c CopyCommand) IsSpread() bool {
+	return false
+}
+
+func (f FileCommand) IsSpread() bool {
+	return false
 }
