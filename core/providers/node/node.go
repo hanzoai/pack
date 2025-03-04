@@ -321,10 +321,10 @@ func (p *NodeProvider) getScripts(packageJson *PackageJson, name string) string 
 
 func (p *NodeProvider) SetNodeMetadata(ctx *generate.GenerateContext) {
 	runtime := p.getRuntime(ctx)
-	staticFramework := p.getStaticFramework(ctx)
+	spaFramework := p.getSPAFramework(ctx)
 
 	ctx.Metadata.Set("nodeRuntime", runtime)
-	ctx.Metadata.Set("nodeStaticFramework", staticFramework)
+	ctx.Metadata.Set("nodeSPAFramework", spaFramework)
 	ctx.Metadata.Set("nodePackageManager", string(p.packageManager))
 	ctx.Metadata.SetBool("nodeIsSPA", p.isSPA(ctx))
 	ctx.Metadata.SetBool("nodeUsesCorepack", p.usesCorepack())
@@ -391,6 +391,8 @@ func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
 			return "astro"
 		} else if p.isVite(ctx) {
 			return "vite"
+		} else if p.isCRA(ctx) {
+			return "cra"
 		}
 
 		return "static"
@@ -405,16 +407,6 @@ func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
 	}
 
 	return "node"
-}
-
-func (p *NodeProvider) getStaticFramework(ctx *generate.GenerateContext) string {
-	if p.isAstro(ctx) {
-		return "astro"
-	} else if p.isVite(ctx) {
-		return "vite"
-	}
-
-	return ""
 }
 
 func (p *NodeProvider) isNext() bool {

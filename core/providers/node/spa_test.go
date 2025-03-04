@@ -14,6 +14,8 @@ func TestVite(t *testing.T) {
 		isSPA     bool
 		isVite    bool
 		isAstro   bool
+		isCRA     bool
+		isAngular bool
 		outputDir string
 	}{
 		{
@@ -29,6 +31,20 @@ func TestVite(t *testing.T) {
 			isSPA:     true,
 			isVite:    true,
 			outputDir: "theoutput",
+		},
+		{
+			name:      "cra",
+			path:      "../../../examples/node-cra",
+			isSPA:     true,
+			isCRA:     true,
+			outputDir: "build",
+		},
+		{
+			name:      "angular",
+			path:      "../../../examples/node-angular",
+			isSPA:     true,
+			isAngular: true,
+			outputDir: "dist/node-angular/browser",
 		},
 		{
 			name:      "astro-static",
