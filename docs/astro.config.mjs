@@ -19,6 +19,7 @@ export default defineConfig({
       editLink: {
         baseUrl: "https://github.com/railwayapp/railpack/edit/main/docs/",
       },
+      favicon: "/favicon.svg?v=2",
       customCss: [
         "./src/tailwind.css",
 
