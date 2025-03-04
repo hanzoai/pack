@@ -41,19 +41,41 @@ func (p *PythonProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 	p.InstallMisePackages(ctx, ctx.GetMiseStepBuilder())
 
+	install := ctx.NewCommandStep("install")
+	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
+
+	installOutputs := []string{}
+
 	if p.hasRequirements(ctx) {
-		p.PlanPip(ctx)
+		installOutputs = p.InstallPip(ctx, install)
 	} else if p.hasPyproject(ctx) && p.hasUv(ctx) {
-		p.PlanUv(ctx)
+		installOutputs = p.InstallUv(ctx, install)
 	} else if p.hasPyproject(ctx) && p.hasPoetry(ctx) {
-		p.PlanPoetry(ctx)
+		installOutputs = p.InstallPoetry(ctx, install)
 	} else if p.hasPyproject(ctx) && p.hasPdm(ctx) {
-		p.PlanPDM(ctx)
+		installOutputs = p.InstallPDM(ctx, install)
 	} else if p.hasPipfile(ctx) {
-		p.PlanPipenv(ctx)
+		installOutputs = p.InstallPipenv(ctx, install)
 	}
 
 	p.addMetadata(ctx)
+
+	build := ctx.NewCommandStep("build")
+	build.AddInput(plan.NewStepInput(install.Name()))
+
+	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
+	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
+		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
+			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: append(installOutputs, "."),
+		}),
+		plan.NewLocalInput("."),
+	}
 
 	return nil
 }
@@ -77,11 +99,8 @@ func (p *PythonProvider) StartCommandHelp() string {
 	return "Railpack will automatically run the main.py file in the root directory as the start command."
 }
 
-func (p *PythonProvider) PlanUv(ctx *generate.GenerateContext) {
+func (p *PythonProvider) InstallUv(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) []string {
 	ctx.Logger.LogInfo("Using uv")
-
-	install := ctx.NewCommandStep("install")
-	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
 	install.AddCache(ctx.Caches.AddCache("uv", UV_CACHE_DIR))
 	install.AddEnvVars(map[string]string{
@@ -102,29 +121,11 @@ func (p *PythonProvider) PlanUv(ctx *generate.GenerateContext) {
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
-	build := ctx.NewCommandStep("build")
-	build.AddInput(plan.NewStepInput(install.Name()))
-
-	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
-	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
-
-	ctx.Deploy.Inputs = []plan.Input{
-		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
-		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
-			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
-		}),
-		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{"."},
-		}),
-		plan.NewLocalInput("."),
-	}
+	return []string{}
 }
 
-func (p *PythonProvider) PlanPipenv(ctx *generate.GenerateContext) {
+func (p *PythonProvider) InstallPipenv(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) []string {
 	ctx.Logger.LogInfo("Using pipenv")
-
-	install := ctx.NewCommandStep("install")
-	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
 	install.AddEnvVars(map[string]string{
@@ -158,29 +159,11 @@ func (p *PythonProvider) PlanPipenv(ctx *generate.GenerateContext) {
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
-	build := ctx.NewCommandStep("build")
-	build.AddInput(plan.NewStepInput(install.Name()))
-
-	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
-	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
-
-	ctx.Deploy.Inputs = []plan.Input{
-		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
-		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
-			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
-		}),
-		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{"."},
-		}),
-		plan.NewLocalInput("."),
-	}
+	return []string{}
 }
 
-func (p *PythonProvider) PlanPDM(ctx *generate.GenerateContext) {
+func (p *PythonProvider) InstallPDM(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) []string {
 	ctx.Logger.LogInfo("Using pdm")
-
-	install := ctx.NewCommandStep("install")
-	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
 	install.AddEnvVars(map[string]string{
@@ -198,29 +181,11 @@ func (p *PythonProvider) PlanPDM(ctx *generate.GenerateContext) {
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
-	build := ctx.NewCommandStep("build")
-	build.AddInput(plan.NewStepInput(install.Name()))
-
-	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
-	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
-
-	ctx.Deploy.Inputs = []plan.Input{
-		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
-		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
-			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
-		}),
-		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{"."},
-		}),
-		plan.NewLocalInput("."),
-	}
+	return []string{}
 }
 
-func (p *PythonProvider) PlanPoetry(ctx *generate.GenerateContext) {
+func (p *PythonProvider) InstallPoetry(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) []string {
 	ctx.Logger.LogInfo("Using poetry")
-
-	install := ctx.NewCommandStep("install")
-	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
 	install.Secrets = []string{}
@@ -237,32 +202,15 @@ func (p *PythonProvider) PlanPoetry(ctx *generate.GenerateContext) {
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
-	build := ctx.NewCommandStep("build")
-	build.AddInput(plan.NewStepInput(install.Name()))
-
-	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
-	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
-	maps.Copy(ctx.Deploy.Variables, map[string]string{
+	install.AddEnvVars(map[string]string{
 		"VIRTUAL_ENV": VENV_PATH,
 	})
 
-	ctx.Deploy.Inputs = []plan.Input{
-		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
-		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
-			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
-		}),
-		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{"."},
-		}),
-		plan.NewLocalInput("."),
-	}
+	return []string{}
 }
 
-func (p *PythonProvider) PlanPip(ctx *generate.GenerateContext) {
+func (p *PythonProvider) InstallPip(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) []string {
 	ctx.Logger.LogInfo("Using pip")
-
-	install := ctx.NewCommandStep("install")
-	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
 	install.AddCache(ctx.Caches.AddCache("pip", PIP_CACHE_DIR))
 	install.AddCommands([]plan.Command{
@@ -277,22 +225,7 @@ func (p *PythonProvider) PlanPip(ctx *generate.GenerateContext) {
 		"PYTHONPATH":    PACKAGES_DIR,
 	})
 
-	build := ctx.NewCommandStep("build")
-	build.AddInput(plan.NewStepInput(install.Name()))
-
-	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
-	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
-
-	ctx.Deploy.Inputs = []plan.Input{
-		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
-		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
-			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
-		}),
-		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: []string{PACKAGES_DIR, "."},
-		}),
-		plan.NewLocalInput("."),
-	}
+	return []string{PACKAGES_DIR}
 }
 
 func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) *generate.AptStepBuilder {
