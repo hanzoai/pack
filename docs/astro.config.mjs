@@ -47,6 +47,10 @@ export default defineConfig({
             //   link: "/guides/custom-frontend",
             // },
             {
+              label: "Installing Additional Packages",
+              link: "/guides/installing-packages",
+            },
+            {
               label: "Developing Locally",
               link: "/guides/developing-locally",
             },

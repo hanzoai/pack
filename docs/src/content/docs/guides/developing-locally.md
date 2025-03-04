@@ -31,7 +31,7 @@ List all the commands available
 go run cmd/cli/main.go --help
 ```
 
-## ① Building directly with Buildkit
+## Building directly with Buildkit
 
 **👋 Requirement**: an instance of Buildkit must be running locally.
 Instructions in "[Run BuildKit Locally](#run-buildkit-locally)" at the bottom of
@@ -46,7 +46,7 @@ go run cmd/cli/main.go --verbose build examples/node-bun
 
 You need to have a BuildKit instance running (see below).
 
-## ② Custom frontend
+## Custom frontend
 
 You can build with a [custom BuildKit frontend](/guides/custom-frontend), but
 this is a bit tedious for local iteration.
@@ -66,7 +66,7 @@ go run cmd/cli/main.go plan examples/node-bun --out test/railpack-plan.json
 Build the app with Docker:
 
 ```bash
-docker build \
+docker buildx \
   --build-arg BUILDKIT_SYNTAX="ghcr.io/railwayapp/railpack:railpack-frontend" \
   -f test/railpack-plan.json \
   examples/node-bun
