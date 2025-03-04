@@ -20,6 +20,15 @@ The Node.js version is determined in the following order:
 - Read from the `.nvmrc` file
 - Defaults to `22`
 
+### Bun
+
+The Bun version is determined in the following order:
+
+- Set via the `RAILPACK_BUN_VERSION` environment variable
+- Defaults to `latest`
+
+If Bun is used, Node will not be installed.
+
 ## Runtime Variables
 
 These variables are available at runtime:
@@ -63,14 +72,16 @@ Railpack detects your package manager based on lock files:
 
 | Variable                  | Description                             | Example |
 | ------------------------- | --------------------------------------- | ------- |
-| `RAILPACK_NODE_VERSION`   | Override the Node.js version            | `20`    |
-| `RAILPACK_BUN_VERSION`    | Override the Bun version                | `1.0.0` |
+| `RAILPACK_NODE_VERSION`   | Override the Node.js version            | `22`    |
+| `RAILPACK_BUN_VERSION`    | Override the Bun version                | `1.2`   |
+| `RAILPACK_NO_SPA`         | Disable SPA mode                        | `true`  |
 | `RAILPACK_SPA_OUTPUT_DIR` | Directory containing built static files | `dist`  |
 | `PRUNE_DEPS`              | Remove development dependencies         | `true`  |
 
 ## Static Sites
 
-Railpack supports building static sites with Vite and Astro:
+Railpack will serve your Vite or Astro project as a static site by default. You
+can disable this by setting the `RAILPACK_NO_SPA=1` environment variable.
 
 - **Vite**: Detects Vite projects by the presence of `vite.config.js` or
   `vite.config.ts` or a `vite build` in the `package.json` build script
