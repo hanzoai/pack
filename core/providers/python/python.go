@@ -59,6 +59,13 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 }
 
 func (p *PythonProvider) GetStartCommand(ctx *generate.GenerateContext) string {
+
+	if djangoAppName, err := p.getDjangoAppName(ctx); err == nil && djangoAppName != "" && p.isDjango(ctx) {
+		ctx.Logger.LogInfo("Found Django app: %s", djangoAppName)
+
+		return fmt.Sprintf("python manage.py migrate && gunicorn %s", djangoAppName)
+	}
+
 	if ctx.App.HasMatch("main.py") {
 		return "python main.py"
 	}
@@ -365,6 +372,7 @@ func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {
 	ctx.Metadata.SetBool("pythonHasRequirementsTxt", p.hasRequirements(ctx))
 	ctx.Metadata.SetBool("pythonHasPyproject", p.hasPyproject(ctx))
 	ctx.Metadata.SetBool("pythonHasPipfile", p.hasPipfile(ctx))
+	ctx.Metadata.SetBool("pythonDjango", p.isDjango(ctx))
 }
 
 func (p *PythonProvider) usesDep(ctx *generate.GenerateContext, dep string) bool {
