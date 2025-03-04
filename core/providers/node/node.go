@@ -166,10 +166,12 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.Comm
 		})
 	}
 
-	// Generic node_modules cache
+	p.addCaches(ctx, build)
+}
+
+func (p *NodeProvider) addCaches(ctx *generate.GenerateContext, build *generate.CommandStepBuilder) {
 	build.AddCache(ctx.Caches.AddCache("node-modules", "/app/node_modules/.cache"))
 
-	// Add caches for NextJS apps
 	if nextApps, err := p.getNextApps(ctx); err == nil {
 		for _, nextApp := range nextApps {
 			nextCacheDir := path.Join("/app", nextApp, ".next/cache")
@@ -177,7 +179,10 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.Comm
 		}
 	}
 
-	// Add cache for Astro and Vite apps
+	if p.isRemix() {
+		build.AddCache(ctx.Caches.AddCache("remix", ".cache"))
+	}
+
 	if p.isAstro(ctx) {
 		build.AddCache(p.getAstroCache(ctx))
 	}

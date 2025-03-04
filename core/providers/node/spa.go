@@ -90,7 +90,6 @@ func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.
 		plan.NewStepInput(caddy.Name(), plan.InputOptions{
 			Include: []string{DefaultCaddyfilePath},
 		}),
-		plan.NewLocalInput("."),
 	}
 
 	return nil
