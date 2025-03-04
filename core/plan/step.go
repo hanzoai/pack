@@ -6,19 +6,6 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-type Input struct {
-	Image   string   `json:"image,omitempty"`
-	Step    string   `json:"step,omitempty"`
-	Local   bool     `json:"local,omitempty"`
-	Include []string `json:"include,omitempty"`
-	Exclude []string `json:"exclude,omitempty"`
-}
-
-type InputOptions struct {
-	Include []string
-	Exclude []string
-}
-
 type Step struct {
 	Name      string            `json:"name,omitempty" jsonschema:"description=The name of the step"`
 	Inputs    []Input           `json:"inputs,omitempty" jsonschema:"description=The inputs for this step"`
@@ -27,47 +14,6 @@ type Step struct {
 	Assets    map[string]string `json:"assets,omitempty" jsonschema:"description=The assets available to this step. The key is the name of the asset that is referenced in a file command"`
 	Variables map[string]string `json:"variables,omitempty" jsonschema:"description=The variables available to this step. The key is the name of the variable that is referenced in a variable command"`
 	Caches    []string          `json:"caches,omitempty" jsonschema:"description=The caches available to all commands in this step. Each cache must refer to a cache at the top level of the plan"`
-}
-
-func NewStepInput(stepName string, options ...InputOptions) Input {
-	input := Input{
-		Step: stepName,
-	}
-
-	if len(options) > 0 {
-		input.Include = options[0].Include
-		input.Exclude = options[0].Exclude
-	}
-
-	return input
-}
-
-func NewImageInput(image string, options ...InputOptions) Input {
-	input := Input{
-		Image: image,
-	}
-
-	if len(options) > 0 {
-		input.Include = options[0].Include
-		input.Exclude = options[0].Exclude
-	}
-	return input
-}
-
-func RuntimeImageInput() Input {
-	return NewImageInput("ghcr.io/railwayapp/railpack-runtime-base:latest")
-}
-
-func NewLocalInput(path string) Input {
-	return Input{
-		Local:   true,
-		Include: []string{path},
-	}
-}
-
-func (i *Input) String() string {
-	bytes, _ := json.Marshal(i)
-	return string(bytes)
 }
 
 func NewStep(name string) *Step {

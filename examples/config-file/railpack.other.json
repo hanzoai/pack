@@ -1,6 +1,5 @@
 {
   "$schema": "../../test/schema.json",
-  "providers": [],
   "buildAptPackages": ["cowsay"],
   "steps": {
     "build": {
@@ -8,8 +7,11 @@
     }
   },
   "deploy": {
+    "inputs": [
+      "...",
+      { "image": "macabees/neofetch", "include": ["/usr/bin/neofetch"] }
+    ],
     "aptPackages": ["cowsay"],
-    "paths": ["/usr/games"],
-    "startCommand": "cowsay hello"
+    "startCommand": "neofetch && cowsay hello"
   }
 }

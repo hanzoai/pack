@@ -1,6 +1,6 @@
 {
   "$schema": "../../test/schema.json",
-  "provider": "python",
+  "provider": "node",
   "packages": {
     "python": "latest"
   },
@@ -15,6 +15,6 @@
   },
   "deploy": {
     "aptPackages": ["neofetch"],
-    "startCommand": "neofetch $HELLO"
+    "startCommand": "python --version && neofetch $HELLO"
   }
 }

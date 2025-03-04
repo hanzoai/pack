@@ -48,6 +48,21 @@ type GenerateContext struct {
 	Logger *logger.Logger
 }
 
+type Command interface {
+	IsSpread() bool
+}
+
+type CommandWrapper struct {
+	Command plan.Command
+}
+
+func (c CommandWrapper) IsSpread() bool {
+	if execCmd, ok := c.Command.(plan.ExecCommand); ok {
+		return execCmd.Cmd == plan.ShellCommandString("...") || execCmd.Cmd == "..."
+	}
+	return false
+}
+
 func NewGenerateContext(app *a.App, env *a.Environment, config *config.Config, logger *logger.Logger) (*GenerateContext, error) {
 	resolver, err := resolver.NewResolver(mise.InstallDir)
 	if err != nil {
@@ -183,6 +198,7 @@ func (c *GenerateContext) applyConfig() {
 
 	// Apply the cache config to the context
 	maps.Copy(c.Caches.Caches, c.Config.Caches)
+	c.Secrets = plan.SpreadStrings(c.Config.Secrets, c.Secrets)
 
 	// Apply step config to the context
 	for _, name := range slices.Sorted(maps.Keys(c.Config.Steps)) {
@@ -207,36 +223,21 @@ func (c *GenerateContext) applyConfig() {
 			}))
 		}
 
-		commandStepBuilder.Commands = overwriteCommands(commandStepBuilder, configStep.Commands)
+		fmt.Printf("COMMANDS FROM CONFIG: %v\n", configStep.Commands)
 
-		if configStep.Inputs != nil {
-			commandStepBuilder.Inputs = configStep.Inputs
-		}
+		commandStepBuilder.Commands = plan.Spread(configStep.Commands, commandStepBuilder.Commands)
+		commandStepBuilder.Inputs = plan.Spread(configStep.Inputs, commandStepBuilder.Inputs)
 
-		for k, v := range configStep.Assets {
-			commandStepBuilder.Assets[k] = v
-		}
+		fmt.Printf("SECRETS FROM CONFIG: %v\n", configStep.Secrets)
+		fmt.Printf("SECRETS FROM COMMAND STEP BUILDER: %v\n", commandStepBuilder.Secrets)
 
-		if configStep.Secrets != nil {
-			commandStepBuilder.Secrets = configStep.Secrets
-		}
+		commandStepBuilder.Secrets = plan.SpreadStrings(configStep.Secrets, commandStepBuilder.Secrets)
 
-		if len(configStep.Caches) > 0 {
-			commandStepBuilder.Caches = configStep.Caches
-		}
+		fmt.Printf("SECRETS AFTER SPREAD: %v\n", commandStepBuilder.Secrets)
 
-		if configStep.Variables != nil {
-			commandStepBuilder.AddEnvVars(configStep.Variables)
-		}
-
-		// Secret config
-		if configStep.Secrets != nil {
-			commandStepBuilder.Secrets = configStep.Secrets
-		}
-	}
-
-	if c.Config.Secrets != nil {
-		c.Secrets = c.Config.Secrets
+		commandStepBuilder.Caches = plan.SpreadStrings(configStep.Caches, commandStepBuilder.Caches)
+		commandStepBuilder.AddEnvVars(configStep.Variables)
+		maps.Copy(commandStepBuilder.Assets, configStep.Assets)
 	}
 
 	// Update deploy from config
@@ -245,38 +246,9 @@ func (c *GenerateContext) applyConfig() {
 			c.Deploy.StartCmd = c.Config.Deploy.StartCmd
 		}
 
-		if c.Config.Deploy.Inputs != nil {
-			c.Deploy.Inputs = c.Config.Deploy.Inputs
-		}
-
-		if c.Config.Deploy.Paths != nil {
-			c.Deploy.Paths = c.Config.Deploy.Paths
-		}
-
+		c.Deploy.Inputs = plan.Spread(c.Config.Deploy.Inputs, c.Deploy.Inputs)
+		c.Deploy.Paths = plan.SpreadStrings(c.Config.Deploy.Paths, c.Deploy.Paths)
 		maps.Copy(c.Deploy.Variables, c.Config.Deploy.Variables)
 	}
 
-}
-
-func overwriteCommands(step *CommandStepBuilder, commands []plan.Command) []plan.Command {
-	if commands == nil {
-		return step.Commands
-	}
-
-	prevCommands := step.Commands
-	result := make([]plan.Command, 0, len(commands)+len(prevCommands))
-
-	for _, command := range commands {
-		if execCmd, ok := command.(plan.ExecCommand); ok {
-			if execCmd.Cmd == plan.ShellCommandString("...") || execCmd.Cmd == "..." {
-				result = append(result, prevCommands...)
-			} else {
-				result = append(result, command)
-			}
-		} else {
-			result = append(result, command)
-		}
-	}
-
-	return result
 }

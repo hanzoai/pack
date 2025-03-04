@@ -9,6 +9,7 @@ import (
 
 type Command interface {
 	CommandType() string
+	Spreadable
 }
 
 type ExecOptions struct {
@@ -200,4 +201,20 @@ func UnmarshalStringCommand(data []byte) (Command, error) {
 		customName = cmdToRun
 	}
 	return NewExecShellCommand(cmdToRun, ExecOptions{CustomName: customName}), nil
+}
+
+func (e ExecCommand) IsSpread() bool {
+	return e.Cmd == ShellCommandString("...") || e.Cmd == "..."
+}
+
+func (p PathCommand) IsSpread() bool {
+	return false
+}
+
+func (c CopyCommand) IsSpread() bool {
+	return false
+}
+
+func (f FileCommand) IsSpread() bool {
+	return false
 }
