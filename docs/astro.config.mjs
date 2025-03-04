@@ -59,7 +59,7 @@ export default defineConfig({
         {
           label: "Configuration",
           items: [
-            // { label: "Configuration File", link: "/config/file" },
+            { label: "Configuration File", link: "/config/file" },
             {
               label: "Environment Variables",
               link: "/config/environment-variables",

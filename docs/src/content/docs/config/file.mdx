@@ -1,0 +1,280 @@
+---
+title: Configuration File
+description: Learn about the railpack.json configuration file format and options
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Beta file format">
+  The config file format is not yet finalized and subject to change.
+</Aside>
+
+Railpack will look for a `railpack.json` file in the root of the directory being
+built. You can override this by setting the `RAILPACK_CONFIG_FILE` environment
+variable to a path relative to the directory being built.
+
+If found, that configuration will be used to change how the plan is built.
+
+A config file looks something like this:
+
+```json
+{
+  "steps": [
+    {
+      "name": "install",
+      "commands": ["npm install"]
+    },
+    {
+      "name": "build",
+      "inputs": [{ "step": "install" }],
+      "commands": ["...", "./my-custom-build.sh"]
+    }
+  ],
+  "deploy": {
+    "startCommand": "node dist/index.js"
+  }
+}
+```
+
+## Inputs
+
+Inputs define where a step gets its filesystem from. They can be:
+
+- Another step's output
+- A Docker image
+- Local files
+
+The first input must not have any include or exclude options as it is the base
+filesystem.
+
+Inputs are used both for steps and for the deploy section. For example, the
+inputs of a Node build might looks like this:
+
+```json
+"deploy": {
+  "inputs": [
+    {
+      "image": "ghcr.io/railwayapp/railpack-runtime:latest"
+    },
+    {
+      "step": "packages:mise",
+      "include": [
+        "/mise/shims",
+        "/mise/installs",
+        // ...
+      ]
+    },
+    {
+      "step": "build",
+      "include": ["."]
+    },
+    {
+      "local": true,
+      "include": ["."]
+    }
+  ]
+}
+```
+
+### Step Input
+
+Use another step's output as input:
+
+```json
+{
+  "step": "install",
+  "include": ["."], // "." represents the working directory (/app)
+  "exclude": ["node_modules"]
+}
+```
+
+### Image Input
+
+Use a Docker image as input:
+
+```json
+{
+  "image": "macabees/neofetch",
+  "include": ["/usr/bin/neofetch"]
+}
+```
+
+### Local Input
+
+Use local files as input:
+
+```json
+{
+  "local": true,
+  "include": ["."]
+}
+```
+
+### Input Options
+
+All input types support these options:
+
+| Field     | Description                                             |
+| :-------- | :------------------------------------------------------ |
+| `include` | Files or directories to include                         |
+| `exclude` | Files or directories to exclude                         |
+| `spread`  | Whether to spread the input into the current filesystem |
+
+## Array Extending
+
+You can use the `...` special syntax to extend arrays in the configuration. This
+is useful when you want to add items to an existing array rather than override
+it completely.
+
+For example:
+
+```json
+{
+  "steps": {
+    "build": {
+      // Runs ./my-custom-build.sh after the auto-generated build commands
+      "commands": ["...", "./my-custom-build.sh"]
+    }
+  },
+  "deploy": {
+    "inputs": [
+      "...",
+
+      // Copies the neofetch binary into the final image on top of the auto-generated image
+      { "image": "macabees/neofetch", "include": ["/usr/bin/neofetch"] }
+    ]
+  }
+}
+```
+
+## Root Configuration
+
+The root configuration can have these fields:
+
+| Field              | Description                                                                     |
+| :----------------- | :------------------------------------------------------------------------------ |
+| `provider`         | The provider to use for deployment (optional, autodetected by default)          |
+| `buildAptPackages` | List of apt packages to install during the build step                           |
+| `packages`         | Map of package name to package version                                          |
+| `caches`           | Map of cache name to cache definitions. The cache names are referenced in steps |
+| `secrets`          | List of secrets that should be made available to commands                       |
+| `steps`            | Map of step names to step definitions                                          |
+
+
+For example:
+
+```json
+{
+  "provider": "node",
+  "buildAptPackages": ["git", "curl"],
+  "packages": {
+    "node": "22",
+    "python": "3.13"
+  },
+  "caches": {
+    "node-modules": {
+      "key": "node-modules-{{hash}}",
+      "paths": ["/app/node_modules/.cache"]
+    }
+  },
+  "secrets": ["DATABASE_URL", "API_KEY"]
+}
+```
+
+## Steps
+
+Each step in the build process can have:
+
+| Field       | Description                                                             |
+| :---------- | :---------------------------------------------------------------------- |
+| `inputs`    | List of inputs for this step (from other steps, images, or local files) |
+| `commands`  | List of commands to run in this step                                    |
+| `secrets`   | List of secrets that this step uses                                     |
+| `assets`    | Mapping of name to file contents referenced in file commands            |
+| `variables` | Mapping of name to variable values referenced in variable commands      |
+| `caches`    | List of cache IDs available to all commands in this step                |
+
+## Commands
+
+A list of commands to run in a step. For example:
+
+```json
+{
+  "commands": [
+    // Copy the package.json file from the local context into the build
+    { "src": "package.json", "dest": "package.json" },
+
+    // Install dependencies
+    {
+      "cmd": "npm install",
+      "customName": "Install dependencies"
+    }
+
+    // Make the node_modules/.bin directory available in the PATH
+    { "path": "node_modules/.bin" }
+  ]
+}
+```
+
+### Exec command
+
+Executes a shell command during the build (e.g. 'go build' or 'npm install').
+
+| Field        | Description                                      |
+| :----------- | :----------------------------------------------- |
+| `cmd`        | The shell command to execute                     |
+| `customName` | Optional custom name to display for this command |
+
+If the command is a string, it is assumed to be an exec command in the format
+`sh -c '<cmd>'`.
+
+### Path command
+
+Adds a directory to the global PATH environment variable. This path will be
+available to all subsequent commands in the build.
+
+| Field  | Description                                                   |
+| :----- | :------------------------------------------------------------ |
+| `path` | Directory path to add to the global PATH environment variable |
+
+### Copy command
+
+Copies files or directories during the build. Can copy from a source image or
+local context.
+
+| Field   | Description                                             |
+| :------ | :------------------------------------------------------ |
+| `image` | Optional source image to copy from (e.g. 'node:18')     |
+| `src`   | Source path to copy from (file or directory)            |
+| `dest`  | Destination path to copy to (will be created if needed) |
+
+### File command
+
+Creates or modifies a file during the build with optional Unix file permissions.
+
+| Field        | Description                                             |
+| :----------- | :------------------------------------------------------ |
+| `path`       | Directory path where the file should be created         |
+| `name`       | Name of the file to create                              |
+| `mode`       | Optional Unix file permissions mode (e.g. 0644)         |
+| `customName` | Optional custom name to display for this file operation |
+
+### String format
+
+Commands can also be specified using a string format:
+
+- `npm install` - Executes the command
+- `PATH:/usr/local/bin` - Adds to PATH
+- `COPY:src dest` - Copies files
+
+## Deploy
+
+The deploy section configures how the container runs:
+
+| Field          | Description                                                             |
+| :------------- | :---------------------------------------------------------------------- |
+| `startCommand` | The command to run when the container starts                            |
+| `variables`    | Environment variables available to the start command                    |
+| `paths`        | Paths to prepend to the $PATH environment variable                      |
+| `inputs`       | List of inputs for the deploy step (from steps, images, or local files) |
+| `aptPackages`  | List of Apt packages to install in the final image                      |
