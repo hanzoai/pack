@@ -212,6 +212,7 @@ func (p *PythonProvider) InstallPip(ctx *generate.GenerateContext, install *gene
 	install.AddCommands([]plan.Command{
 		plan.NewCopyCommand("requirements.txt"),
 		plan.NewExecCommand(fmt.Sprintf("pip install --target=%s -r requirements.txt", PACKAGES_DIR)),
+		plan.NewPathCommand(fmt.Sprintf("%s/bin", PACKAGES_DIR)),
 	})
 	maps.Copy(install.Variables, p.GetPythonEnvVars(ctx))
 	maps.Copy(install.Variables, map[string]string{
