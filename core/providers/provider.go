@@ -24,11 +24,11 @@ func GetLanguageProviders() []Provider {
 	return []Provider{
 		&php.PhpProvider{},
 		&golang.GoProvider{},
+		&java.JavaProvider{},
 		&python.PythonProvider{},
 		&node.NodeProvider{},
 		&staticfile.StaticfileProvider{},
 		&shell.ShellProvider{},
-		&java.JavaProvider{},
 	}
 }
 
