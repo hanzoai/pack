@@ -54,6 +54,10 @@ export default defineConfig({
               label: "Developing Locally",
               link: "/guides/developing-locally",
             },
+            {
+              label: "Running Railpack in Production",
+              link: "/guides/running-railpack-in-production",
+            },
           ],
         },
         {
