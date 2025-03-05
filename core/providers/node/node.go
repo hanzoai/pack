@@ -103,6 +103,10 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		buildIncludeDirs = append(buildIncludeDirs, "/root/.cache")
 	}
 
+	if p.packageManager == PackageManagerYarn2 {
+		buildIncludeDirs = append(buildIncludeDirs, p.packageManager.getYarn2GlobalFolder(ctx))
+	}
+
 	ctx.Deploy.Inputs = []plan.Input{
 		ctx.DefaultRuntimeInput(),
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
@@ -110,21 +114,25 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		}),
 	}
 
-	stepForInstallFiles := "install"
 	if p.shouldPrune(ctx) {
-		stepForInstallFiles = "prune"
+		// If we are pruning, we want to grab the pruned node_modules
+		// and ignore the node_modules from the install/build steps
+		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+			plan.NewStepInput(prune.Name(), plan.InputOptions{
+				Include: p.packageManager.GetInstallFolder(ctx),
+			}),
+			plan.NewStepInput(build.Name(), plan.InputOptions{
+				Include: buildIncludeDirs,
+				Exclude: []string{"node_modules", ".yarn"},
+			}),
+		)
+	} else {
+		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+			plan.NewStepInput(build.Name(), plan.InputOptions{
+				Include: buildIncludeDirs,
+			}),
+		)
 	}
-
-	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
-		// Copy over the install files in a separate layer
-		plan.NewStepInput(stepForInstallFiles, plan.InputOptions{
-			Include: p.packageManager.GetInstallFolder(ctx),
-		}),
-		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: buildIncludeDirs,
-			Exclude: []string{"node_modules", ".yarn"},
-		}),
-	)
 
 	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, plan.NewLocalInput("."))
 
