@@ -1,0 +1,3 @@
+[tools]
+yarn = "2"
+node = "22"

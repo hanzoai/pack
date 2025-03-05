@@ -95,6 +95,10 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		buildIncludeDirs = append(buildIncludeDirs, "/root/.cache")
 	}
 
+	if p.packageManager == PackageManagerYarn2 {
+		buildIncludeDirs = append(buildIncludeDirs, p.packageManager.getYarn2GlobalFolder(ctx))
+	}
+
 	if isSPA {
 		err := p.DeploySPA(ctx, build)
 		return err
@@ -265,8 +269,11 @@ func (p *NodeProvider) GetNodeEnvVars(ctx *generate.GenerateContext) map[string]
 		"NPM_CONFIG_PRODUCTION":      "false",
 		"NPM_CONFIG_UPDATE_NOTIFIER": "false",
 		"NPM_CONFIG_FUND":            "false",
-		"YARN_PRODUCTION":            "false",
 		"CI":                         "true",
+	}
+
+	if p.packageManager == PackageManagerYarn1 {
+		envVars["YARN_PRODUCTION"] = "false"
 	}
 
 	if p.isAstro(ctx) && !p.isAstroSPA(ctx) {
