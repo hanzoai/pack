@@ -45,7 +45,10 @@ Railpack builds your Python application based on your project structure. The bui
 - Installs project dependencies using your preferred package manager
 - Configures the Python environment for production
 
-The start command is the `main.py` file in the root directory.
+The start command is determined by:
+
+1. Framework specific start command (see below)
+2. `main.py` file in the root directory
 
 ### Package Managers
 
@@ -59,9 +62,10 @@ Railpack supports multiple Python package managers:
 
 ### Config Variables
 
-| Variable                  | Description                 | Example |
-| ------------------------- | --------------------------- | ------- |
-| `RAILPACK_PYTHON_VERSION` | Override the Python version | `3.11`  |
+| Variable                   | Description                 | Example      |
+| -------------------------- | --------------------------- | ------------ |
+| `RAILPACK_PYTHON_VERSION`  | Override the Python version | `3.11`       |
+| `RAILPACK_DJANGO_APP_NAME` | Django app name             | `myapp.wsgi` |
 
 ### System Dependencies
 
@@ -70,3 +74,20 @@ Railpack installs system dependencies for common Python packages:
 - **pdf2image**: Installs `poppler-utils`
 - **pydub**: Installs `ffmpeg`
 - **pymovie**: Installs `ffmpeg`, `qt5-qmake`, and related Qt packages
+
+## Framework Support
+
+Railpack detects and configures caches and commands for popular frameworks:
+
+### Django
+
+Railpack detects Django projects by:
+
+- Presence of `manage.py`
+- Django being listed as a dependency
+
+The start command is determined by:
+
+1. `RAILPACK_DJANGO_APP_NAME` environment variable
+2. Scanning Python files for `WSGI_APPLICATION` setting
+3. Runs `python manage.py migrate && gunicorn {appName}:application`
