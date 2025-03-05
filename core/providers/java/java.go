@@ -17,8 +17,12 @@ func (p *JavaProvider) Detect(ctx *generate.GenerateContext) (bool, error) {
 	return ctx.App.HasMatch("pom.{xml,atom,clj,groovy,rb,scala,yaml,yml}") || ctx.App.HasMatch("gradlew"), nil
 }
 
-func (p *JavaProvider) Initialize() error {
+func (p *JavaProvider) Initialize(ctx *generate.GenerateContext) error {
 	return nil
+}
+
+func (p *JavaProvider) StartCommandHelp() string {
+	return ""
 }
 
 func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
@@ -26,6 +30,7 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 
 	build := ctx.NewCommandStep("build")
 	build.AddCommand(plan.NewCopyCommand("."))
+	build.Inputs = []plan.Input{plan.NewStepInput(ctx.GetMiseStepBuilder().Name())}
 
 	if p.usesGradle(ctx) {
 		p.installGradle(ctx)
@@ -46,6 +51,10 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 		build.AddCommand(plan.NewExecCommand(fmt.Sprintf("%s -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", p.getMavenExe(ctx))))
 	}
 
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(build.Name()),
+		plan.NewLocalInput("."),
+	}
 	ctx.Deploy.StartCmd = p.getStartCmd(ctx)
 
 	return nil
