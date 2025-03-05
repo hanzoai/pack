@@ -9,11 +9,11 @@ This guide will walk you through running Railpack in production as a platform
 ## CLI vs Frontend
 
 Railpack can build using the CLI or through a custom BuildKit frontend. **It is
-highly recommended to use the frontend in production**. The CLI is still used to
-analyze the code and generate a build plan. The CLI simply creates a BuildKit
-client and pipes the result into `docker load`. It is not something designed or
-optimized to be used with high throughput. The rest of this guide will assume
-you are using a custom frontend.
+highly recommended to use the frontend in production**. To build, the CLI simply
+creates a BuildKit client and pipes the result into `docker load` and is not
+something designed or optimized to be used with high throughput. The CLI is
+still used to analyze the code and generate a build plan. The rest of this guide
+will assume you are using a custom frontend.
 
 ## Prepare Command
 
