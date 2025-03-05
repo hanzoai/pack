@@ -1,15 +1,11 @@
 {
  "caches": {
-  "next-": {
-   "directory": "/app/.next/cache",
-   "type": "shared"
-  },
   "node-modules": {
    "directory": "/app/node_modules/.cache",
    "type": "shared"
   },
-  "npm-install": {
-   "directory": "/root/.npm",
+  "yarn-install": {
+   "directory": "/app/.yarn/cache",
    "type": "shared"
   }
  },
@@ -30,7 +26,8 @@
    },
    {
     "include": [
-     "."
+     ".",
+     "/root/.yarn"
     ],
     "step": "build"
    },
@@ -41,7 +38,7 @@
     "local": true
    }
   ],
-  "startCommand": "npm run start",
+  "startCommand": "yarn run start",
   "variables": {
    "CI": "true",
    "NODE_ENV": "production",
@@ -66,7 +63,7 @@
     },
     {
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
-     "customName": "install mise packages: node"
+     "customName": "install mise packages: node, yarn"
     }
    ],
    "inputs": [
@@ -85,7 +82,7 @@
   },
   {
    "caches": [
-    "npm-install"
+    "yarn-install"
    ],
    "commands": [
     {
@@ -96,11 +93,19 @@
      "src": "package.json"
     },
     {
-     "dest": "package-lock.json",
-     "src": "package-lock.json"
+     "dest": "yarn.lock",
+     "src": "yarn.lock"
     },
     {
-     "cmd": "npm ci"
+     "dest": ".yarn",
+     "src": ".yarn"
+    },
+    {
+     "dest": ".yarnrc.yml",
+     "src": ".yarnrc.yml"
+    },
+    {
+     "cmd": "yarn install --check-cache"
     }
    ],
    "inputs": [
@@ -127,8 +132,7 @@
   },
   {
    "caches": [
-    "node-modules",
-    "next-"
+    "node-modules"
    ],
    "commands": [
     {
@@ -136,7 +140,7 @@
      "src": "."
     },
     {
-     "cmd": "npm run build"
+     "cmd": "yarn run build"
     }
    ],
    "inputs": [

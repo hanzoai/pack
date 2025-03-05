@@ -44,8 +44,7 @@
    "NODE_ENV": "production",
    "NPM_CONFIG_FUND": "false",
    "NPM_CONFIG_PRODUCTION": "false",
-   "NPM_CONFIG_UPDATE_NOTIFIER": "false",
-   "YARN_PRODUCTION": "false"
+   "NPM_CONFIG_UPDATE_NOTIFIER": "false"
   }
  },
  "steps": [
@@ -112,8 +111,7 @@
     "NODE_ENV": "production",
     "NPM_CONFIG_FUND": "false",
     "NPM_CONFIG_PRODUCTION": "false",
-    "NPM_CONFIG_UPDATE_NOTIFIER": "false",
-    "YARN_PRODUCTION": "false"
+    "NPM_CONFIG_UPDATE_NOTIFIER": "false"
    }
   },
   {

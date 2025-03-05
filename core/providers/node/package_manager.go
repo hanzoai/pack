@@ -76,7 +76,7 @@ func (p PackageManager) GetInstallCache(ctx *generate.GenerateContext) string {
 	case PackageManagerYarn1:
 		return ctx.Caches.AddCacheWithType("yarn-install", "/usr/local/share/.cache/yarn", plan.CacheTypeLocked)
 	case PackageManagerYarn2:
-		return ctx.Caches.AddCache("yarn-install", "/usr/local/share/.cache/yarn")
+		return ctx.Caches.AddCache("yarn-install", "/app/.yarn/cache")
 	default:
 		return ""
 	}
@@ -118,7 +118,16 @@ func (p PackageManager) PruneDeps(ctx *generate.GenerateContext, prune *generate
 	case PackageManagerYarn1:
 		prune.AddCommand(plan.NewExecCommand("yarn install --production=true"))
 	case PackageManagerYarn2:
-		prune.AddCommand(plan.NewExecCommand("yarn install --production=true"))
+		prune.AddCommand(plan.NewExecCommand("yarn workspaces focus --production --all"))
+	}
+}
+
+func (p PackageManager) GetInstallFolder(ctx *generate.GenerateContext) []string {
+	switch p {
+	case PackageManagerYarn2:
+		return []string{"/app/.yarn", p.getYarn2GlobalFolder(ctx)}
+	default:
+		return []string{"/app/node_modules"}
 	}
 }
 
@@ -132,7 +141,7 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 		"**/pnpm-lock.yaml",
 		"**/bun.lockb",
 		"**/bun.lock",
-		"**/yarn.lock",
+		"**/.yarn",
 		"**/.pnp.*",        // Yarn Plug'n'Play files
 		"**/.yarnrc.yml",   // Yarn 2+ config
 		"**/.npmrc",        // NPM config
@@ -230,4 +239,17 @@ func (p PackageManager) parsePackageManagerField(packageJson *PackageJson) (stri
 	}
 
 	return "", ""
+}
+
+type YarnRc struct {
+	GlobalFolder string `json:"globalFolder"`
+}
+
+func (p PackageManager) getYarn2GlobalFolder(ctx *generate.GenerateContext) string {
+	var yarnRc YarnRc
+	if err := ctx.App.ReadYAML(".yarnrc.yml", &yarnRc); err == nil && yarnRc.GlobalFolder != "" {
+		return yarnRc.GlobalFolder
+	}
+
+	return "/root/.yarn"
 }
