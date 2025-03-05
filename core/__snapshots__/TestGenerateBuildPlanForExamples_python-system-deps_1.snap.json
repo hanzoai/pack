@@ -109,6 +109,9 @@
     },
     {
      "cmd": "pip install --target=/opt/python-packages -r requirements.txt"
+    },
+    {
+     "path": "/opt/python-packages/bin"
     }
    ],
    "inputs": [
