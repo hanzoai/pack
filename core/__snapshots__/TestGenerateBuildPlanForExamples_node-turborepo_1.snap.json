@@ -101,7 +101,8 @@
      "src": "package.json"
     },
     {
-     "cmd": "corepack enable"
+     "cmd": "sh -c 'npm i -g corepack@latest \u0026\u0026 corepack enable \u0026\u0026 corepack prepare --activate'",
+     "customName": "npm i -g corepack@latest \u0026\u0026 corepack enable \u0026\u0026 corepack prepare --activate"
     },
     {
      "cmd": "corepack prepare --activate"
