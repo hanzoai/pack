@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -102,6 +103,27 @@ func (a *App) HasMatch(pattern string) bool {
 	}
 
 	return len(files) > 0 || len(dirs) > 0
+}
+
+func (a *App) FindFilesWithContent(pattern string, regex *regexp.Regexp) []string {
+	files, err := a.FindFiles(pattern)
+	if err != nil {
+		return nil
+	}
+
+	var matches []string
+	for _, file := range files {
+		content, err := a.ReadFile(file)
+		if err != nil {
+			continue
+		}
+
+		if regex.MatchString(content) {
+			matches = append(matches, file)
+		}
+	}
+
+	return matches
 }
 
 // ReadFile reads the contents of a file

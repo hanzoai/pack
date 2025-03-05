@@ -44,8 +44,7 @@
    "PYTHONDONTWRITEBYTECODE": "1",
    "PYTHONFAULTHANDLER": "1",
    "PYTHONHASHSEED": "random",
-   "PYTHONUNBUFFERED": "1",
-   "VIRTUAL_ENV": "/app/.venv"
+   "PYTHONUNBUFFERED": "1"
   }
  },
  "steps": [
@@ -131,7 +130,8 @@
     "PYTHONDONTWRITEBYTECODE": "1",
     "PYTHONFAULTHANDLER": "1",
     "PYTHONHASHSEED": "random",
-    "PYTHONUNBUFFERED": "1"
+    "PYTHONUNBUFFERED": "1",
+    "VIRTUAL_ENV": "/app/.venv"
    }
   },
   {

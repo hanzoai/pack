@@ -27,6 +27,7 @@ type TestCase struct {
 	ExpectedOutput string            `json:"expectedOutput"`
 	Envs           map[string]string `json:"envs"`
 	ConfigFilePath string            `json:"configFile"`
+	JustBuild      bool              `json:"justBuild"`
 }
 
 func TestExamplesIntegration(t *testing.T) {
@@ -95,6 +96,10 @@ func TestExamplesIntegration(t *testing.T) {
 					Secrets:     testCase.Envs,
 				}); err != nil {
 					t.Fatalf("failed to build image: %v", err)
+				}
+
+				if testCase.JustBuild {
+					return
 				}
 
 				if err := runContainerWithTimeout(t, imageName, testCase.ExpectedOutput, testCase.Envs); err != nil {
