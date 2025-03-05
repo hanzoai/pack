@@ -44,6 +44,9 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 	install := ctx.NewCommandStep("install")
 	install.AddInput(plan.NewStepInput(p.GetBuilderDeps(ctx).Name()))
 
+	install.Secrets = []string{}
+	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP", "PIPX", "UV", "PDM", "POETRY"})
+
 	installOutputs := []string{}
 
 	if p.hasRequirements(ctx) {
@@ -81,18 +84,17 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 }
 
 func (p *PythonProvider) GetStartCommand(ctx *generate.GenerateContext) string {
+	startCommand := ""
 
-	if djangoAppName, err := p.getDjangoAppName(ctx); err == nil && djangoAppName != "" && p.isDjango(ctx) {
-		ctx.Logger.LogInfo("Found Django app: %s", djangoAppName)
-
-		return fmt.Sprintf("python manage.py migrate && gunicorn %s", djangoAppName)
+	if p.isDjango(ctx) {
+		startCommand = p.getDjangoStartCommand(ctx)
 	}
 
-	if ctx.App.HasMatch("main.py") {
-		return "python main.py"
+	if startCommand == "" && ctx.App.HasMatch("main.py") {
+		startCommand = "python main.py"
 	}
 
-	return ""
+	return startCommand
 }
 
 func (p *PythonProvider) StartCommandHelp() string {
@@ -133,8 +135,6 @@ func (p *PythonProvider) InstallPipenv(ctx *generate.GenerateContext, install *g
 		"PIPENV_VENV_IN_PROJECT":    "1",
 		"PIPENV_IGNORE_VIRTUALENVS": "1",
 	})
-	install.Secrets = []string{}
-	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP"})
 
 	install.AddCommands([]plan.Command{
 		plan.NewExecCommand("pipx install pipenv"),
@@ -169,8 +169,6 @@ func (p *PythonProvider) InstallPDM(ctx *generate.GenerateContext, install *gene
 	install.AddEnvVars(map[string]string{
 		"PDM_CHECK_UPDATE": "false",
 	})
-	install.Secrets = []string{}
-	install.UseSecretsWithPrefixes([]string{"PYTHON", "PDM"})
 
 	install.AddCommands([]plan.Command{
 		plan.NewExecCommand("pipx install pdm"),
@@ -188,8 +186,6 @@ func (p *PythonProvider) InstallPoetry(ctx *generate.GenerateContext, install *g
 	ctx.Logger.LogInfo("Using poetry")
 
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
-	install.Secrets = []string{}
-	install.UseSecretsWithPrefixes([]string{"PYTHON", "POETRY"})
 
 	install.AddCommands([]plan.Command{
 		plan.NewExecCommand("pipx install poetry"),
@@ -217,8 +213,6 @@ func (p *PythonProvider) InstallPip(ctx *generate.GenerateContext, install *gene
 		plan.NewCopyCommand("requirements.txt"),
 		plan.NewExecCommand(fmt.Sprintf("pip install --target=%s -r requirements.txt", PACKAGES_DIR)),
 	})
-	install.Secrets = []string{}
-	install.UseSecretsWithPrefixes([]string{"PYTHON", "PIP", "PIPX"})
 	maps.Copy(install.Variables, p.GetPythonEnvVars(ctx))
 	maps.Copy(install.Variables, map[string]string{
 		"PIP_CACHE_DIR": PIP_CACHE_DIR,
@@ -239,6 +233,10 @@ func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) 
 			ctx.Logger.LogInfo("Installing apt packages for %s", dep)
 			aptStep.Packages = append(aptStep.Packages, requiredPkgs...)
 		}
+	}
+
+	if p.usesPostgres(ctx) {
+		aptStep.Packages = append(aptStep.Packages, "libpq5")
 	}
 
 	return aptStep
@@ -284,6 +282,12 @@ func (p *PythonProvider) GetPythonEnvVars(ctx *generate.GenerateContext) map[str
 		"PIP_DISABLE_PIP_VERSION_CHECK": "1",
 		"PIP_DEFAULT_TIMEOUT":           "100",
 	}
+}
+
+func (p *PythonProvider) usesPostgres(ctx *generate.GenerateContext) bool {
+	djangoPythonRe := regexp.MustCompile(`django.db.backends.postgresql`)
+	containsDjangoPostgres := len(ctx.App.FindFilesWithContent("**/*.py", djangoPythonRe)) > 0
+	return p.usesDep(ctx, "psycopg2") || p.usesDep(ctx, "psycopg2-binary") || containsDjangoPostgres
 }
 
 func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {

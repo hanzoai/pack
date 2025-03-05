@@ -7,10 +7,14 @@ import (
 	"github.com/railwayapp/railpack/core/generate"
 )
 
-func (p *PythonProvider) getDjangoAppName(ctx *generate.GenerateContext) (string, error) {
+func (p *PythonProvider) getDjangoAppName(ctx *generate.GenerateContext) string {
+	if appName, _ := ctx.Env.GetConfigVariable("DJANGO_APP_NAME"); appName != "" {
+		return appName
+	}
+
 	paths, err := ctx.App.FindFiles("**/*.py")
 	if err != nil {
-		return "", err
+		return ""
 	}
 
 	re := regexp.MustCompile(`WSGI_APPLICATION = ["'](.*).application["']`)
@@ -23,11 +27,21 @@ func (p *PythonProvider) getDjangoAppName(ctx *generate.GenerateContext) (string
 
 		matches := re.FindStringSubmatch(contents)
 		if len(matches) > 1 {
-			return matches[1], nil
+			return matches[1]
 		}
 	}
 
-	return "", fmt.Errorf("failed to find your WSGI_APPLICATION django setting")
+	return ""
+}
+
+func (p *PythonProvider) getDjangoStartCommand(ctx *generate.GenerateContext) string {
+	appName := p.getDjangoAppName(ctx)
+	if appName == "" {
+		return ""
+	}
+
+	ctx.Logger.LogInfo("Using Django app: %s", appName)
+	return fmt.Sprintf("python manage.py migrate && gunicorn %s:application", appName)
 }
 
 func (p *PythonProvider) isDjango(ctx *generate.GenerateContext) bool {

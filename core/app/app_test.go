@@ -2,6 +2,7 @@ package app
 
 import (
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -62,4 +63,25 @@ func TestAppReadJsonWithComments(t *testing.T) {
 	err = app.ReadJSON("hello.jsonc", &config)
 	require.NoError(t, err)
 	require.Equal(t, config["hello"], "world")
+}
+
+func TestFindFilesWithContent(t *testing.T) {
+	app, err := NewApp("../../examples/node-bun")
+	require.NoError(t, err)
+
+	// Test finding files containing "console.log"
+	regex := regexp.MustCompile(`console\.log`)
+	matches := app.FindFilesWithContent("*.ts", regex)
+	require.Equal(t, len(matches), 1)
+	require.Equal(t, matches[0], "index.ts")
+
+	// Test finding files with non-existent pattern
+	regex = regexp.MustCompile(`nonexistent`)
+	matches = app.FindFilesWithContent("*.ts", regex)
+	require.Empty(t, matches)
+
+	// Test with invalid glob pattern
+	regex = regexp.MustCompile(`test`)
+	matches = app.FindFilesWithContent("[invalid", regex)
+	require.Empty(t, matches)
 }

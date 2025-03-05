@@ -42,7 +42,7 @@
     "local": true
    }
   ],
-  "startCommand": "python manage.py migrate \u0026\u0026 gunicorn mysite.wsgi",
+  "startCommand": "python manage.py migrate \u0026\u0026 gunicorn mysite.wsgi:application",
   "variables": {
    "PIP_DEFAULT_TIMEOUT": "100",
    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
@@ -136,9 +136,6 @@
     }
    ],
    "name": "install",
-   "secrets": [
-    "*"
-   ],
    "variables": {
     "PIP_DEFAULT_TIMEOUT": "100",
     "PIP_DISABLE_PIP_VERSION_CHECK": "1",
@@ -170,8 +167,8 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y '",
-     "customName": "install apt packages: "
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y libpq5'",
+     "customName": "install apt packages: libpq5"
     }
    ],
    "inputs": [
