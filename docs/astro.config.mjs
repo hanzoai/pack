@@ -99,7 +99,7 @@ export default defineConfig({
             },
             { label: "BuildKit Generation", link: "/architecture/buildkit" },
             { label: "Caching", link: "/architecture/caching" },
-            // { label: "User Config", link: "/architecture/user-config" },
+            { label: "User Config", link: "/architecture/user-config" },
           ],
         },
         {
