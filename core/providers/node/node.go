@@ -405,6 +405,8 @@ func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
 			return "vite"
 		} else if p.isCRA(ctx) {
 			return "cra"
+		} else if p.isAngular(ctx) {
+			return "angular"
 		}
 
 		return "static"
