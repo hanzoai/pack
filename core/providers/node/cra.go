@@ -8,6 +8,7 @@ import (
 
 const (
 	DefaultCRAOutputDirectory = "build"
+	DefaultCRAStartCommand    = "react-scripts start"
 )
 
 func (p *NodeProvider) isCRA(ctx *generate.GenerateContext) bool {
