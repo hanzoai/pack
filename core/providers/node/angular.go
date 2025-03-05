@@ -8,6 +8,10 @@ import (
 	"github.com/railwayapp/railpack/core/generate"
 )
 
+const (
+	DefaultAngularStartCommand = "ng serve"
+)
+
 func (p *NodeProvider) isAngular(ctx *generate.GenerateContext) bool {
 	hasAngularDep := p.hasDependency("@angular/core")
 	hasAngularConfig := ctx.App.HasMatch("angular.json")

@@ -22,6 +22,12 @@ func (p *NodeProvider) isSPA(ctx *generate.GenerateContext) bool {
 		return false
 	}
 
+	// If there is a custom start command, we don't want to deploy with Caddy as an SPA
+	if p.hasCustomStartCommand(ctx) {
+		ctx.Logger.LogInfo("Skipping SPA deployment because a custom start command is set")
+		return false
+	}
+
 	isVite := p.isVite(ctx)
 	isAstro := p.isAstroSPA(ctx)
 	isCRA := p.isCRA(ctx)
@@ -111,6 +117,16 @@ func (p *NodeProvider) getOutputDirectory(ctx *generate.GenerateContext) string 
 	}
 
 	return outputDir
+}
+
+func (p *NodeProvider) hasCustomStartCommand(ctx *generate.GenerateContext) bool {
+	startCommand := ctx.Config.Deploy.StartCmd
+	if startCommand == "" {
+		startCommand = p.packageJson.Scripts["start"]
+	}
+	isAngularDefaultStartCommand := startCommand == DefaultAngularStartCommand
+	isCRAStartCommand := startCommand == DefaultCRAStartCommand
+	return startCommand != "" && !isAngularDefaultStartCommand && !isCRAStartCommand
 }
 
 // func (p *NodeProvider) isReact() bool {
