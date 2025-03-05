@@ -180,6 +180,9 @@ Caches are used to speed up builds by storing and reusing files between builds.
 Each cache has a type and a directory. Caches **are not persisted** in the final
 image.
 
+The cache name is referenced in the `caches` field of a step. A cache has the
+following properties:
+
 | Field       | Description                                                           |
 | :---------- | :-------------------------------------------------------------------- |
 | `directory` | The directory to cache                                                |
@@ -204,8 +207,10 @@ For example:
 
 ### Cache Types
 
-- `shared`: Multiple builds can use this cache simultaneously (used for package manager caches)
-- `locked`: Only one build can use this cache at a time (used for apt caches to prevent concurrent package installations)
+- `shared`: Multiple builds can use this cache simultaneously (used for package
+  manager caches)
+- `locked`: Only one build can use this cache at a time (used for apt caches to
+  prevent concurrent package installations)
 
 ## Steps
 
