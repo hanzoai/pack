@@ -118,7 +118,16 @@ func (p PackageManager) PruneDeps(ctx *generate.GenerateContext, prune *generate
 	case PackageManagerYarn1:
 		prune.AddCommand(plan.NewExecCommand("yarn install --production=true"))
 	case PackageManagerYarn2:
-		prune.AddCommand(plan.NewExecCommand("yarn install --production=true"))
+		prune.AddCommand(plan.NewExecCommand("yarn workspaces focus --production --all"))
+	}
+}
+
+func (p PackageManager) GetInstallFolder(ctx *generate.GenerateContext) []string {
+	switch p {
+	case PackageManagerYarn2:
+		return []string{"/app/.yarn", p.getYarn2GlobalFolder(ctx)}
+	default:
+		return []string{"/app/node_modules"}
 	}
 }
 

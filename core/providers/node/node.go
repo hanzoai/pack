@@ -90,18 +90,17 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
 	maps.Copy(ctx.Deploy.Variables, p.GetNodeEnvVars(ctx))
 
-	buildIncludeDirs := []string{"."}
-	if p.usesCorepack() {
-		buildIncludeDirs = append(buildIncludeDirs, "/root/.cache")
-	}
-
-	if p.packageManager == PackageManagerYarn2 {
-		buildIncludeDirs = append(buildIncludeDirs, p.packageManager.getYarn2GlobalFolder(ctx))
-	}
-
+	// Custom deploy for SPA's
 	if isSPA {
 		err := p.DeploySPA(ctx, build)
 		return err
+	}
+
+	// All the files we need to include in the deploy
+	buildIncludeDirs := []string{"."}
+
+	if p.usesCorepack() {
+		buildIncludeDirs = append(buildIncludeDirs, "/root/.cache")
 	}
 
 	ctx.Deploy.Inputs = []plan.Input{
@@ -111,25 +110,21 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		}),
 	}
 
+	stepForInstallFiles := "install"
 	if p.shouldPrune(ctx) {
-		// If we are pruning, we want to grab the pruned node_modules
-		// and ignore the node_modules from the install/build steps
-		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
-			plan.NewStepInput(prune.Name(), plan.InputOptions{
-				Include: []string{"/app/node_modules"},
-			}),
-			plan.NewStepInput(build.Name(), plan.InputOptions{
-				Include: buildIncludeDirs,
-				Exclude: []string{"node_modules"},
-			}),
-		)
-	} else {
-		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
-			plan.NewStepInput(build.Name(), plan.InputOptions{
-				Include: buildIncludeDirs,
-			}),
-		)
+		stepForInstallFiles = "prune"
 	}
+
+	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+		// Copy over the install files in a separate layer
+		plan.NewStepInput(stepForInstallFiles, plan.InputOptions{
+			Include: p.packageManager.GetInstallFolder(ctx),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: buildIncludeDirs,
+			Exclude: []string{"node_modules", ".yarn"},
+		}),
+	)
 
 	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, plan.NewLocalInput("."))
 
