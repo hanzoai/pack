@@ -35,7 +35,7 @@ func TestNode(t *testing.T) {
 			detected:       true,
 			packageManager: PackageManagerPnpm,
 			nodeVersion:    "20",
-			pnpmVersion:    "9.9.0",
+			pnpmVersion:    "10.4.1",
 		},
 		{
 			name:           "pnpm",

@@ -171,15 +171,46 @@ For example:
     "node": "22",
     "python": "3.13"
   },
-  "caches": {
-    "node-modules": {
-      "key": "node-modules-{{hash}}",
-      "paths": ["/app/node_modules/.cache"]
-    }
-  },
-  "secrets": ["DATABASE_URL", "API_KEY"]
 }
 ```
+
+## Caches
+
+Caches are used to speed up builds by storing and reusing files between builds.
+Each cache has a type and a directory. Caches **are not persisted** in the final
+image.
+
+The cache name is referenced in the `caches` field of a step. A cache has the
+following properties:
+
+| Field       | Description                                                           |
+| :---------- | :-------------------------------------------------------------------- |
+| `directory` | The directory to cache                                                |
+| `type`      | The type of cache (either "shared" or "locked", defaults to "shared") |
+
+For example:
+
+```json
+{
+  "caches": {
+    "npm-install": {
+      "directory": "/root/.npm",
+      "type": "shared"
+    },
+    "apt": {
+      "directory": "/var/cache/apt",
+      "type": "locked"
+    }
+  }
+}
+```
+
+### Cache Types
+
+- `shared`: Multiple builds can use this cache simultaneously (used for package
+  manager caches)
+- `locked`: Only one build can use this cache at a time (used for apt caches to
+  prevent concurrent package installations)
 
 ## Steps
 

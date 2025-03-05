@@ -231,10 +231,12 @@ func (p PackageManager) parsePackageManagerField(packageJson *PackageJson) (stri
 	if packageJson.PackageManager != nil {
 		pmString := *packageJson.PackageManager
 
-		// Parse packageManager field which is in format "name@version"
+		// Parse packageManager field which is in format "name@version" or "name@version+sha224.hash"
 		parts := strings.Split(pmString, "@")
 		if len(parts) == 2 {
-			return parts[0], parts[1]
+			// Split version on '+' to remove SHA hash if present
+			versionParts := strings.Split(parts[1], "+")
+			return parts[0], versionParts[0]
 		}
 	}
 

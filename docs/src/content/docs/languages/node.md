@@ -81,14 +81,18 @@ Railpack detects your package manager based on lock files:
 
 ## Static Sites
 
-Railpack will serve your Vite or Astro project as a static site by default. You
-can disable this by setting the `RAILPACK_NO_SPA=1` environment variable.
+Railpack can serve a statically built Node project with zero config. You can
+disable this behaviour by either:
 
-- **Vite**: Detects Vite projects by the presence of `vite.config.js` or
-  `vite.config.ts` or a `vite build` in the `package.json` build script
-- **Astro**: Detects Astro projects by the presence of `astro.config.js`
-- **CRA**: Detects CRA projects by the presence of `react-scripts`
-- **Angular**: Detects Angular projects by the presence of `angular.json`
+- Setting the `RAILPACK_NO_SPA=1` environment variable
+- Setting a custom start command
+
+These frameworks are supported:
+
+- **Vite**: Detected if `vite.config.js` or `vite.config.ts` exists, or if the build script contains `vite build`
+- **Astro**: Detected if `astro.config.js` exists
+- **CRA**: Detected if `react-scripts` is in dependencies and build script contains `react-scripts build`
+- **Angular**: Detected if `angular.json` exists
 
 For both frameworks, Railpack will try to detect the output directory and will
 default to `dist`. Set the `RAILPACK_SPA_OUTPUT_DIR` environment variable to
@@ -104,6 +108,11 @@ You can overwrite this file with your own Caddyfile at the root of your project.
 Railpack detects and configures caches and commands for popular frameworks.
 Including:
 
-- Next.js
-- Vite
-- Astro
+- Next.js: Caches `.next/cache` for each Next.js app in the workspace
+- Remix: Caches `.cache`
+- Vite: Caches `.vite/cache`
+- Astro: Caches `.astro/cache`
+
+As well as a default cache for node modules:
+
+- Node modules: Caches `node_modules/.cache`

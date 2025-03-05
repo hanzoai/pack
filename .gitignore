@@ -33,3 +33,4 @@ test
 dist
 
 .vscode/
+.DS_Store

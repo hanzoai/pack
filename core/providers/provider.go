@@ -20,11 +20,12 @@ type Provider interface {
 }
 
 func GetLanguageProviders() []Provider {
+	// Order is important here. The first provider that returns true from Detect() will be used.
 	return []Provider{
 		&php.PhpProvider{},
-		&node.NodeProvider{},
-		&python.PythonProvider{},
 		&golang.GoProvider{},
+		&python.PythonProvider{},
+		&node.NodeProvider{},
 		&staticfile.StaticfileProvider{},
 		&shell.ShellProvider{},
 		&java.JavaProvider{},
