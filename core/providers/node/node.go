@@ -291,7 +291,7 @@ func (p *NodeProvider) hasDependency(dependency string) bool {
 }
 
 func (p *NodeProvider) usesCorepack() bool {
-	return p.packageJson.PackageManager != nil
+	return p.packageJson.PackageManager != nil && p.packageManager != PackageManagerBun
 }
 
 func (p *NodeProvider) getPackageManager(app *app.App) PackageManager {
