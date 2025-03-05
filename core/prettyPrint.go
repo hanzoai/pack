@@ -159,8 +159,6 @@ func formatLogs(output *strings.Builder, logs []logger.Msg) {
 		}
 		output.WriteString("\n")
 	}
-
-	output.WriteString("\n")
 }
 
 func formatPackages(output *strings.Builder, packages map[string]*resolver.ResolvedPackage) {

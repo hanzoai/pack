@@ -90,14 +90,21 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
 	maps.Copy(ctx.Deploy.Variables, p.GetNodeEnvVars(ctx))
 
+	// Custom deploy for SPA's
+	if isSPA {
+		err := p.DeploySPA(ctx, build)
+		return err
+	}
+
+	// All the files we need to include in the deploy
 	buildIncludeDirs := []string{"."}
+
 	if p.usesCorepack() {
 		buildIncludeDirs = append(buildIncludeDirs, "/root/.cache")
 	}
 
-	if isSPA {
-		err := p.DeploySPA(ctx, build)
-		return err
+	if p.packageManager == PackageManagerYarn2 {
+		buildIncludeDirs = append(buildIncludeDirs, p.packageManager.getYarn2GlobalFolder(ctx))
 	}
 
 	ctx.Deploy.Inputs = []plan.Input{
@@ -112,11 +119,11 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		// and ignore the node_modules from the install/build steps
 		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
 			plan.NewStepInput(prune.Name(), plan.InputOptions{
-				Include: []string{"/app/node_modules"},
+				Include: p.packageManager.GetInstallFolder(ctx),
 			}),
 			plan.NewStepInput(build.Name(), plan.InputOptions{
 				Include: buildIncludeDirs,
-				Exclude: []string{"node_modules"},
+				Exclude: []string{"node_modules", ".yarn"},
 			}),
 		)
 	} else {
@@ -265,8 +272,11 @@ func (p *NodeProvider) GetNodeEnvVars(ctx *generate.GenerateContext) map[string]
 		"NPM_CONFIG_PRODUCTION":      "false",
 		"NPM_CONFIG_UPDATE_NOTIFIER": "false",
 		"NPM_CONFIG_FUND":            "false",
-		"YARN_PRODUCTION":            "false",
 		"CI":                         "true",
+	}
+
+	if p.packageManager == PackageManagerYarn1 {
+		envVars["YARN_PRODUCTION"] = "false"
 	}
 
 	if p.isAstro(ctx) && !p.isAstroSPA(ctx) {
@@ -398,6 +408,8 @@ func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
 			return "vite"
 		} else if p.isCRA(ctx) {
 			return "cra"
+		} else if p.isAngular(ctx) {
+			return "angular"
 		}
 
 		return "static"
