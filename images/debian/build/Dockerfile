@@ -1,5 +1,7 @@
 FROM buildpack-deps:bookworm-scm
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     # Build tools
@@ -61,7 +63,6 @@ ENV MISE_INSTALL_PATH=/usr/local/bin/mise \
     MISE_DATA_DIR=/mise \
     MISE_CONFIG_DIR=/mise \
     MISE_CACHE_DIR=/mise/cache \
-    DEBIAN_FRONTEND=noninteractive \
     PATH=/mise/shims:$PATH
 
 # Copy mise binary from builder
