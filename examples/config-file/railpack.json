@@ -1,5 +1,5 @@
 {
-  "$schema": "../../test/schema.json",
+  "$schema": "https://schema.railpack.com",
   "provider": "node",
   "packages": {
     "python": "latest"

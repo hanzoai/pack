@@ -3,8 +3,8 @@ title: Caching
 description: Understanding Railpack's caching mechanisms
 ---
 
-Railpack takes advantage of BuildKit layer and mount caches to speed up
-successive builds.
+Railpack uses both BuildKit layer and mount caches to speed up successive
+builds.
 
 ## Layer Cache
 
@@ -25,31 +25,15 @@ is used to save the contents of a directory from the build context between
 builds. This is useful for speeding up commands that download or compile assets
 (e.g. npm install). The directory **does not** appear in the final image.
 
-Caches are defined on the build plan and can be referenced via execution commands.
+Caches are defined in the build plan and referenced by steps that need them.
+Each cache has a type and a directory:
 
-```json
-{
-  "caches": {
-    "npm-install": {
-      "directory": "/root/.npm",
-      "type": "shared"
-    }
-  },
+### Cache Types
 
-  "steps": {
-    "install": {
-      "commands": [
-        {
-          "cmd": "npm install",
-          "caches": ["npm-install"]
-        }
-        // ...
-      ]
-      // ...
-    }
-  }
-}
-```
+- `shared`: Multiple builds can use this cache simultaneously (used for package
+  manager caches)
+- `locked`: Only one build can use this cache at a time (used for apt caches to
+  prevent concurrent package installations)
 
-Caches are shared across all steps. This is useful for common caches such as the
-apt-cache or apt-lists.
+Caches are shared across all steps that reference them. This is useful for
+common caches such as the apt-cache or apt-lists.

@@ -3,7 +3,8 @@ title: Secrets and Environment Variables
 description: How Railpack handles secrets and environment variables
 ---
 
-Build secrets and environment variables are treated separatley. The main differences being
+Build secrets and environment variables are treated separately. The main
+differences being:
 
 - Environment variables are saved in the final image and should not contain
   sensitive information. Since they are in the final image, providers can add
@@ -13,19 +14,29 @@ Build secrets and environment variables are treated separatley. The main differe
 
 ## Environment Variables
 
-Environment variables are added to the build plan as a step command. This allows
-the providers to control exactly when to bust the layer cache (in contrast to
-Nixpacks which treats env vars as all or nothing at the start of the build).
+Environment variables can be set in two ways:
+
+1. Through step variables:
 
 ```json
 {
   "steps": {
     "install": {
-      "commands": [
-        { "name": "NODE_ENV", "value": "production" }
-        // ...
-      ]
-      // ...
+      "variables": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+```
+
+2. Through the deploy section for runtime variables:
+
+```json
+{
+  "deploy": {
+    "variables": {
+      "NODE_ENV": "production"
     }
   }
 }
@@ -34,22 +45,38 @@ Nixpacks which treats env vars as all or nothing at the start of the build).
 ## Secrets
 
 The names of all secrets that should be used during the build are added to the
-top of the build plan. Whether or not a step uses the secrets is determined by a
-`useSecrets` key. If this key is present, the secrets will be available to all
-exec commands run in the step.
+top of the build plan. Each step that needs access to secrets must include them
+in its `secrets` field.
 
 Under the hood, Railpack uses [BuildKit secrets
 mounts](https://docs.docker.com/build/building/secrets/) to supply an exec
 command with the secret value as an environment variable.
 
+By default, all secrets defined in the build plan are available to each step.
+You can explicitly specify which secrets a step should have access to using the
+`secrets` array. An empty array indicates that no secrets should be available to
+that step.
+
 ```json
 {
-  "secrets": ["STRIPE_LIVE_KEY"],
-
+  "secrets": ["DATABASE_URL", "API_KEY", "STRIPE_LIVE_KEY"],
   "steps": {
     "build": {
-      "useSecrets": true
-      // ...
+      "secrets": ["DATABASE_URL", "API_KEY"] // Only these secrets are available to this step
+    }
+  }
+}
+```
+
+You can also use `"*"` in a step's secrets array to indicate that it should have
+access to all secrets defined in the build plan:
+
+```json
+{
+  "secrets": ["DATABASE_URL", "API_KEY", "STRIPE_LIVE_KEY"],
+  "steps": {
+    "build": {
+      "secrets": ["*"] // This step has access to all secrets
     }
   }
 }
@@ -81,33 +108,20 @@ or BuildKit with the `--secret` flag.
 railpack plan --env STRIPE_LIVE_KEY=sk_live_asdf --out test/railpack-plan.json
 
 # Build with the custom frontend
-STRIPE_LIVE_KEY=sk_live_asdf docker build \
+STRIPE_LIVE_KEY=asdf123456789 docker build \
   --build-arg BUILDKIT_SYNTAX="ghcr.io/railwayapp/railpack:railpack-frontend" \
   -f test/railpack-plan.json \
   --secret id=STRIPE_LIVE_KEY,env=STRIPE_LIVE_KEY \
+  --build-arg secrets-hash=asdfasdf \
   examples/node-bun
 ```
 
-### Secrets hash
+For more information about running Railpack in production, see the [Running
+Railpack in Production](/guides/running-railpack-in-production) guide.
 
-By default, BuildKit will not invalidate the a layer if a secret is changed. To
-get around this, Railpack uses a hash of the secret values and mounts this as a
-file in the layer. This will bust the layer cache if the secret is changed.
+### Layer Invalidation
 
-If using the CLI to build, this will happen automatically.
-
-If using a custom frontend, you will need to provide the secret hash manually
-via the `--opt secrets-hash=<hash>` flag.
-
-```bash
-STRIPE_LIVE_KEY=sk_live_asdf docker build \
-  --build-arg BUILDKIT_SYNTAX="ghcr.io/railwayapp/railpack:railpack-frontend" \
-  -f test/railpack-plan.json \
-  --secret id=STRIPE_LIVE_KEY,env=STRIPE_LIVE_KEY \
-  --opt secrets-hash=asdf123456789... \
-  examples/node-bun
-```
-
-This value can be anything that indicates that the secrets have changed (a
-simple counter also works). However, we recommend using a non-reversible hash of
-the secret values.
+By default, BuildKit will not invalidate a layer if a secret is changed. To get
+around this, Railpack uses a hash of the secret values and mounts this as a file
+in the layer. This will bust the layer cache if the secret is changed. Pass the
+secret hash to BuildKit with the `--build-arg secrets-hash=<hash>` flag.
