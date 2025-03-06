@@ -117,7 +117,7 @@
      "src": ".nvmrc"
     },
     {
-     "cmd": "pnpm install --frozen-lockfile --prefer-offline --no-optional"
+     "cmd": "pnpm install --frozen-lockfile --prefer-offline"
     }
    ],
    "inputs": [
