@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -90,27 +89,10 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
-	// Error if there are no commands in the build plan
-	var atLeastOneCommand = false
-	for _, step := range buildPlan.Steps {
-		if len(step.Commands) > 0 {
-			atLeastOneCommand = true
-		}
-	}
-
-	if !atLeastOneCommand {
-		logger.LogError("%s", getNoProviderError(app))
-		return &BuildResult{Success: false, Logs: logger.Logs}
-	}
-
-	// Error if there is no start command and we are configured to error on it
-	if options.ErrorMissingStartCommand && ctx.Deploy.StartCmd == "" {
-		startCmdHelp := "No start command was found."
-		if providerHelp := providerToUse.StartCommandHelp(); providerHelp != "" {
-			startCmdHelp += "\n\n" + providerHelp
-		}
-		logger.LogError("%s", startCmdHelp)
-
+	if !ValidatePlan(buildPlan, app, logger, &ValidatePlanOptions{
+		ErrorMissingStartCommand: options.ErrorMissingStartCommand,
+		ProviderToUse:            providerToUse,
+	}) {
 		return &BuildResult{Success: false, Logs: logger.Logs}
 	}
 
@@ -286,45 +268,4 @@ func getProviders(ctx *generate.GenerateContext, config *config.Config) (provide
 	}
 
 	return providerToUse, detectedProvider
-}
-
-func getNoProviderError(app *app.App) string {
-	providerNames := []string{}
-	for _, provider := range providers.GetLanguageProviders() {
-		providerNames = append(providerNames, utils.CapitalizeFirst(provider.Name()))
-	}
-
-	files, _ := app.FindFiles("*")
-	dirs, _ := app.FindDirectories("*")
-
-	fileTree := "./\n"
-
-	for i, dir := range dirs {
-		prefix := "├── "
-		if i == len(dirs)-1 && len(files) == 0 {
-			prefix = "└── "
-		}
-		fileTree += fmt.Sprintf("%s%s/\n", prefix, dir)
-	}
-
-	for i, file := range files {
-		prefix := "├── "
-		if i == len(files)-1 {
-			prefix = "└── "
-		}
-		fileTree += fmt.Sprintf("%s%s\n", prefix, file)
-	}
-
-	errorMsg := "Railpack could not determine how to build the app.\n\n"
-	errorMsg += "The following languages are supported:\n"
-	for _, provider := range providerNames {
-		errorMsg += fmt.Sprintf("- %s\n", provider)
-	}
-
-	errorMsg += "\nThe app contents that Railpack analyzed contains:\n\n"
-	errorMsg += fileTree
-	errorMsg += "\n"
-	errorMsg += "Check out the docs for more information: https://railpack.com"
-
-	return errorMsg
 }
