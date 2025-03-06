@@ -90,7 +90,7 @@ disable this behaviour by either:
 These frameworks are supported:
 
 - **Vite**: Detected if `vite.config.js` or `vite.config.ts` exists, or if the build script contains `vite build`
-- **Astro**: Detected if `astro.config.js` exists
+- **Astro**: Detected if `astro.config.js` exists and the output is not type `"server"`
 - **CRA**: Detected if `react-scripts` is in dependencies and build script contains `react-scripts build`
 - **Angular**: Detected if `angular.json` exists
 
