@@ -11,6 +11,7 @@ import (
 
 const (
 	DefaultCaddyfilePath = "/Caddyfile"
+	OUTPUT_DIR_VAR       = "SPA_OUTPUT_DIR"
 )
 
 //go:embed Caddyfile.template
@@ -18,13 +19,16 @@ var caddyfileTemplate string
 
 func (p *NodeProvider) isSPA(ctx *generate.GenerateContext) bool {
 	if ctx.Env.IsConfigVariableTruthy("NO_SPA") {
-		ctx.Logger.LogInfo("Skipping SPA deployment because NO_SPA is set")
 		return false
+	}
+
+	// Setting the output dir directly will force an SPA build
+	if value, _ := ctx.Env.GetConfigVariable(OUTPUT_DIR_VAR); value != "" {
+		return true
 	}
 
 	// If there is a custom start command, we don't want to deploy with Caddy as an SPA
 	if p.hasCustomStartCommand(ctx) {
-		ctx.Logger.LogInfo("Skipping SPA deployment because a custom start command is set")
 		return false
 	}
 
@@ -104,7 +108,7 @@ func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.
 func (p *NodeProvider) getOutputDirectory(ctx *generate.GenerateContext) string {
 	outputDir := ""
 
-	if dir, _ := ctx.Env.GetConfigVariable("SPA_OUTPUT_DIR"); dir != "" {
+	if dir, _ := ctx.Env.GetConfigVariable(OUTPUT_DIR_VAR); dir != "" {
 		outputDir = dir
 	} else if p.isVite(ctx) {
 		outputDir = p.getViteOutputDirectory(ctx)
