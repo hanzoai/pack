@@ -1,5 +1,13 @@
 package node
 
+import (
+	"encoding/json"
+)
+
+type WorkspacesConfig struct {
+	Packages []string `json:"packages"`
+}
+
 type PackageJson struct {
 	Name            string            `json:"name"`
 	Version         string            `json:"version"`
@@ -9,7 +17,7 @@ type PackageJson struct {
 	DevDependencies map[string]string `json:"devDependencies"`
 	Engines         map[string]string `json:"engines"`
 	Main            string            `json:"main"`
-	Workspaces      []string          `json:"workspaces"`
+	Workspaces      []string          `json:"-"`
 }
 
 func NewPackageJson() *PackageJson {
@@ -46,4 +54,43 @@ func (p *PackageJson) hasDependency(dependency string) bool {
 	}
 
 	return false
+}
+
+func (p *PackageJson) UnmarshalJSON(data []byte) error {
+	type WorkspacesObject struct {
+		Packages []string `json:"packages"`
+	}
+
+	type Alias PackageJson
+	aux := &struct {
+		*Alias
+		Workspaces interface{} `json:"workspaces"`
+	}{
+		Alias: (*Alias)(p),
+	}
+
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+
+	// Handle workspaces field based on its type
+	switch w := aux.Workspaces.(type) {
+	case []interface{}:
+		p.Workspaces = make([]string, len(w))
+		for i, v := range w {
+			if s, ok := v.(string); ok {
+				p.Workspaces[i] = s
+			}
+		}
+	case map[string]interface{}:
+		// Try to unmarshal as WorkspacesObject
+		var wo WorkspacesObject
+		if b, err := json.Marshal(w); err == nil {
+			if err := json.Unmarshal(b, &wo); err == nil {
+				p.Workspaces = wo.Packages
+			}
+		}
+	}
+
+	return nil
 }
