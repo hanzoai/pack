@@ -26,14 +26,14 @@ func (p *JavaProvider) StartCommandHelp() string {
 }
 
 func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
-	p.installJDK(ctx)
 
 	build := ctx.NewCommandStep("build")
 	build.AddCommand(plan.NewCopyCommand("."))
 	build.Inputs = []plan.Input{plan.NewStepInput(ctx.GetMiseStepBuilder().Name())}
 
 	if p.usesGradle(ctx) {
-		p.installGradle(ctx)
+		p.setGradleVersion(ctx)
+		p.setJDKVersion(ctx, nil)
 
 		if ctx.App.HasMatch("gradlew") && !ctx.App.IsFileExecutable("gradlew") {
 			build.AddCommand(plan.NewExecCommand("chmod +x gradlew"))
@@ -43,6 +43,7 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 		build.AddCache(p.gradleCache(ctx))
 	} else {
 		ctx.GetMiseStepBuilder().Default("maven", "latest")
+		p.setJDKVersion(ctx, nil)
 
 		if ctx.App.HasMatch("mvnw") && !ctx.App.IsFileExecutable("mvnw") {
 			build.AddCommand(plan.NewExecCommand("chmod +x mvnw"))
@@ -51,9 +52,23 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 		build.AddCommand(plan.NewExecCommand(fmt.Sprintf("%s -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", p.getMavenExe(ctx))))
 	}
 
+	runtimeDeps := ctx.NewMiseStepBuilder("java-runtime-deps")
+	runtimeDeps.Inputs = []plan.Input{ctx.DefaultRuntimeInput()}
+	p.setJDKVersion(ctx, runtimeDeps)
+
+	outPath := "target/."
+	if ctx.App.HasMatch("*/build/libs/*.jar") {
+		outPath = "."
+	}
+
 	ctx.Deploy.Inputs = []plan.Input{
-		plan.NewStepInput(build.Name()),
-		plan.NewLocalInput("."),
+		ctx.DefaultRuntimeInput(),
+		plan.NewStepInput(runtimeDeps.Name(), plan.InputOptions{
+			Include: runtimeDeps.GetOutputPaths(),
+		}),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{outPath},
+		}),
 	}
 	ctx.Deploy.StartCmd = p.getStartCmd(ctx)
 
@@ -63,7 +78,7 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 func (p *JavaProvider) getStartCmd(ctx *generate.GenerateContext) string {
 	if p.usesGradle(ctx) {
 		buildGradle := p.readBuildGradle(ctx)
-		return fmt.Sprintf("java $JAVA_OPTS -jar %s $(ls -1 build/libs/*jar | grep -v plain)", getGradlePortConfig(buildGradle))
+		return fmt.Sprintf("java $JAVA_OPTS -jar %s $(ls -1 */build/libs/*jar | grep -v plain)", getGradlePortConfig(buildGradle))
 	} else if ctx.App.HasMatch("pom.xml") {
 		return fmt.Sprintf("java %s $JAVA_OPTS -jar target/*jar", getMavenPortConfig(ctx))
 	} else {

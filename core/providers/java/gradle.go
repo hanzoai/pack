@@ -2,14 +2,13 @@ package java
 
 import (
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/railwayapp/railpack/core/generate"
 )
 
 const (
-	DEFAULT_GRADLE_VERSION = 8
+	DEFAULT_GRADLE_VERSION = "8"
 	GRADLE_CACHE_KEY       = "gradle"
 )
 
@@ -17,59 +16,47 @@ func (p *JavaProvider) usesGradle(ctx *generate.GenerateContext) bool {
 	return ctx.App.HasMatch("gradlew")
 }
 
-func (p *JavaProvider) getGradleVersion(ctx *generate.GenerateContext) (int, error) {
+func (p *JavaProvider) setGradleVersion(ctx *generate.GenerateContext) error {
+	miseStep := ctx.GetMiseStepBuilder()
+	gradle := miseStep.Default("gradle", DEFAULT_GRADLE_VERSION)
+
 	if envVersion, _ := ctx.Env.GetConfigVariable("GRADLE_VERSION"); envVersion != "" {
-		intVersion, err := strconv.Atoi(envVersion)
-		if err != nil {
-			return DEFAULT_GRADLE_VERSION, err
-		} else {
-			return intVersion, nil
-		}
+		miseStep.Version(gradle, envVersion, "GRADLE_VERSION")
 	}
 
 	if !ctx.App.HasMatch("gradle/wrapper/gradle-wrapper.properties") {
-		return DEFAULT_GRADLE_VERSION, nil
+		return nil
 	}
 
 	wrapperProps, err := ctx.App.ReadFile("gradle/wrapper/gradle-wrapper.properties")
 	if err != nil {
-		return DEFAULT_GRADLE_VERSION, err
+		return err
 	}
 
 	versionRegex, err := regexp.Compile(`(distributionUrl[\S].*[gradle])(-)([0-9|\.]*)`)
 	if err != nil {
-		return DEFAULT_GRADLE_VERSION, err
+		return err
 	}
 
 	if !versionRegex.Match([]byte(wrapperProps)) {
-		return DEFAULT_GRADLE_VERSION, nil
+		return err
 	}
 
 	customVersion := string(versionRegex.FindSubmatch([]byte(wrapperProps))[3])
 
 	parseVersionRegex, err := regexp.Compile(`^(?:[\sa-zA-Z-"']*)(\d*)(?:\.*)(\d*)(?:\.*\d*)(?:["']?)$`)
 	if err != nil {
-		return DEFAULT_GRADLE_VERSION, err
+		return err
 	}
 
 	if !parseVersionRegex.Match([]byte(customVersion)) {
-		return DEFAULT_GRADLE_VERSION, nil
+		return err
 	}
 
 	parsedVersion := string(parseVersionRegex.FindSubmatch([]byte(customVersion))[1])
 
-	intVersion, err := strconv.Atoi(parsedVersion)
-	if err != nil {
-		return DEFAULT_GRADLE_VERSION, err
-	} else {
-		return intVersion, nil
-	}
-}
-
-func (p *JavaProvider) installGradle(ctx *generate.GenerateContext) {
-	version, _ := p.getGradleVersion(ctx)
-
-	ctx.GetMiseStepBuilder().Default("gradle", strconv.Itoa(version))
+	miseStep.Version(gradle, parsedVersion, "gradle-wrapper.properties")
+	return nil
 }
 
 func (p *JavaProvider) gradleCache(ctx *generate.GenerateContext) string {
