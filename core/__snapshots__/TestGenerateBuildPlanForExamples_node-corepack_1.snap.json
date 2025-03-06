@@ -109,7 +109,7 @@
      "src": "pnpm-lock.yaml"
     },
     {
-     "cmd": "pnpm install --frozen-lockfile --prefer-offline --prod=false"
+     "cmd": "pnpm install --frozen-lockfile --prefer-offline --no-optional"
     }
    ],
    "inputs": [
