@@ -52,7 +52,7 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 		build.AddCommand(plan.NewExecCommand(fmt.Sprintf("%s -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install", p.getMavenExe(ctx))))
 	}
 
-	runtimeDeps := ctx.NewMiseStepBuilder("java-runtime-deps")
+	runtimeDeps := ctx.NewMiseStepBuilder("mise:install-runtime")
 	runtimeDeps.Inputs = []plan.Input{ctx.DefaultRuntimeInput()}
 	p.setJDKVersion(ctx, runtimeDeps)
 
