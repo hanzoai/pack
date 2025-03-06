@@ -19,6 +19,7 @@ A config file looks something like this:
 
 ```json
 {
+  "$schema": "https://schema.railpack.com",
   "steps": [
     {
       "name": "install",
@@ -309,3 +310,13 @@ The deploy section configures how the container runs:
 | `paths`        | Paths to prepend to the $PATH environment variable                      |
 | `inputs`       | List of inputs for the deploy step (from steps, images, or local files) |
 | `aptPackages`  | List of Apt packages to install in the final image                      |
+
+## Schema
+
+The schema for the config file is available at https://schema.railpack.com. Add
+it to your `railpack.json` to get autocomplete and validation in your editor.
+
+```json
+{
+  "$schema": "https://schema.railpack.com"
+}
