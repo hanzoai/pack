@@ -23,8 +23,14 @@ func resolveToFuzzyVersion(version string) string {
 		}
 	}
 
-	// Remove any prefix characters (^, ~, v)
-	version = strings.TrimPrefix(version, "^")
+	// Handle caret notation by only keeping major version
+	if strings.HasPrefix(version, "^") {
+		version = strings.TrimPrefix(version, "^")
+		parts := strings.Split(version, ".")
+		return parts[0]
+	}
+
+	// Remove any prefix characters (~, v)
 	version = strings.TrimPrefix(version, "~")
 	version = strings.TrimPrefix(version, "v")
 
