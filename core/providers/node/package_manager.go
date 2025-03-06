@@ -94,7 +94,7 @@ func (p PackageManager) InstallDeps(ctx *generate.GenerateContext, install *gene
 			install.AddCommand(plan.NewExecCommand("npm install"))
 		}
 	case PackageManagerPnpm:
-		install.AddCommand(plan.NewExecCommand("pnpm install --frozen-lockfile --prefer-offline"))
+		install.AddCommand(plan.NewExecCommand("pnpm install --frozen-lockfile --prefer-offline --no-optional"))
 	case PackageManagerBun:
 		install.AddCommand(plan.NewExecCommand("bun install --frozen-lockfile"))
 	case PackageManagerYarn1:
