@@ -12,13 +12,13 @@ const (
 )
 
 func (p *NodeProvider) isVite(ctx *generate.GenerateContext) bool {
-	hasSupportedFramework := p.isReact() || p.isVue() || p.isSvelte() || p.isPreact() || p.isLit() || p.isSolidJs() || p.isQwik()
-	if !hasSupportedFramework {
-		return false
-	}
-
 	hasViteConfig := ctx.App.HasMatch("vite.config.js") || ctx.App.HasMatch("vite.config.ts")
 	hasViteBuildCommand := strings.Contains(strings.ToLower(p.packageJson.GetScript("build")), "vite build")
+
+	// SvelteKit does not build as a static site by default
+	if p.isSvelteKit() {
+		return false
+	}
 
 	return hasViteConfig || hasViteBuildCommand
 }
@@ -65,30 +65,30 @@ func (p *NodeProvider) getViteCache(ctx *generate.GenerateContext) string {
 	return ctx.Caches.AddCache("vite", "node_modules/.vite")
 }
 
-func (p *NodeProvider) isReact() bool {
-	return p.hasDependency("react")
+func (p *NodeProvider) isSvelteKit() bool {
+	return p.hasDependency("svelte") && p.hasDependency("@sveltejs/kit")
 }
 
-func (p *NodeProvider) isVue() bool {
-	return p.hasDependency("vue")
-}
+// func (p *NodeProvider) isReact() bool {
+// 	return p.hasDependency("react")
+// }
 
-func (p *NodeProvider) isSvelte() bool {
-	return p.hasDependency("svelte") && !p.hasDependency("@sveltejs/kit")
-}
+// func (p *NodeProvider) isVue() bool {
+// 	return p.hasDependency("vue")
+// }
 
-func (p *NodeProvider) isPreact() bool {
-	return p.hasDependency("preact")
-}
+// func (p *NodeProvider) isPreact() bool {
+// 	return p.hasDependency("preact")
+// }
 
-func (p *NodeProvider) isLit() bool {
-	return p.hasDependency("lit")
-}
+// func (p *NodeProvider) isLit() bool {
+// 	return p.hasDependency("lit")
+// }
 
-func (p *NodeProvider) isSolidJs() bool {
-	return p.hasDependency("solid-js")
-}
+// func (p *NodeProvider) isSolidJs() bool {
+// 	return p.hasDependency("solid-js")
+// }
 
-func (p *NodeProvider) isQwik() bool {
-	return p.hasDependency("@builder.io/qwik")
-}
+// func (p *NodeProvider) isQwik() bool {
+// 	return p.hasDependency("@builder.io/qwik")
+// }

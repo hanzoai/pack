@@ -1,0 +1,143 @@
+{
+ "caches": {
+  "node-modules": {
+   "directory": "/app/node_modules/.cache",
+   "type": "shared"
+  },
+  "pnpm-install": {
+   "directory": "/root/.local/share/pnpm/store/v3",
+   "type": "shared"
+  }
+ },
+ "deploy": {
+  "inputs": [
+   {
+    "image": "ghcr.io/railwayapp/railpack-runtime:latest"
+   },
+   {
+    "include": [
+     "/mise/shims",
+     "/mise/installs",
+     "/usr/local/bin/mise",
+     "/etc/mise/config.toml",
+     "/root/.local/state/mise"
+    ],
+    "step": "packages:mise"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "step": "build"
+   },
+   {
+    "include": [
+     "."
+    ],
+    "local": true
+   }
+  ],
+  "variables": {
+   "CI": "true",
+   "NODE_ENV": "production",
+   "NPM_CONFIG_FUND": "false",
+   "NPM_CONFIG_PRODUCTION": "false",
+   "NPM_CONFIG_UPDATE_NOTIFIER": "false"
+  }
+ },
+ "steps": [
+  {
+   "assets": {
+    "mise.toml": "[mise.toml]"
+   },
+   "commands": [
+    {
+     "path": "/mise/shims"
+    },
+    {
+     "customName": "create mise config",
+     "name": "mise.toml",
+     "path": "/etc/mise/config.toml"
+    },
+    {
+     "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
+     "customName": "install mise packages: node, pnpm"
+    }
+   ],
+   "inputs": [
+    {
+     "image": "ghcr.io/railwayapp/railpack-builder:latest"
+    }
+   ],
+   "name": "packages:mise",
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
+  },
+  {
+   "caches": [
+    "pnpm-install"
+   ],
+   "commands": [
+    {
+     "path": "/app/node_modules/.bin"
+    },
+    {
+     "dest": ".",
+     "src": "."
+    },
+    {
+     "cmd": "pnpm install --frozen-lockfile --prefer-offline"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
+   ],
+   "name": "install",
+   "variables": {
+    "CI": "true",
+    "NODE_ENV": "production",
+    "NPM_CONFIG_FUND": "false",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "NPM_CONFIG_UPDATE_NOTIFIER": "false"
+   }
+  },
+  {
+   "inputs": [
+    {
+     "step": "install"
+    }
+   ],
+   "name": "prune"
+  },
+  {
+   "caches": [
+    "node-modules"
+   ],
+   "commands": [
+    {
+     "dest": ".",
+     "src": "."
+    },
+    {
+     "cmd": "pnpm run build"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "install"
+    }
+   ],
+   "name": "build",
+   "secrets": [
+    "*"
+   ]
+  }
+ ]
+}
