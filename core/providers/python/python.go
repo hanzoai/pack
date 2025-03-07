@@ -89,7 +89,17 @@ func (p *PythonProvider) GetStartCommand(ctx *generate.GenerateContext) string {
 		startCommand = p.getDjangoStartCommand(ctx)
 	}
 
-	if startCommand == "" && ctx.App.HasMatch("main.py") {
+	hasMainPy := ctx.App.HasMatch("main.py")
+
+	if p.isFasthtml(ctx) && hasMainPy && p.usesDep(ctx, "uvicorn") {
+		startCommand = "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"
+	}
+
+	if p.isFlask(ctx) && hasMainPy && p.usesDep(ctx, "gunicorn") {
+		startCommand = "gunicorn --bind 0.0.0.0:${PORT:-8000} main:app"
+	}
+
+	if startCommand == "" && hasMainPy {
 		startCommand = "python main.py"
 	}
 
@@ -302,10 +312,7 @@ func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {
 	}
 
 	ctx.Metadata.Set("pythonPackageManager", pkgManager)
-	ctx.Metadata.SetBool("pythonHasRequirementsTxt", p.hasRequirements(ctx))
-	ctx.Metadata.SetBool("pythonHasPyproject", p.hasPyproject(ctx))
-	ctx.Metadata.SetBool("pythonHasPipfile", p.hasPipfile(ctx))
-	ctx.Metadata.SetBool("pythonDjango", p.isDjango(ctx))
+	ctx.Metadata.Set("pythonRuntime", p.getRuntime(ctx))
 }
 
 func (p *PythonProvider) usesDep(ctx *generate.GenerateContext, dep string) bool {
@@ -358,6 +365,28 @@ func (p *PythonProvider) hasPdm(ctx *generate.GenerateContext) bool {
 
 func (p *PythonProvider) hasUv(ctx *generate.GenerateContext) bool {
 	return ctx.App.HasMatch("uv.lock")
+}
+
+func (p *PythonProvider) isFasthtml(ctx *generate.GenerateContext) bool {
+	return p.usesDep(ctx, "python-fasthtml")
+}
+
+func (p *PythonProvider) isFlask(ctx *generate.GenerateContext) bool {
+	return p.usesDep(ctx, "flask")
+}
+
+func (p *PythonProvider) getRuntime(ctx *generate.GenerateContext) string {
+	if p.isDjango(ctx) {
+		return "django"
+	} else if p.isFlask(ctx) {
+		return "flask"
+	} else if p.usesDep(ctx, "fastapi") {
+		return "fastapi"
+	} else if p.isFasthtml(ctx) {
+		return "fasthtml"
+	}
+
+	return "python"
 }
 
 // Mapping of python dependencies to required apt packages
