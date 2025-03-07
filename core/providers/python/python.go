@@ -14,7 +14,6 @@ const (
 	DEFAULT_PYTHON_VERSION = "3.13.2"
 	UV_CACHE_DIR           = "/opt/uv-cache"
 	PIP_CACHE_DIR          = "/opt/pip-cache"
-	PACKAGES_DIR           = "/opt/python-packages"
 	VENV_PATH              = "/app/.venv"
 	LOCAL_BIN_PATH         = "/root/.local/bin"
 )
@@ -115,12 +114,12 @@ func (p *PythonProvider) InstallUv(ctx *generate.GenerateContext, install *gener
 	install.AddCommands([]plan.Command{
 		plan.NewExecCommand("pipx install uv"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
 		plan.NewCopyCommand("pyproject.toml"),
 		plan.NewCopyCommand("uv.lock"),
 		plan.NewExecCommand("uv sync --locked --no-dev --no-install-project"),
 		plan.NewCopyCommand("."),
 		plan.NewExecCommand("uv sync --locked --no-dev --no-editable"),
-		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
 	return []string{}
@@ -154,10 +153,6 @@ func (p *PythonProvider) InstallPipenv(ctx *generate.GenerateContext, install *g
 			plan.NewExecCommand("pipenv install --skip-lock"),
 		})
 	}
-
-	install.AddCommands([]plan.Command{
-		plan.NewPathCommand(VENV_PATH + "/bin"),
-	})
 
 	return []string{}
 }
@@ -195,7 +190,6 @@ func (p *PythonProvider) InstallPoetry(ctx *generate.GenerateContext, install *g
 		plan.NewCopyCommand("poetry.lock"),
 		plan.NewExecCommand("poetry install --no-interaction --no-ansi --only main --no-root"),
 		plan.NewCopyCommand("."),
-		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
 	install.AddEnvVars(map[string]string{
@@ -210,17 +204,18 @@ func (p *PythonProvider) InstallPip(ctx *generate.GenerateContext, install *gene
 
 	install.AddCache(ctx.Caches.AddCache("pip", PIP_CACHE_DIR))
 	install.AddCommands([]plan.Command{
+		plan.NewExecCommand(fmt.Sprintf("python -m venv %s", VENV_PATH)),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
 		plan.NewCopyCommand("requirements.txt"),
-		plan.NewExecCommand(fmt.Sprintf("pip install --target=%s -r requirements.txt", PACKAGES_DIR)),
-		plan.NewPathCommand(fmt.Sprintf("%s/bin", PACKAGES_DIR)),
+		plan.NewExecCommand("pip install -r requirements.txt"),
 	})
 	maps.Copy(install.Variables, p.GetPythonEnvVars(ctx))
 	maps.Copy(install.Variables, map[string]string{
 		"PIP_CACHE_DIR": PIP_CACHE_DIR,
-		"PYTHONPATH":    PACKAGES_DIR,
+		"VIRTUAL_ENV":   VENV_PATH,
 	})
 
-	return []string{PACKAGES_DIR}
+	return []string{}
 }
 
 func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) *generate.AptStepBuilder {
