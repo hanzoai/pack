@@ -246,12 +246,24 @@ func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) 
 		aptStep.Packages = append(aptStep.Packages, "libpq5")
 	}
 
+	if p.usesMysql(ctx) {
+		aptStep.Packages = append(aptStep.Packages, "default-mysql-client")
+	}
+
 	return aptStep
 }
 
 func (p *PythonProvider) GetBuilderDeps(ctx *generate.GenerateContext) *generate.MiseStepBuilder {
 	miseStep := ctx.GetMiseStepBuilder()
-	miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "python3-dev", "libpq-dev")
+	miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "python3-dev")
+
+	if p.usesPostgres(ctx) {
+		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "libpq5")
+	}
+
+	if p.usesMysql(ctx) {
+		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "default-libmysqlclient-dev")
+	}
 
 	return miseStep
 }
@@ -295,6 +307,12 @@ func (p *PythonProvider) usesPostgres(ctx *generate.GenerateContext) bool {
 	djangoPythonRe := regexp.MustCompile(`django.db.backends.postgresql`)
 	containsDjangoPostgres := len(ctx.App.FindFilesWithContent("**/*.py", djangoPythonRe)) > 0
 	return p.usesDep(ctx, "psycopg2") || p.usesDep(ctx, "psycopg2-binary") || containsDjangoPostgres
+}
+
+func (p *PythonProvider) usesMysql(ctx *generate.GenerateContext) bool {
+	djangoPythonRe := regexp.MustCompile(`django.db.backends.mysql`)
+	containsDjangoMysql := len(ctx.App.FindFilesWithContent("**/*.py", djangoPythonRe)) > 0
+	return p.usesDep(ctx, "mysqlclient") || containsDjangoMysql
 }
 
 func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {
