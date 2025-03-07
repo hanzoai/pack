@@ -221,7 +221,6 @@ func (p *NodeProvider) InstallNodeDeps(ctx *generate.GenerateContext, install *g
 		install.AddCommands([]plan.Command{
 			plan.NewCopyCommand("package.json"),
 			plan.NewExecShellCommand("npm i -g corepack@latest && corepack enable && corepack prepare --activate"),
-			plan.NewExecCommand("corepack prepare --activate"),
 		})
 	}
 
