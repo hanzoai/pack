@@ -11,14 +11,17 @@ func resolveToFuzzyVersion(version string) string {
 		return "latest"
 	}
 
-	// Handle range notation (e.g. ">=22 <23")
+	// Handle range notation (e.g. ">=22 <23" or ">= 22" or ">=20.0.0")
 	if strings.Contains(version, ">=") || strings.Contains(version, "<") {
 		parts := strings.Fields(version)
-		// Take the first version number we find
-		for _, part := range parts {
-			if v := strings.TrimPrefix(strings.TrimPrefix(part, ">="), "<"); v != part {
-				version = v
-				break
+		for i, part := range parts {
+			if strings.HasPrefix(part, ">=") {
+				// Version number is either after the >= in this part, or in the next part
+				v := strings.TrimPrefix(part, ">=")
+				if v == "" && i+1 < len(parts) {
+					v = parts[i+1]
+				}
+				return strings.Split(strings.TrimSpace(v), ".")[0]
 			}
 		}
 	}
