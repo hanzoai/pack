@@ -30,7 +30,6 @@
    },
    {
     "include": [
-     "/opt/python-packages",
      "."
     ],
     "step": "build"
@@ -99,14 +98,17 @@
    ],
    "commands": [
     {
+     "cmd": "python -m venv /app/.venv"
+    },
+    {
+     "path": "/app/.venv/bin"
+    },
+    {
      "dest": "requirements.txt",
      "src": "requirements.txt"
     },
     {
-     "cmd": "pip install --target=/opt/python-packages -r requirements.txt"
-    },
-    {
-     "path": "/opt/python-packages/bin"
+     "cmd": "pip install -r requirements.txt"
     }
    ],
    "inputs": [
@@ -122,8 +124,8 @@
     "PYTHONDONTWRITEBYTECODE": "1",
     "PYTHONFAULTHANDLER": "1",
     "PYTHONHASHSEED": "random",
-    "PYTHONPATH": "/opt/python-packages",
-    "PYTHONUNBUFFERED": "1"
+    "PYTHONUNBUFFERED": "1",
+    "VIRTUAL_ENV": "/app/.venv"
    }
   },
   {

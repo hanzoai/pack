@@ -109,9 +109,6 @@
     },
     {
      "cmd": "pipenv install --deploy --ignore-pipfile"
-    },
-    {
-     "path": "/app/.venv/bin"
     }
    ],
    "inputs": [
