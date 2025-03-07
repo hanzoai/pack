@@ -8,6 +8,7 @@ import (
 
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
 const (
@@ -276,11 +277,11 @@ func (p *PythonProvider) InstallMisePackages(ctx *generate.GenerateContext, mise
 	}
 
 	if versionFile, err := ctx.App.ReadFile(".python-version"); err == nil {
-		miseStep.Version(python, string(versionFile), ".python-version")
+		miseStep.Version(python, utils.ExtractSemverVersion(string(versionFile)), ".python-version")
 	}
 
 	if runtimeFile, err := ctx.App.ReadFile("runtime.txt"); err == nil {
-		miseStep.Version(python, string(runtimeFile), "runtime.txt")
+		miseStep.Version(python, utils.ExtractSemverVersion(string(runtimeFile)), "runtime.txt")
 	}
 
 	if pipfileVersion := parseVersionFromPipfile(ctx); pipfileVersion != "" {

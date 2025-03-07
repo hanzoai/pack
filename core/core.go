@@ -176,7 +176,7 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 	}
 
 	if envPackages, _ := env.GetConfigVariable("PACKAGES"); envPackages != "" {
-		config.Packages = utils.ParseVersions(strings.Split(envPackages, " "))
+		config.Packages = utils.ParsePackageWithVersion(strings.Split(envPackages, " "))
 	}
 
 	if envAptPackages, _ := env.GetConfigVariable("BUILD_APT_PACKAGES"); envAptPackages != "" {

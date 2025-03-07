@@ -62,7 +62,7 @@ func GenerateBuildResultForCommand(cmd *cli.Command) (*core.BuildResult, *a.App,
 		return nil, nil, nil, fmt.Errorf("error creating env: %w", err)
 	}
 
-	previousVersions := utils.ParseVersions(cmd.StringSlice("previous"))
+	previousVersions := utils.ParsePackageWithVersion(cmd.StringSlice("previous"))
 
 	generateOptions := &core.GenerateBuildPlanOptions{
 		RailpackVersion:          Version,
