@@ -97,6 +97,9 @@
      "path": "/root/.local/bin"
     },
     {
+     "path": "/app/.venv/bin"
+    },
+    {
      "cmd": "poetry config virtualenvs.in-project true"
     },
     {
