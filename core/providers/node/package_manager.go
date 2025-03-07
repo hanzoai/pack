@@ -133,42 +133,42 @@ func (p PackageManager) GetInstallFolder(ctx *generate.GenerateContext) []string
 
 // SupportingInstallFiles returns a list of files that are needed to install dependencies
 func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
-	basePatterns := []string{
-		"package.json",
-		"package-lock.json",
-		"pnpm-workspace.yaml",
-		"yarn.lock",
-		"pnpm-lock.yaml",
-		"bun.lockb",
-		"bun.lock",
-		".yarn",
-		".pnp.*",        // Yarn Plug'n'Play files
-		".yarnrc.yml",   // Yarn 2+ config
-		".npmrc",        // NPM config
-		".node-version", // Node version file
-		".nvmrc",        // NVM config
-		"patches",       // PNPM patches
+	patterns := []string{
+		"**/package.json",
+		"**/package-lock.json",
+		"**/pnpm-workspace.yaml",
+		"**/yarn.lock",
+		"**/pnpm-lock.yaml",
+		"**/bun.lockb",
+		"**/bun.lock",
+		"**/.yarn",
+		"**/.pnp.*",        // Yarn Plug'n'Play files
+		"**/.yarnrc.yml",   // Yarn 2+ config
+		"**/.npmrc",        // NPM config
+		"**/.node-version", // Node version file
+		"**/.nvmrc",        // NVM config
+		"patches",          // PNPM patches
 		".pnpm-patches",
 	}
 
-	pattern := fmt.Sprintf("{%s}", strings.Join(basePatterns, ","))
-
 	var allFiles []string
-	files, err := app.FindFiles(pattern)
-	if err == nil {
+	for _, pattern := range patterns {
+		files, err := app.FindFiles(pattern)
+		if err != nil {
+			continue
+		}
 		for _, file := range files {
 			if !strings.HasPrefix(file, "node_modules/") {
 				allFiles = append(allFiles, file)
 			}
 		}
-	}
 
-	dirs, err := app.FindDirectories(pattern)
-	if err == nil {
+		dirs, err := app.FindDirectories(pattern)
+		if err != nil {
+			continue
+		}
 		allFiles = append(allFiles, dirs...)
 	}
-
-	fmt.Printf("allFiles: %v\n", allFiles)
 
 	return allFiles
 }
