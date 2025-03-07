@@ -102,7 +102,7 @@ func ParsePackageWithVersion(versions []string) map[string]string {
 // Returns an empty string if no version number is found.
 func ExtractSemverVersion(version string) string {
 	semverRe := regexp.MustCompile(`(\d+(?:\.\d+)?(?:\.\d+)?)`)
-	matches := semverRe.FindStringSubmatch(version)
+	matches := semverRe.FindStringSubmatch(strings.TrimSpace(version))
 	if len(matches) > 1 {
 		return matches[1]
 	}

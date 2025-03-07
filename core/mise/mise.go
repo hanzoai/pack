@@ -11,6 +11,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/alexflint/go-filemutex"
 	"github.com/charmbracelet/log"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
 const (
@@ -47,7 +48,7 @@ func (m *Mise) GetLatestVersion(pkg, version string) (string, error) {
 	}
 	defer unlock()
 
-	query := fmt.Sprintf("%s@%s", pkg, strings.TrimSpace(version))
+	query := fmt.Sprintf("%s@%s", pkg, utils.ExtractSemverVersion(version))
 	output, err := m.runCmd("latest", query)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found in mise tool registry") {
@@ -72,7 +73,7 @@ func (m *Mise) GetAllVersions(pkg, version string) ([]string, error) {
 	}
 	defer unlock()
 
-	query := fmt.Sprintf("%s@%s", pkg, strings.TrimSpace(version))
+	query := fmt.Sprintf("%s@%s", pkg, utils.ExtractSemverVersion(version))
 	output, err := m.runCmd("ls-remote", query)
 	if err != nil {
 		return nil, err
