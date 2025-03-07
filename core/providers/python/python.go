@@ -123,8 +123,8 @@ func (p *PythonProvider) InstallUv(ctx *generate.GenerateContext, install *gener
 	})
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
 	install.AddCommands([]plan.Command{
-		plan.NewExecCommand("pipx install uv"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewExecCommand("pipx install uv"),
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 		plan.NewCopyCommand("pyproject.toml"),
 		plan.NewCopyCommand("uv.lock"),
@@ -147,8 +147,8 @@ func (p *PythonProvider) InstallPipenv(ctx *generate.GenerateContext, install *g
 	})
 
 	install.AddCommands([]plan.Command{
-		plan.NewExecCommand("pipx install pipenv"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewExecCommand("pipx install pipenv"),
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
@@ -177,8 +177,8 @@ func (p *PythonProvider) InstallPDM(ctx *generate.GenerateContext, install *gene
 	})
 
 	install.AddCommands([]plan.Command{
-		plan.NewExecCommand("pipx install pdm"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewExecCommand("pipx install pdm"),
 		plan.NewCopyCommand("."),
 		plan.NewExecCommand("python --version"),
 		plan.NewExecCommand("pdm install --check --prod --no-editable"),
@@ -194,8 +194,8 @@ func (p *PythonProvider) InstallPoetry(ctx *generate.GenerateContext, install *g
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
 
 	install.AddCommands([]plan.Command{
-		plan.NewExecCommand("pipx install poetry"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewExecCommand("pipx install poetry"),
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 		plan.NewExecCommand("poetry config virtualenvs.in-project true"),
 		plan.NewCopyCommand("pyproject.toml"),
