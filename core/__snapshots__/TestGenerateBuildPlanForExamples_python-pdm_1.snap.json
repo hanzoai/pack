@@ -91,10 +91,10 @@
   {
    "commands": [
     {
-     "cmd": "pipx install pdm"
+     "path": "/root/.local/bin"
     },
     {
-     "path": "/root/.local/bin"
+     "cmd": "pipx install pdm"
     },
     {
      "dest": ".",
