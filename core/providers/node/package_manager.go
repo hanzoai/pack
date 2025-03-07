@@ -157,7 +157,11 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 		if err != nil {
 			continue
 		}
-		allFiles = append(allFiles, files...)
+		for _, file := range files {
+			if !strings.HasPrefix(file, "node_modules/") {
+				allFiles = append(allFiles, file)
+			}
+		}
 
 		dirs, err := app.FindDirectories(pattern)
 		if err != nil {
