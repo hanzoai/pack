@@ -98,9 +98,6 @@
      "customName": "npm i -g corepack@latest \u0026\u0026 corepack enable \u0026\u0026 corepack prepare --activate"
     },
     {
-     "cmd": "corepack prepare --activate"
-    },
-    {
      "dest": "package.json",
      "src": "package.json"
     },
@@ -109,7 +106,7 @@
      "src": "pnpm-lock.yaml"
     },
     {
-     "cmd": "pnpm install --frozen-lockfile --prefer-offline --prod=false"
+     "cmd": "pnpm install --frozen-lockfile --prefer-offline"
     }
    ],
    "inputs": [

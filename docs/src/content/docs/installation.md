@@ -27,7 +27,7 @@ download the `railpack` binary for your platform.
 ```sh
 git clone https://github.com/railwayapp/railpack.git
 cd railpack
-go build -o railpack
+go build -o railpack ./cmd/...
 
 ./railpack --help
 ```

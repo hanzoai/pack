@@ -50,6 +50,10 @@ func (m *Mise) GetLatestVersion(pkg, version string) (string, error) {
 	query := fmt.Sprintf("%s@%s", pkg, strings.TrimSpace(version))
 	output, err := m.runCmd("latest", query)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found in mise tool registry") {
+			return "", fmt.Errorf("package `%s` not available in Mise. Try installing as apt package instead", pkg)
+		}
+
 		return "", err
 	}
 
@@ -110,7 +114,7 @@ func (m *Mise) runCmd(args ...string) (string, error) {
 	)
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to run mise command '%s': %w\nstdout: %s\nstderr: %s",
+		return "", fmt.Errorf("failed to run mise command '%s': %w\n%s\n\n%s",
 			strings.Join(append([]string{m.binaryPath}, args...), " "),
 			err,
 			stdout.String(),

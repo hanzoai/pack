@@ -221,7 +221,6 @@ func (p *NodeProvider) InstallNodeDeps(ctx *generate.GenerateContext, install *g
 		install.AddCommands([]plan.Command{
 			plan.NewCopyCommand("package.json"),
 			plan.NewExecShellCommand("npm i -g corepack@latest && corepack enable && corepack prepare --activate"),
-			plan.NewExecCommand("corepack prepare --activate"),
 		})
 	}
 
@@ -277,6 +276,7 @@ func (p *NodeProvider) GetNodeEnvVars(ctx *generate.GenerateContext) map[string]
 
 	if p.packageManager == PackageManagerYarn1 {
 		envVars["YARN_PRODUCTION"] = "false"
+		envVars["MISE_YARN_SKIP_GPG"] = "true" // https://github.com/mise-plugins/mise-yarn/pull/8
 	}
 
 	if p.isAstro(ctx) && !p.isAstroSPA(ctx) {

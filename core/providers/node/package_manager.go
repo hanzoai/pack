@@ -94,7 +94,7 @@ func (p PackageManager) InstallDeps(ctx *generate.GenerateContext, install *gene
 			install.AddCommand(plan.NewExecCommand("npm install"))
 		}
 	case PackageManagerPnpm:
-		install.AddCommand(plan.NewExecCommand("pnpm install --frozen-lockfile --prefer-offline --prod=false"))
+		install.AddCommand(plan.NewExecCommand("pnpm install --frozen-lockfile --prefer-offline"))
 	case PackageManagerBun:
 		install.AddCommand(plan.NewExecCommand("bun install --frozen-lockfile"))
 	case PackageManagerYarn1:
@@ -157,7 +157,11 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 		if err != nil {
 			continue
 		}
-		allFiles = append(allFiles, files...)
+		for _, file := range files {
+			if !strings.HasPrefix(file, "node_modules/") {
+				allFiles = append(allFiles, file)
+			}
+		}
 
 		dirs, err := app.FindDirectories(pattern)
 		if err != nil {
