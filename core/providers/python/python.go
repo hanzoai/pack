@@ -195,6 +195,7 @@ func (p *PythonProvider) InstallPoetry(ctx *generate.GenerateContext, install *g
 	install.AddCommands([]plan.Command{
 		plan.NewExecCommand("pipx install poetry"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
 		plan.NewExecCommand("poetry config virtualenvs.in-project true"),
 		plan.NewCopyCommand("pyproject.toml"),
 		plan.NewCopyCommand("poetry.lock"),
