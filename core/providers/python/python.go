@@ -258,7 +258,7 @@ func (p *PythonProvider) GetBuilderDeps(ctx *generate.GenerateContext) *generate
 	miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "python3-dev")
 
 	if p.usesPostgres(ctx) {
-		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "libpq5")
+		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "libpq-dev")
 	}
 
 	if p.usesMysql(ctx) {
