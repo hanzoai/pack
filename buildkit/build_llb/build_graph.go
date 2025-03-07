@@ -317,9 +317,7 @@ func (g *BuildGraph) getNodeStartingState(node *StepNode) (llb.State, error) {
 	if len(node.InputEnv.PathList) > 0 {
 		pathString := strings.Join(node.InputEnv.PathList, ":")
 		state = state.AddEnvf("PATH", "%s:%s", pathString, system.DefaultPathEnvUnix)
-		for _, path := range node.InputEnv.PathList {
-			node.OutputEnv.AddPath(path)
-		}
+		node.OutputEnv.PathList = append(node.OutputEnv.PathList, node.InputEnv.PathList...)
 	}
 
 	return state, nil
@@ -375,9 +373,8 @@ func (g *BuildGraph) convertExecCommandToLLB(node *StepNode, cmd plan.ExecComman
 
 // convertPathCommandToLLB converts a path command to an LLB state
 func (g *BuildGraph) convertPathCommandToLLB(node *StepNode, cmd plan.PathCommand, state llb.State) (llb.State, error) {
-	node.OutputEnv.AddPath(cmd.Path)
-	pathList := node.getPathList()
-	pathString := strings.Join(pathList, ":")
+	node.OutputEnv.PushPath(cmd.Path)
+	pathString := strings.Join(node.getPathList(), ":")
 
 	s := state.AddEnvf("PATH", "%s:%s", pathString, system.DefaultPathEnvUnix)
 	return s, nil

@@ -40,7 +40,6 @@ func (n *StepNode) SetChildren(children []graph.Node) {
 
 func (node *StepNode) getPathList() []string {
 	pathList := make([]string, 0)
-	pathList = append(pathList, node.InputEnv.PathList...)
 	pathList = append(pathList, node.OutputEnv.PathList...)
 	return pathList
 }
