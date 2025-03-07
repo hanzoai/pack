@@ -14,9 +14,8 @@ const (
 	DEFAULT_PYTHON_VERSION = "3.13.2"
 	UV_CACHE_DIR           = "/opt/uv-cache"
 	PIP_CACHE_DIR          = "/opt/pip-cache"
-	// PACKAGES_DIR           = "/opt/python-packages"
-	VENV_PATH      = "/app/.venv"
-	LOCAL_BIN_PATH = "/root/.local/bin"
+	VENV_PATH              = "/app/.venv"
+	LOCAL_BIN_PATH         = "/root/.local/bin"
 )
 
 type PythonProvider struct{}
