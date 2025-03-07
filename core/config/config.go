@@ -6,6 +6,10 @@ import (
 	"github.com/railwayapp/railpack/core/utils"
 )
 
+const (
+	SchemaUrl = "https://schema.railpack.com"
+)
+
 type DeployConfig struct {
 	AptPackages []string          `json:"aptPackages,omitempty" jsonschema:"description=List of apt packages to include at runtime"`
 	Inputs      []plan.Input      `json:"inputs,omitempty" jsonschema:"description=The inputs for the deploy step"`

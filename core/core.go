@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/config"
+	c "github.com/railwayapp/railpack/core/config"
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/logger"
 	"github.com/railwayapp/railpack/core/plan"
@@ -127,6 +128,8 @@ func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOpt
 
 // GenerateConfigFromFile generates a config from the config file
 func GenerateConfigFromFile(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions, logger *logger.Logger) (*config.Config, error) {
+	config := c.EmptyConfig()
+
 	configFileName := defaultConfigFileName
 	if options.ConfigFilePath != "" {
 		configFileName = options.ConfigFilePath
@@ -141,12 +144,12 @@ func GenerateConfigFromFile(app *app.App, env *app.Environment, options *Generat
 			logger.LogWarn("Config file `%s` not found", configFileName)
 		}
 
-		return config.EmptyConfig(), nil
+		return config, nil
 	}
 
-	config := config.EmptyConfig()
 	if err := app.ReadJSON(configFileName, config); err != nil {
-		return nil, err
+		logger.LogWarn("Failed to read config file `%s`\nUse the following schema to validate your config file: %s\n", configFileName, c.SchemaUrl)
+		return config, nil
 	}
 
 	logger.LogInfo("Using config file `%s`", configFileName)
@@ -156,8 +159,8 @@ func GenerateConfigFromFile(app *app.App, env *app.Environment, options *Generat
 }
 
 // GenerateConfigFromEnvironment generates a config from the environment
-func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.Config {
-	config := config.EmptyConfig()
+func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *c.Config {
+	config := c.EmptyConfig()
 
 	if env == nil {
 		return config
@@ -195,8 +198,8 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *config.C
 }
 
 // GenerateConfigFromOptions generates a config from the CLI options
-func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config {
-	config := config.EmptyConfig()
+func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *c.Config {
+	config := c.EmptyConfig()
 
 	if options == nil {
 		return config
@@ -217,7 +220,7 @@ func GenerateConfigFromOptions(options *GenerateBuildPlanOptions) *config.Config
 	return config
 }
 
-func getProviders(ctx *generate.GenerateContext, config *config.Config) (providers.Provider, string) {
+func getProviders(ctx *generate.GenerateContext, config *c.Config) (providers.Provider, string) {
 	allProviders := providers.GetLanguageProviders()
 
 	var providerToUse providers.Provider
