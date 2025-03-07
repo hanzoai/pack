@@ -276,6 +276,7 @@ func (p *NodeProvider) GetNodeEnvVars(ctx *generate.GenerateContext) map[string]
 
 	if p.packageManager == PackageManagerYarn1 {
 		envVars["YARN_PRODUCTION"] = "false"
+		envVars["MISE_YARN_SKIP_GPG"] = "1" // https://github.com/twuni/asdf-yarn/issues/33
 	}
 
 	if p.isAstro(ctx) && !p.isAstroSPA(ctx) {
