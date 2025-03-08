@@ -129,17 +129,24 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.Input) llb.State {
 		return state
 	}
 
+	mergeStates := []llb.State{state}
+	mergeNames := []string{inputs[0].DisplayName()}
+
 	// Copy from subsequent inputs into the base state
 	for _, input := range inputs[1:] {
 		inputState := g.GetStateForInput(input, llb.Scratch())
 
 		// Copy the specified paths (or everything) from this input into our base state
 		if len(input.Include) > 0 {
+			destState := llb.Scratch()
+			destName := input.DisplayName()
+
 			for _, include := range input.Include {
 				if input.Local {
 					// For local context, always copy into /app
 					destPath := filepath.Join("/app", filepath.Base(include))
-					state = state.File(llb.Copy(inputState, include, destPath, &llb.CopyInfo{
+
+					destState = destState.File(llb.Copy(inputState, include, destPath, &llb.CopyInfo{
 						CopyDirContentsOnly: true,
 						CreateDestPath:      true,
 						FollowSymlinks:      true,
@@ -147,6 +154,7 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.Input) llb.State {
 						AllowEmptyWildcard:  true,
 						ExcludePatterns:     input.Exclude,
 					}))
+
 				} else {
 					// For other states, handle paths based on whether they're absolute or relative
 					srcPath := include
@@ -171,7 +179,7 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.Input) llb.State {
 						opts = append(opts, llb.WithCustomName(fmt.Sprintf("copy %s", srcPath)))
 					}
 
-					state = state.File(llb.Copy(inputState, srcPath, destPath, &llb.CopyInfo{
+					destState = destState.File(llb.Copy(inputState, srcPath, destPath, &llb.CopyInfo{
 						CopyDirContentsOnly: true,
 						CreateDestPath:      true,
 						FollowSymlinks:      true,
@@ -181,10 +189,15 @@ func (g *BuildGraph) GetFullStateFromInputs(inputs []plan.Input) llb.State {
 					}), opts...)
 				}
 			}
+
+			mergeStates = append(mergeStates, destState)
+			mergeNames = append(mergeNames, destName)
 		} else {
 			log.Warnf("input %s has no include or exclude paths. This is probably a mistake.", input.Step)
 		}
 	}
+
+	state = llb.Merge(mergeStates, llb.WithCustomNamef("[railpack] merge %s", strings.Join(mergeNames, ", ")))
 
 	return state
 }
