@@ -16,6 +16,8 @@ type PackageManager string
 const (
 	DEFAULT_NODE_VERSION = "22"
 	DEFAULT_BUN_VERSION  = "latest"
+
+	COREPACK_HOME = "/opt/corepack"
 )
 
 type NodeProvider struct {
@@ -100,41 +102,57 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	buildIncludeDirs := []string{"."}
 
 	if p.usesCorepack() {
-		buildIncludeDirs = append(buildIncludeDirs, "/root/.cache")
+		buildIncludeDirs = append(buildIncludeDirs, COREPACK_HOME)
 	}
 
 	if p.packageManager == PackageManagerYarn2 {
 		buildIncludeDirs = append(buildIncludeDirs, p.packageManager.getYarn2GlobalFolder(ctx))
 	}
 
+	nodeModulesInput := plan.NewStepInput(build.Name(), plan.InputOptions{
+		Include: p.packageManager.GetInstallFolder(ctx),
+	})
+	if p.shouldPrune(ctx) {
+		nodeModulesInput = plan.NewStepInput(prune.Name(), plan.InputOptions{
+			Include: p.packageManager.GetInstallFolder(ctx),
+		})
+	}
+
+	buildInput := plan.NewStepInput(build.Name(), plan.InputOptions{
+		Include: buildIncludeDirs,
+		Exclude: []string{"node_modules", ".yarn"},
+	})
+
 	ctx.Deploy.Inputs = []plan.Input{
 		ctx.DefaultRuntimeInput(),
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 			Include: miseStep.GetOutputPaths(),
 		}),
+		nodeModulesInput,
+		buildInput,
 	}
 
-	if p.shouldPrune(ctx) {
-		// If we are pruning, we want to grab the pruned node_modules
-		// and ignore the node_modules from the install/build steps
-		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
-			plan.NewStepInput(prune.Name(), plan.InputOptions{
-				Include: p.packageManager.GetInstallFolder(ctx),
-			}),
-			plan.NewStepInput(build.Name(), plan.InputOptions{
-				Include: buildIncludeDirs,
-				Exclude: []string{"node_modules", ".yarn"},
-			}),
-		)
-	} else {
-		ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
-			plan.NewStepInput(build.Name(), plan.InputOptions{
-				Include: buildIncludeDirs,
-			}),
-		)
-	}
+	// if p.shouldPrune(ctx) {
+	// 	// If we are pruning, we want to grab the pruned node_modules
+	// 	// and ignore the node_modules from the install/build steps
+	// 	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+	// 		plan.NewStepInput(prune.Name(), plan.InputOptions{
+	// 			Include: p.packageManager.GetInstallFolder(ctx),
+	// 		}),
+	// 		plan.NewStepInput(build.Name(), plan.InputOptions{
+	// 			Include: buildIncludeDirs,
+	// 			Exclude: []string{"node_modules", ".yarn"},
+	// 		}),
+	// 	)
+	// } else {
+	// 	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
+	// 		plan.NewStepInput(build.Name(), plan.InputOptions{
+	// 			Include: buildIncludeDirs,
+	// 		}),
+	// 	)
+	// }
 
-	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, plan.NewLocalInput("."))
+	// ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, plan.NewLocalInput("."))
 
 	return nil
 }
@@ -216,6 +234,9 @@ func (p *NodeProvider) InstallNodeDeps(ctx *generate.GenerateContext, install *g
 	install.AddPaths([]string{"/app/node_modules/.bin"})
 
 	if p.usesCorepack() {
+		install.AddVariables(map[string]string{
+			"COREPACK_HOME": COREPACK_HOME,
+		})
 		ctx.Logger.LogInfo("Using Corepack")
 
 		install.AddCommands([]plan.Command{
