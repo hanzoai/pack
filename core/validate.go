@@ -54,9 +54,13 @@ func validateCommands(plan *plan.BuildPlan, app *app.App, logger *logger.Logger)
 func validateStartCommand(plan *plan.BuildPlan, logger *logger.Logger, provider providers.Provider) bool {
 	if plan.Deploy.StartCmd == "" {
 		startCmdHelp := "No start command was found."
-		if providerHelp := provider.StartCommandHelp(); providerHelp != "" {
-			startCmdHelp += "\n\n" + providerHelp
+
+		if provider != nil {
+			if providerHelp := provider.StartCommandHelp(); providerHelp != "" {
+				startCmdHelp += "\n\n" + providerHelp
+			}
 		}
+
 		logger.LogError("%s", startCmdHelp)
 
 		return false
