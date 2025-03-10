@@ -58,8 +58,8 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y libpq-dev python3-dev'",
-     "customName": "install apt packages: libpq-dev python3-dev"
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y python3-dev'",
+     "customName": "install apt packages: python3-dev"
     },
     {
      "path": "/mise/shims"
@@ -91,10 +91,10 @@
   {
    "commands": [
     {
-     "cmd": "pipx install pipenv"
+     "path": "/root/.local/bin"
     },
     {
-     "path": "/root/.local/bin"
+     "cmd": "pipx install pipenv"
     },
     {
      "path": "/app/.venv/bin"
@@ -109,9 +109,6 @@
     },
     {
      "cmd": "pipenv install --deploy --ignore-pipfile"
-    },
-    {
-     "path": "/app/.venv/bin"
     }
    ],
    "inputs": [

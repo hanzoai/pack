@@ -103,10 +103,13 @@
    ],
    "commands": [
     {
+     "path": "/root/.local/bin"
+    },
+    {
      "cmd": "pipx install uv"
     },
     {
-     "path": "/root/.local/bin"
+     "path": "/app/.venv/bin"
     },
     {
      "dest": "pyproject.toml",
@@ -125,9 +128,6 @@
     },
     {
      "cmd": "uv sync --locked --no-dev --no-editable"
-    },
-    {
-     "path": "/app/.venv/bin"
     }
    ],
    "inputs": [

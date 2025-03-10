@@ -1,5 +1,10 @@
 package build_llb
 
+import (
+	"maps"
+	"slices"
+)
+
 type BuildEnvironment struct {
 	PathList []string
 	EnvVars  map[string]string
@@ -15,20 +20,14 @@ func NewGraphEnvironment() BuildEnvironment {
 // Merges the other environment into the current environment
 func (e *BuildEnvironment) Merge(other BuildEnvironment) {
 	e.PathList = append(e.PathList, other.PathList...)
-
-	for k, v := range other.EnvVars {
-		e.EnvVars[k] = v
-	}
+	maps.Copy(e.EnvVars, other.EnvVars)
 }
 
-func (e *BuildEnvironment) AddPath(path string) {
-	for _, existingPath := range e.PathList {
-		if existingPath == path {
-			return
-		}
+func (e *BuildEnvironment) PushPath(path string) {
+	if slices.Contains(e.PathList, path) {
+		return
 	}
-
-	e.PathList = append(e.PathList, path)
+	e.PathList = append([]string{path}, e.PathList...)
 }
 
 func (e *BuildEnvironment) AddEnvVar(key, value string) {

@@ -91,3 +91,10 @@ The start command is determined by:
 1. `RAILPACK_DJANGO_APP_NAME` environment variable
 2. Scanning Python files for `WSGI_APPLICATION` setting
 3. Runs `python manage.py migrate && gunicorn {appName}:application`
+
+### Databases
+
+Railpack automatically installs system dependencies for common databases:
+
+- **PostgreSQL**: Installs `libpq-dev` at build time and `libpq5` at runtime
+- **MySQL**: Installs `default-libmysqlclient-dev` at build time and `default-mysql-client` at runtime

@@ -132,31 +132,3 @@ func (p *NodeProvider) hasCustomStartCommand(ctx *generate.GenerateContext) bool
 	isCRAStartCommand := startCommand == DefaultCRAStartCommand
 	return startCommand != "" && !isAngularDefaultStartCommand && !isCRAStartCommand
 }
-
-// func (p *NodeProvider) isReact() bool {
-// 	return p.hasDependency("react")
-// }
-
-// func (p *NodeProvider) isVue() bool {
-// 	return p.hasDependency("vue")
-// }
-
-// func (p *NodeProvider) isSvelte() bool {
-// 	return p.hasDependency("svelte") && !p.hasDependency("@sveltejs/kit")
-// }
-
-// func (p *NodeProvider) isPreact() bool {
-// 	return p.hasDependency("preact")
-// }
-
-// func (p *NodeProvider) isLit() bool {
-// 	return p.hasDependency("lit")
-// }
-
-// func (p *NodeProvider) isSolidJs() bool {
-// 	return p.hasDependency("solid-js")
-// }
-
-// func (p *NodeProvider) isQwik() bool {
-// 	return p.hasDependency("@builder.io/qwik")
-// }

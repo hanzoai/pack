@@ -58,8 +58,8 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y libpq-dev python3-dev'",
-     "customName": "install apt packages: libpq-dev python3-dev"
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y python3-dev'",
+     "customName": "install apt packages: python3-dev"
     },
     {
      "path": "/mise/shims"
@@ -91,10 +91,13 @@
   {
    "commands": [
     {
+     "path": "/root/.local/bin"
+    },
+    {
      "cmd": "pipx install poetry"
     },
     {
-     "path": "/root/.local/bin"
+     "path": "/app/.venv/bin"
     },
     {
      "cmd": "poetry config virtualenvs.in-project true"
@@ -113,9 +116,6 @@
     {
      "dest": ".",
      "src": "."
-    },
-    {
-     "path": "/app/.venv/bin"
     }
    ],
    "inputs": [

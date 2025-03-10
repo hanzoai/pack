@@ -124,7 +124,7 @@ func TestParseVersions(t *testing.T) {
 		"wildcard@*",
 	}
 
-	parsedVersions := ParseVersions(input)
+	parsedVersions := ParsePackageWithVersion(input)
 
 	expected := map[string]string{
 		"basic":     "1.0.0",
@@ -137,4 +137,54 @@ func TestParseVersions(t *testing.T) {
 	}
 
 	require.Equal(t, expected, parsedVersions)
+}
+
+func TestExtractSemverVersion(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		// Basic version formats
+		{"major version only", "1", "1"},
+		{"major.minor version", "1.2", "1.2"},
+		{"simple version", "1.2.3", "1.2.3"},
+		{"v prefix", "v1.2.3", "1.2.3"},
+
+		// Large version numbers
+		{"large major version", "100", "100"},
+		{"large minor version", "1.234", "1.234"},
+		{"large patch version", "1.2.345", "1.2.345"},
+		{"all large numbers", "123.456.789", "123.456.789"},
+		{"leading zeros", "01.02.03", "01.02.03"},
+
+		// Version in different contexts
+		{"with prefix", "version1.2.3", "1.2.3"},
+		{"with suffix", "1.2.3-beta", "1.2.3"},
+		{"python style version", "python-3.10.7", "3.10.7"},
+		{"version in text", "runtime version is 2.4.1 or higher", "2.4.1"},
+		{"with suffix and prefix", "myapp1.2.3-rc1", "1.2.3"},
+		{"major version in text", "python 3 or higher", "3"},
+		{"major.minor in text", "requires node 14.2", "14.2"},
+		{"multiple versions", "supports both 1.2.3 and 4.5.6", "1.2.3"},
+
+		// Edge cases
+		{"empty string", "", ""},
+		{"non-numeric", "a.b.c", ""},
+		{"mixed format", "v1.2.x", "1.2"},
+		{"invalid format", "1.2.3.4", "1.2.3"},
+		{"double digit major", "10.2.3", "10.2.3"},
+		{"version with spaces", "  2.3.4  ", "2.3.4"},
+		{"version in parentheses", "(1.2.3)", "1.2.3"},
+		{"version with build info", "1.2.3+build123", "1.2.3"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ExtractSemverVersion(tt.input)
+			if result != tt.expected {
+				t.Errorf("ExtractSemverVersion(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
 }

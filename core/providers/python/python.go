@@ -8,13 +8,13 @@ import (
 
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
+	"github.com/railwayapp/railpack/core/utils"
 )
 
 const (
-	DEFAULT_PYTHON_VERSION = "3.13.2"
+	DEFAULT_PYTHON_VERSION = "3.11"
 	UV_CACHE_DIR           = "/opt/uv-cache"
 	PIP_CACHE_DIR          = "/opt/pip-cache"
-	PACKAGES_DIR           = "/opt/python-packages"
 	VENV_PATH              = "/app/.venv"
 	LOCAL_BIN_PATH         = "/root/.local/bin"
 )
@@ -90,7 +90,17 @@ func (p *PythonProvider) GetStartCommand(ctx *generate.GenerateContext) string {
 		startCommand = p.getDjangoStartCommand(ctx)
 	}
 
-	if startCommand == "" && ctx.App.HasMatch("main.py") {
+	hasMainPy := ctx.App.HasMatch("main.py")
+
+	if p.isFasthtml(ctx) && hasMainPy && p.usesDep(ctx, "uvicorn") {
+		startCommand = "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"
+	}
+
+	if p.isFlask(ctx) && hasMainPy && p.usesDep(ctx, "gunicorn") {
+		startCommand = "gunicorn --bind 0.0.0.0:${PORT:-8000} main:app"
+	}
+
+	if startCommand == "" && hasMainPy {
 		startCommand = "python main.py"
 	}
 
@@ -113,14 +123,14 @@ func (p *PythonProvider) InstallUv(ctx *generate.GenerateContext, install *gener
 	})
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
 	install.AddCommands([]plan.Command{
-		plan.NewExecCommand("pipx install uv"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewExecCommand("pipx install uv"),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
 		plan.NewCopyCommand("pyproject.toml"),
 		plan.NewCopyCommand("uv.lock"),
 		plan.NewExecCommand("uv sync --locked --no-dev --no-install-project"),
 		plan.NewCopyCommand("."),
 		plan.NewExecCommand("uv sync --locked --no-dev --no-editable"),
-		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
 	return []string{}
@@ -137,8 +147,8 @@ func (p *PythonProvider) InstallPipenv(ctx *generate.GenerateContext, install *g
 	})
 
 	install.AddCommands([]plan.Command{
-		plan.NewExecCommand("pipx install pipenv"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewExecCommand("pipx install pipenv"),
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
@@ -155,10 +165,6 @@ func (p *PythonProvider) InstallPipenv(ctx *generate.GenerateContext, install *g
 		})
 	}
 
-	install.AddCommands([]plan.Command{
-		plan.NewPathCommand(VENV_PATH + "/bin"),
-	})
-
 	return []string{}
 }
 
@@ -171,8 +177,8 @@ func (p *PythonProvider) InstallPDM(ctx *generate.GenerateContext, install *gene
 	})
 
 	install.AddCommands([]plan.Command{
-		plan.NewExecCommand("pipx install pdm"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewExecCommand("pipx install pdm"),
 		plan.NewCopyCommand("."),
 		plan.NewExecCommand("python --version"),
 		plan.NewExecCommand("pdm install --check --prod --no-editable"),
@@ -188,14 +194,14 @@ func (p *PythonProvider) InstallPoetry(ctx *generate.GenerateContext, install *g
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
 
 	install.AddCommands([]plan.Command{
-		plan.NewExecCommand("pipx install poetry"),
 		plan.NewPathCommand(LOCAL_BIN_PATH),
+		plan.NewExecCommand("pipx install poetry"),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
 		plan.NewExecCommand("poetry config virtualenvs.in-project true"),
 		plan.NewCopyCommand("pyproject.toml"),
 		plan.NewCopyCommand("poetry.lock"),
 		plan.NewExecCommand("poetry install --no-interaction --no-ansi --only main --no-root"),
 		plan.NewCopyCommand("."),
-		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
 	install.AddEnvVars(map[string]string{
@@ -210,17 +216,18 @@ func (p *PythonProvider) InstallPip(ctx *generate.GenerateContext, install *gene
 
 	install.AddCache(ctx.Caches.AddCache("pip", PIP_CACHE_DIR))
 	install.AddCommands([]plan.Command{
+		plan.NewExecCommand(fmt.Sprintf("python -m venv %s", VENV_PATH)),
+		plan.NewPathCommand(VENV_PATH + "/bin"),
 		plan.NewCopyCommand("requirements.txt"),
-		plan.NewExecCommand(fmt.Sprintf("pip install --target=%s -r requirements.txt", PACKAGES_DIR)),
-		plan.NewPathCommand(fmt.Sprintf("%s/bin", PACKAGES_DIR)),
+		plan.NewExecCommand("pip install -r requirements.txt"),
 	})
 	maps.Copy(install.Variables, p.GetPythonEnvVars(ctx))
 	maps.Copy(install.Variables, map[string]string{
 		"PIP_CACHE_DIR": PIP_CACHE_DIR,
-		"PYTHONPATH":    PACKAGES_DIR,
+		"VIRTUAL_ENV":   VENV_PATH,
 	})
 
-	return []string{PACKAGES_DIR}
+	return []string{}
 }
 
 func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) *generate.AptStepBuilder {
@@ -240,12 +247,24 @@ func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) 
 		aptStep.Packages = append(aptStep.Packages, "libpq5")
 	}
 
+	if p.usesMysql(ctx) {
+		aptStep.Packages = append(aptStep.Packages, "default-mysql-client")
+	}
+
 	return aptStep
 }
 
 func (p *PythonProvider) GetBuilderDeps(ctx *generate.GenerateContext) *generate.MiseStepBuilder {
 	miseStep := ctx.GetMiseStepBuilder()
-	miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "python3-dev", "libpq-dev")
+	miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "python3-dev")
+
+	if p.usesPostgres(ctx) {
+		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "libpq-dev")
+	}
+
+	if p.usesMysql(ctx) {
+		miseStep.SupportingAptPackages = append(miseStep.SupportingAptPackages, "default-libmysqlclient-dev")
+	}
 
 	return miseStep
 }
@@ -258,11 +277,11 @@ func (p *PythonProvider) InstallMisePackages(ctx *generate.GenerateContext, mise
 	}
 
 	if versionFile, err := ctx.App.ReadFile(".python-version"); err == nil {
-		miseStep.Version(python, string(versionFile), ".python-version")
+		miseStep.Version(python, utils.ExtractSemverVersion(string(versionFile)), ".python-version")
 	}
 
 	if runtimeFile, err := ctx.App.ReadFile("runtime.txt"); err == nil {
-		miseStep.Version(python, string(runtimeFile), "runtime.txt")
+		miseStep.Version(python, utils.ExtractSemverVersion(string(runtimeFile)), "runtime.txt")
 	}
 
 	if pipfileVersion := parseVersionFromPipfile(ctx); pipfileVersion != "" {
@@ -291,6 +310,12 @@ func (p *PythonProvider) usesPostgres(ctx *generate.GenerateContext) bool {
 	return p.usesDep(ctx, "psycopg2") || p.usesDep(ctx, "psycopg2-binary") || containsDjangoPostgres
 }
 
+func (p *PythonProvider) usesMysql(ctx *generate.GenerateContext) bool {
+	djangoPythonRe := regexp.MustCompile(`django.db.backends.mysql`)
+	containsDjangoMysql := len(ctx.App.FindFilesWithContent("**/*.py", djangoPythonRe)) > 0
+	return p.usesDep(ctx, "mysqlclient") || containsDjangoMysql
+}
+
 func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {
 	hasPoetry := p.hasPoetry(ctx)
 	hasPdm := p.hasPdm(ctx)
@@ -307,10 +332,7 @@ func (p *PythonProvider) addMetadata(ctx *generate.GenerateContext) {
 	}
 
 	ctx.Metadata.Set("pythonPackageManager", pkgManager)
-	ctx.Metadata.SetBool("pythonHasRequirementsTxt", p.hasRequirements(ctx))
-	ctx.Metadata.SetBool("pythonHasPyproject", p.hasPyproject(ctx))
-	ctx.Metadata.SetBool("pythonHasPipfile", p.hasPipfile(ctx))
-	ctx.Metadata.SetBool("pythonDjango", p.isDjango(ctx))
+	ctx.Metadata.Set("pythonRuntime", p.getRuntime(ctx))
 }
 
 func (p *PythonProvider) usesDep(ctx *generate.GenerateContext, dep string) bool {
@@ -363,6 +385,28 @@ func (p *PythonProvider) hasPdm(ctx *generate.GenerateContext) bool {
 
 func (p *PythonProvider) hasUv(ctx *generate.GenerateContext) bool {
 	return ctx.App.HasMatch("uv.lock")
+}
+
+func (p *PythonProvider) isFasthtml(ctx *generate.GenerateContext) bool {
+	return p.usesDep(ctx, "python-fasthtml")
+}
+
+func (p *PythonProvider) isFlask(ctx *generate.GenerateContext) bool {
+	return p.usesDep(ctx, "flask")
+}
+
+func (p *PythonProvider) getRuntime(ctx *generate.GenerateContext) string {
+	if p.isDjango(ctx) {
+		return "django"
+	} else if p.isFlask(ctx) {
+		return "flask"
+	} else if p.usesDep(ctx, "fastapi") {
+		return "fastapi"
+	} else if p.isFasthtml(ctx) {
+		return "fasthtml"
+	}
+
+	return "python"
 }
 
 // Mapping of python dependencies to required apt packages
