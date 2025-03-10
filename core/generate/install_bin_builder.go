@@ -63,7 +63,6 @@ func (b *InstallBinStepBuilder) Build(options *BuildStepOptions) (*plan.Step, er
 
 	step.AddCommands([]plan.Command{
 		plan.NewExecCommand(fmt.Sprintf("mise install-into %s@%s %s", b.Package.Name, *packageVersion, binPath)),
-		plan.NewPathCommand(BinDir),
 		plan.NewPathCommand(binPath),
 		plan.NewPathCommand(fmt.Sprintf("%s/bin", binPath)),
 	})
