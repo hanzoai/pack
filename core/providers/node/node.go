@@ -228,8 +228,10 @@ func (p *NodeProvider) InstallNodeDeps(ctx *generate.GenerateContext, install *g
 }
 
 func (p *NodeProvider) InstallMisePackages(ctx *generate.GenerateContext, miseStep *generate.MiseStepBuilder) {
+	requiresNode := p.requiresNode(ctx)
+
 	// Node
-	if p.requiresNode(ctx) {
+	if requiresNode {
 		node := miseStep.Default("node", DEFAULT_NODE_VERSION)
 
 		if envVersion, varName := ctx.Env.GetConfigVariable("NODE_VERSION"); envVersion != "" {
@@ -250,11 +252,18 @@ func (p *NodeProvider) InstallMisePackages(ctx *generate.GenerateContext, miseSt
 	}
 
 	// Bun
-	if p.packageManager == PackageManagerBun {
+	if p.requiresBun(ctx) {
 		bun := miseStep.Default("bun", DEFAULT_BUN_VERSION)
 
 		if envVersion, varName := ctx.Env.GetConfigVariable("BUN_VERSION"); envVersion != "" {
 			miseStep.Version(bun, envVersion, varName)
+		}
+
+		// If we don't need node in the final image, we still want to include it for the install steps
+		// since many packages need node-gyp to install native modules
+		// in this case, we don't need a specific version, so we'll just pull from apt
+		if !requiresNode && ctx.Config.Packages["node"] == "" {
+			miseStep.AddSupportingAptPackage("nodejs")
 		}
 	}
 
@@ -389,15 +398,31 @@ func (p *NodeProvider) requiresNode(ctx *generate.GenerateContext) bool {
 		return true
 	}
 
-	scripts := p.packageJson.Scripts
-
-	for _, script := range scripts {
+	for _, script := range p.packageJson.Scripts {
 		if strings.Contains(script, "node") {
 			return true
 		}
 	}
 
 	return p.isAstro(ctx)
+}
+
+func (p *NodeProvider) requiresBun(ctx *generate.GenerateContext) bool {
+	if p.packageManager == PackageManagerBun {
+		return true
+	}
+
+	for _, script := range p.packageJson.Scripts {
+		if strings.Contains(script, "bun") {
+			return true
+		}
+	}
+
+	if ctx.Config.Deploy != nil && strings.Contains(ctx.Config.Deploy.StartCmd, "bun") {
+		return true
+	}
+
+	return false
 }
 
 func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
