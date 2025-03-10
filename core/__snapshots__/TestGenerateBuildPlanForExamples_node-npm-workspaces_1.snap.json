@@ -137,6 +137,12 @@
    "caches": [
     "node-modules"
    ],
+   "commands": [
+    {
+     "dest": ".",
+     "src": "."
+    }
+   ],
    "inputs": [
     {
      "step": "install"
