@@ -28,9 +28,11 @@ func getMavenPortConfig(ctx *generate.GenerateContext) string {
 	}
 
 	if strings.Contains(pomFile, "<groupId>org.wildfly.swarm") {
+		// If using the Swarm web server, set the port accordingly for any passed-in $PORT variable
 		return "-Dswarm.http.port=$PORT"
 	} else if strings.Contains(pomFile, "<groupId>org.springframework.boot") &&
 		strings.Contains(pomFile, "<artifactId>spring-boot") {
+		// If using Spring Boot, set the port accordingly for any passed-in $PORT variable
 		return "-Dserver.port=$PORT"
 	}
 	return ""

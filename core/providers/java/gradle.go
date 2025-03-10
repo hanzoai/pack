@@ -20,8 +20,8 @@ func (p *JavaProvider) setGradleVersion(ctx *generate.GenerateContext) error {
 	miseStep := ctx.GetMiseStepBuilder()
 	gradle := miseStep.Default("gradle", DEFAULT_GRADLE_VERSION)
 
-	if envVersion, _ := ctx.Env.GetConfigVariable("GRADLE_VERSION"); envVersion != "" {
-		miseStep.Version(gradle, envVersion, "GRADLE_VERSION")
+	if envVersion, envName := ctx.Env.GetConfigVariable("GRADLE_VERSION"); envVersion != "" {
+		miseStep.Version(gradle, envVersion, envName)
 	}
 
 	if !ctx.App.HasMatch("gradle/wrapper/gradle-wrapper.properties") {
@@ -50,7 +50,7 @@ func (p *JavaProvider) setGradleVersion(ctx *generate.GenerateContext) error {
 	}
 
 	if !parseVersionRegex.Match([]byte(customVersion)) {
-		return err
+		return nil
 	}
 
 	parsedVersion := string(parseVersionRegex.FindSubmatch([]byte(customVersion))[1])
