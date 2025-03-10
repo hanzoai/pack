@@ -94,6 +94,7 @@ func TestExamplesIntegration(t *testing.T) {
 					ImportCache: *buildkitCacheImport,
 					ExportCache: *buildkitCacheExport,
 					Secrets:     testCase.Envs,
+					CacheKey:    imageName,
 				}); err != nil {
 					t.Fatalf("failed to build image: %v", err)
 				}

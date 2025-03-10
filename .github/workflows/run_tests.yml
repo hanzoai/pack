@@ -67,7 +67,7 @@ jobs:
             -run "TestExamplesIntegration/${{ matrix.example }}" \
             -timeout 20m \
             -buildkit-cache-import="type=gha,url=${{ env.ACTIONS_CACHE_URL }},token=${{ env.ACTIONS_RUNTIME_TOKEN }},scope=${{ matrix.example }}" \
-            -buildkit-cache-export="type=gha,url=${{ env.ACTIONS_CACHE_URL }},token=${{ env.ACTIONS_RUNTIME_TOKEN }},mode=max,scope=${{ matrix.example }},error=ignore"
+            -buildkit-cache-export="type=gha,url=${{ env.ACTIONS_CACHE_URL }},token=${{ env.ACTIONS_RUNTIME_TOKEN }},mode=max,scope=${{ matrix.example }},error=ignore,compression=zstd"
 
       - name: Stop BuildKit
         if: always()
