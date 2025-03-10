@@ -132,28 +132,6 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 		buildInput,
 	}
 
-	// if p.shouldPrune(ctx) {
-	// 	// If we are pruning, we want to grab the pruned node_modules
-	// 	// and ignore the node_modules from the install/build steps
-	// 	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
-	// 		plan.NewStepInput(prune.Name(), plan.InputOptions{
-	// 			Include: p.packageManager.GetInstallFolder(ctx),
-	// 		}),
-	// 		plan.NewStepInput(build.Name(), plan.InputOptions{
-	// 			Include: buildIncludeDirs,
-	// 			Exclude: []string{"node_modules", ".yarn"},
-	// 		}),
-	// 	)
-	// } else {
-	// 	ctx.Deploy.Inputs = append(ctx.Deploy.Inputs,
-	// 		plan.NewStepInput(build.Name(), plan.InputOptions{
-	// 			Include: buildIncludeDirs,
-	// 		}),
-	// 	)
-	// }
-
-	// ctx.Deploy.Inputs = append(ctx.Deploy.Inputs, plan.NewLocalInput("."))
-
 	return nil
 }
 
