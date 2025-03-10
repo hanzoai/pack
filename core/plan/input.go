@@ -75,7 +75,7 @@ func (i *Input) DisplayName() string {
 	}
 
 	if i.Image != "" {
-		return fmt.Sprintf("%s", i.Image)
+		return i.Image
 	}
 
 	return fmt.Sprintf("input %s", include)
