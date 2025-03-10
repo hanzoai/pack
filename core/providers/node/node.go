@@ -418,6 +418,10 @@ func (p *NodeProvider) requiresBun(ctx *generate.GenerateContext) bool {
 		}
 	}
 
+	if ctx.Config.Deploy != nil && strings.Contains(ctx.Config.Deploy.StartCmd, "bun") {
+		return true
+	}
+
 	return false
 }
 
