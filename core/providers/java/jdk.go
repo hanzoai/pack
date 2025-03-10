@@ -14,8 +14,8 @@ func (p *JavaProvider) setJDKVersion(ctx *generate.GenerateContext, miseOut *gen
 		miseOut = miseStep
 	}
 	jdk := miseOut.Default("java", DEFAULT_JDK_VERSION)
-	if jdkVersion, _ := ctx.Env.GetConfigVariable("JDK_VERSION"); jdkVersion != "" {
-		miseOut.Version(jdk, jdkVersion, "JDK_VERSION")
+	if jdkVersion, envName := ctx.Env.GetConfigVariable("JDK_VERSION"); jdkVersion != "" {
+		miseOut.Version(jdk, jdkVersion, envName)
 	}
 
 	if p.usesGradle(ctx) {
