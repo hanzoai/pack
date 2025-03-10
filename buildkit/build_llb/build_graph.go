@@ -86,7 +86,7 @@ func NewBuildGraph(plan *plan.BuildPlan, localState *llb.State, cacheStore *Buil
 
 	g.graph.ComputeTransitiveDependencies()
 
-	g.graph.PrintGraph()
+	// g.graph.PrintGraph()
 
 	return g, nil
 }
