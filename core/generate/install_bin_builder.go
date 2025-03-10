@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	BinDir = "/bin"
+	BinDir = "/railpack"
 )
 
 type InstallBinStepBuilder struct {
@@ -59,9 +59,13 @@ func (b *InstallBinStepBuilder) Build(options *BuildStepOptions) (*plan.Step, er
 		plan.NewImageInput(plan.RAILPACK_BUILDER_IMAGE),
 	}
 
+	binPath := b.getBinPath()
+
 	step.AddCommands([]plan.Command{
-		plan.NewExecCommand(fmt.Sprintf("mise install-into %s@%s %s", b.Package.Name, *packageVersion, BinDir)),
-		plan.NewPathCommand(b.getBinPath()),
+		plan.NewExecCommand(fmt.Sprintf("mise install-into %s@%s %s", b.Package.Name, *packageVersion, binPath)),
+		plan.NewPathCommand(BinDir),
+		plan.NewPathCommand(binPath),
+		plan.NewPathCommand(fmt.Sprintf("%s/bin", binPath)),
 	})
 
 	step.Secrets = []string{}

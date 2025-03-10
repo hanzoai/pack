@@ -8,7 +8,7 @@ import (
 
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/utils"
+	"github.com/railwayapp/railpack/internal/utils"
 )
 
 const (

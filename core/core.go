@@ -13,7 +13,7 @@ import (
 	"github.com/railwayapp/railpack/core/providers"
 	"github.com/railwayapp/railpack/core/providers/procfile"
 	"github.com/railwayapp/railpack/core/resolver"
-	"github.com/railwayapp/railpack/core/utils"
+	"github.com/railwayapp/railpack/internal/utils"
 )
 
 const (

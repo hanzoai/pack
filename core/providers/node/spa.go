@@ -81,6 +81,8 @@ func (p *NodeProvider) DeploySPA(ctx *generate.GenerateContext, build *generate.
 	caddy.AddInput(plan.NewStepInput(installCaddyStep.Name()))
 	caddy.AddCommands([]plan.Command{
 		plan.NewFileCommand(DefaultCaddyfilePath, "Caddyfile"),
+		plan.NewExecCommand("env"),
+		plan.NewExecCommand("which caddy"),
 		plan.NewExecCommand(fmt.Sprintf("caddy fmt --overwrite %s", DefaultCaddyfilePath)),
 	})
 	caddy.Assets = map[string]string{
