@@ -52,9 +52,12 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 	prepare := ctx.NewCommandStep("prepare")
 	prepare.AddInput(plan.NewStepInput(phpImageStep.Name()))
 	prepare.AddEnvVars(map[string]string{
-		"SERVER_NAME": ":80",
 		"APP_ENV":     "production",
 		"APP_DEBUG":   "false",
+		"APP_LOCALE":  "en",
+		"LOG_CHANNEL": "stderr",
+		"LOG_LEVEL":   "debug",
+		"SERVER_NAME": ":80",
 		"PHP_INI_DIR": "/usr/local/etc/php",
 	})
 	prepare.Assets["Caddyfile"] = configFiles.Caddyfile
@@ -64,6 +67,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		plan.NewExecShellCommand("cp $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini"),
 		plan.NewFileCommand(DefaultCaddyfilePath, "Caddyfile"),
 	})
+	prepare.Secrets = []string{}
 
 	extensions := ctx.NewCommandStep("extensions")
 	extensions.AddInput(plan.NewStepInput(prepare.Name()))
@@ -71,14 +75,19 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		plan.NewExecCommand(fmt.Sprintf("install-php-extensions %s", strings.Join(p.getPhpExtensions(ctx), " "))),
 	})
 	extensions.Caches = append(extensions.Caches, ctx.Caches.GetAptCaches()...)
+	extensions.Secrets = []string{}
 
 	// Composer
 	composer := ctx.NewCommandStep("install:composer")
 	composer.AddInput(plan.NewStepInput(extensions.Name()))
+	composer.Secrets = []string{}
+	composer.UseSecretsWithPrefixes([]string{"COMPOSER", "PHP"})
+	composer.AddVariables(map[string]string{
+		"COMPOSER_FUND":      "0",
+		"COMPOSER_CACHE_DIR": "/opt/cache/composer",
+	})
 	if _, err := p.readComposerJson(ctx); err == nil {
 		composer.AddCache(ctx.Caches.AddCache("composer", "/opt/cache/composer"))
-		composer.AddEnvVars(map[string]string{"COMPOSER_CACHE_DIR": "/opt/cache/composer"})
-
 		composerFiles := p.ComposerSupportingFiles(ctx)
 
 		// Copy composer from the composer image
@@ -91,7 +100,6 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		composer.AddCommands([]plan.Command{
 			plan.NewExecCommand("composer install --optimize-autoloader --no-scripts --no-interaction"),
 		})
-
 	}
 
 	// Node (if necessary)
@@ -137,7 +145,7 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 
 		if isLaravel {
 			build.AddCommands([]plan.Command{
-				plan.NewExecCommand("chmod -R ugo+rw /app/storage"),
+				plan.NewExecShellCommand("mkdir -p storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache && chmod -R a+rw storage"),
 				plan.NewExecCommand("php artisan optimize:clear"),
 				plan.NewExecCommand("php artisan config:cache"),
 				plan.NewExecCommand("php artisan event:cache"),
@@ -211,6 +219,12 @@ func (p *PhpProvider) getPhpExtensions(ctx *generate.GenerateContext) []string {
 				extensions = append(extensions, strings.TrimPrefix(ext, "ext-"))
 			}
 		}
+	}
+
+	if extensionsVar, _ := ctx.Env.GetConfigVariable("PHP_EXTENSIONS"); extensionsVar != "" {
+		extensions = append(extensions, strings.FieldsFunc(extensionsVar, func(r rune) bool {
+			return r == ',' || r == ' '
+		})...)
 	}
 
 	return extensions
@@ -424,8 +438,7 @@ func (p *PhpProvider) phpImagePackage(ctx *generate.GenerateContext) (*generate.
 		return getPhpImage(DEFAULT_PHP_VERSION)
 	})
 
-	// imageStep.AptPackages = append(imageStep.AptPackages, "nginx", "git", "zip", "unzip")
-	imageStep.AptPackages = append(imageStep.AptPackages, "git", "zip", "unzip")
+	imageStep.AptPackages = append(imageStep.AptPackages, "git", "zip", "unzip", "ca-certificates")
 
 	// Include both build and runtime apt packages since we don't have a separate runtime image
 	imageStep.AptPackages = append(imageStep.AptPackages, ctx.Config.BuildAptPackages...)

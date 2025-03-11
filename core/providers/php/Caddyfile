@@ -5,8 +5,10 @@
 
   {$CADDY_GLOBAL_OPTIONS}
 
-  log { 
-    format json 
+  log {
+    format json
+    output stderr
+    level DEBUG
   }
 
 	frankenphp {
@@ -32,5 +34,7 @@
 
 	{$CADDY_SERVER_EXTRA_DIRECTIVES}
 
-	php_server
+	php_server {
+		stderr_log_level DEBUG
+	}
 }
