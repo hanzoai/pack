@@ -70,13 +70,19 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
 	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
 
+	installArtifacts := plan.NewStepInput(build.Name(), plan.InputOptions{
+		Include: installOutputs,
+	})
+
 	ctx.Deploy.Inputs = []plan.Input{
 		plan.NewStepInput(p.GetImageWithRuntimeDeps(ctx).Name()),
 		plan.NewStepInput(ctx.GetMiseStepBuilder().Name(), plan.InputOptions{
 			Include: ctx.GetMiseStepBuilder().GetOutputPaths(),
 		}),
+		installArtifacts,
 		plan.NewStepInput(build.Name(), plan.InputOptions{
-			Include: append(installOutputs, "."),
+			Include: []string{"."},
+			Exclude: []string{strings.TrimPrefix(VENV_PATH, "/app/")},
 		}),
 	}
 
@@ -120,6 +126,7 @@ func (p *PythonProvider) InstallUv(ctx *generate.GenerateContext, install *gener
 		"UV_LINK_MODE":        "copy",
 		"UV_CACHE_DIR":        UV_CACHE_DIR,
 		"UV_PYTHON_DOWNLOADS": "never",
+		"VIRTUAL_ENV":         VENV_PATH,
 	})
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
 	install.AddCommands([]plan.Command{
@@ -133,7 +140,7 @@ func (p *PythonProvider) InstallUv(ctx *generate.GenerateContext, install *gener
 		plan.NewExecCommand("uv sync --locked --no-dev --no-editable"),
 	})
 
-	return []string{}
+	return []string{VENV_PATH}
 }
 
 func (p *PythonProvider) InstallPipenv(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) []string {
@@ -165,7 +172,7 @@ func (p *PythonProvider) InstallPipenv(ctx *generate.GenerateContext, install *g
 		})
 	}
 
-	return []string{}
+	return []string{VENV_PATH}
 }
 
 func (p *PythonProvider) InstallPDM(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) []string {
@@ -185,30 +192,29 @@ func (p *PythonProvider) InstallPDM(ctx *generate.GenerateContext, install *gene
 		plan.NewPathCommand(VENV_PATH + "/bin"),
 	})
 
-	return []string{}
+	return []string{VENV_PATH}
 }
 
 func (p *PythonProvider) InstallPoetry(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) []string {
 	ctx.Logger.LogInfo("Using poetry")
 
 	install.AddEnvVars(p.GetPythonEnvVars(ctx))
+	install.AddEnvVars(map[string]string{
+		"VIRTUAL_ENV":             VENV_PATH,
+		"POETRY_VIRTUALENVS_PATH": VENV_PATH,
+	})
 
 	install.AddCommands([]plan.Command{
 		plan.NewPathCommand(LOCAL_BIN_PATH),
 		plan.NewExecCommand("pipx install poetry"),
 		plan.NewPathCommand(VENV_PATH + "/bin"),
-		plan.NewExecCommand("poetry config virtualenvs.in-project true"),
 		plan.NewCopyCommand("pyproject.toml"),
 		plan.NewCopyCommand("poetry.lock"),
 		plan.NewExecCommand("poetry install --no-interaction --no-ansi --only main --no-root"),
 		plan.NewCopyCommand("."),
 	})
 
-	install.AddEnvVars(map[string]string{
-		"VIRTUAL_ENV": VENV_PATH,
-	})
-
-	return []string{}
+	return []string{VENV_PATH}
 }
 
 func (p *PythonProvider) InstallPip(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) []string {
@@ -227,7 +233,7 @@ func (p *PythonProvider) InstallPip(ctx *generate.GenerateContext, install *gene
 		"VIRTUAL_ENV":   VENV_PATH,
 	})
 
-	return []string{}
+	return []string{VENV_PATH}
 }
 
 func (p *PythonProvider) GetImageWithRuntimeDeps(ctx *generate.GenerateContext) *generate.AptStepBuilder {

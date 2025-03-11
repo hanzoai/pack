@@ -30,6 +30,15 @@
    },
    {
     "include": [
+     "/app/.venv"
+    ],
+    "step": "build"
+   },
+   {
+    "exclude": [
+     ".venv"
+    ],
+    "include": [
      "."
     ],
     "step": "build"

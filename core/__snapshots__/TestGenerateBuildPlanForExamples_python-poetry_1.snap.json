@@ -26,6 +26,15 @@
    },
    {
     "include": [
+     "/app/.venv"
+    ],
+    "step": "build"
+   },
+   {
+    "exclude": [
+     ".venv"
+    ],
+    "include": [
      "."
     ],
     "step": "build"
@@ -94,9 +103,6 @@
      "path": "/app/.venv/bin"
     },
     {
-     "cmd": "poetry config virtualenvs.in-project true"
-    },
-    {
      "dest": "pyproject.toml",
      "src": "pyproject.toml"
     },
@@ -121,6 +127,7 @@
    "variables": {
     "PIP_DEFAULT_TIMEOUT": "100",
     "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "POETRY_VIRTUALENVS_PATH": "/app/.venv",
     "PYTHONDONTWRITEBYTECODE": "1",
     "PYTHONFAULTHANDLER": "1",
     "PYTHONHASHSEED": "random",
