@@ -3,6 +3,7 @@ package php
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	_ "embed"
@@ -108,7 +109,7 @@ func (p *PhpProvider) Prepare(ctx *generate.GenerateContext, prepare *generate.C
 		"SERVER_NAME":   ":80",
 		"PHP_INI_DIR":   "/usr/local/etc/php",
 		"OCTANE_SERVER": "frankenphp",
-		"IS_LARAVEL":    "true",
+		"IS_LARAVEL":    strconv.FormatBool(p.usesLaravel(ctx)),
 	})
 	prepare.Assets["Caddyfile"] = configFiles.Caddyfile
 	prepare.Assets["php.ini"] = configFiles.PhpIni
