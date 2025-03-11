@@ -39,7 +39,7 @@ func (p *JavaProvider) setGradleVersion(ctx *generate.GenerateContext) error {
 	}
 
 	if !versionRegex.Match([]byte(wrapperProps)) {
-		return err
+		return nil
 	}
 
 	customVersion := string(versionRegex.FindSubmatch([]byte(wrapperProps))[3])
