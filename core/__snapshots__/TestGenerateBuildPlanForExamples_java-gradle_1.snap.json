@@ -8,18 +8,51 @@
  "deploy": {
   "inputs": [
    {
-    "step": "build"
+    "image": "ghcr.io/railwayapp/railpack-runtime:latest"
+   },
+   {
+    "include": [
+     "/mise/shims",
+     "/mise/installs",
+     "/usr/local/bin/mise",
+     "/etc/mise/config.toml",
+     "/root/.local/state/mise"
+    ],
+    "step": "mise:install-runtime"
    },
    {
     "include": [
      "."
     ],
-    "local": true
+    "step": "build"
    }
   ],
-  "startCommand": "java $JAVA_OPTS -jar  $(ls -1 build/libs/*jar | grep -v plain)"
+  "startCommand": "java $JAVA_OPTS -jar  $(ls -1 */build/libs/*jar | grep -v plain)"
  },
  "steps": [
+  {
+   "caches": [
+    "gradle"
+   ],
+   "commands": [
+    {
+     "dest": ".",
+     "src": "."
+    },
+    {
+     "cmd": "./gradlew clean build -x check -x test"
+    }
+   ],
+   "inputs": [
+    {
+     "step": "packages:mise"
+    }
+   ],
+   "name": "build",
+   "secrets": [
+    "*"
+   ]
+  },
   {
    "assets": {
     "mise.toml": "[mise.toml]"
@@ -53,27 +86,36 @@
    }
   },
   {
-   "caches": [
-    "gradle"
-   ],
+   "assets": {
+    "mise.toml": "[mise.toml]"
+   },
    "commands": [
     {
-     "dest": ".",
-     "src": "."
+     "path": "/mise/shims"
     },
     {
-     "cmd": "./gradlew clean build -x check -x test"
+     "customName": "create mise config",
+     "name": "mise.toml",
+     "path": "/etc/mise/config.toml"
+    },
+    {
+     "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
+     "customName": "install mise packages: java"
     }
    ],
    "inputs": [
     {
-     "step": "packages:mise"
+     "image": "ghcr.io/railwayapp/railpack-builder:latest"
     }
    ],
-   "name": "build",
-   "secrets": [
-    "*"
-   ]
+   "name": "mise:install-runtime",
+   "variables": {
+    "MISE_CACHE_DIR": "/mise/cache",
+    "MISE_CONFIG_DIR": "/mise",
+    "MISE_DATA_DIR": "/mise",
+    "MISE_INSTALLS_DIR": "/mise/installs",
+    "MISE_SHIMS_DIR": "/mise/shims"
+   }
   }
  ]
 }
