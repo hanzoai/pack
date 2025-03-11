@@ -57,6 +57,8 @@ func (b *ImageStepBuilder) Build(options *BuildStepOptions) (*plan.Step, error) 
 		plan.NewImageInput(image),
 	}
 
+	step.Secrets = []string{}
+
 	if len(b.AptPackages) > 0 {
 		step.Commands = []plan.Command{
 			options.NewAptInstallCommand(b.AptPackages),
