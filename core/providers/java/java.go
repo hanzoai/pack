@@ -44,7 +44,7 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 		build.AddCache(p.gradleCache(ctx))
 	} else {
 		ctx.GetMiseStepBuilder().Default("maven", "latest")
-		p.setJDKVersion(ctx, nil)
+		_ = p.setJDKVersion(ctx, nil)
 
 		if ctx.App.HasMatch("mvnw") && !ctx.App.IsFileExecutable("mvnw") {
 			build.AddCommand(plan.NewExecCommand("chmod +x mvnw"))
