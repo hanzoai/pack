@@ -30,7 +30,7 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 	build := ctx.NewCommandStep("build")
 	build.AddCommand(plan.NewCopyCommand("."))
 	build.Inputs = []plan.Input{plan.NewStepInput(ctx.GetMiseStepBuilder().Name())}
-	_ := nil
+	var _ error
 
 	if p.usesGradle(ctx) {
 		_ = p.setGradleVersion(ctx)
