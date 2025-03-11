@@ -21,6 +21,8 @@ The PHP version is determined in the following order:
 - Read from the `composer.json` file
 - Defaults to `8.4`
 
+Only PHP 8.2 and above are supported.
+
 ## Configuration
 
 Railpack will configure [FrankenPHP](https://frankenphp.dev/) for your
