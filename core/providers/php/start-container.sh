@@ -12,6 +12,8 @@ if [ "$IS_LARAVEL" = "true" ]; then
   php artisan storage:link
   php artisan optimize:clear
   php artisan optimize
+
+  echo "Starting Laravel server ..."
 fi
 
 # Start the FrankenPHP server

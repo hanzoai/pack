@@ -108,6 +108,7 @@ func (p *PhpProvider) Prepare(ctx *generate.GenerateContext, prepare *generate.C
 		"SERVER_NAME":   ":80",
 		"PHP_INI_DIR":   "/usr/local/etc/php",
 		"OCTANE_SERVER": "frankenphp",
+		"IS_LARAVEL":    "true",
 	})
 	prepare.Assets["Caddyfile"] = configFiles.Caddyfile
 	prepare.Assets["php.ini"] = configFiles.PhpIni
@@ -192,7 +193,6 @@ func (p *PhpProvider) DeployWithNode(ctx *generate.GenerateContext, nodeProvider
 	if isLaravel {
 		build.AddCommands([]plan.Command{
 			plan.NewExecShellCommand("mkdir -p storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache && chmod -R a+rw storage"),
-			plan.NewExecCommand("php artisan optimize:clear"),
 			plan.NewExecCommand("php artisan config:cache"),
 			plan.NewExecCommand("php artisan event:cache"),
 			plan.NewExecCommand("php artisan route:cache"),
