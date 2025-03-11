@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	_ "embed"
+
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/providers/node"
@@ -12,8 +14,18 @@ import (
 )
 
 const (
-	DEFAULT_PHP_VERSION = "8.4.3"
+	DEFAULT_PHP_VERSION  = "8.4"
+	DefaultCaddyfilePath = "/Caddyfile"
 )
+
+//go:embed Caddyfile
+var caddyfileTemplate string
+
+//go:embed start-container.sh
+var startContainerScript string
+
+//go:embed php.ini
+var phpIniTemplate string
 
 type PhpProvider struct{}
 
@@ -36,42 +48,24 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		return err
 	}
 
-	// Nginx
-	nginx := ctx.NewCommandStep("nginx")
-	nginx.AddInput(plan.NewStepInput(phpImageStep.Name()))
-	nginx.AddCommands([]plan.Command{
-		plan.NewFileCommand("/etc/nginx/railpack.conf", "nginx.conf", plan.FileOptions{CustomName: "create nginx config"}),
-		plan.NewExecCommand("nginx -t -c /etc/nginx/railpack.conf"),
-		plan.NewFileCommand("/etc/php-fpm.conf", "php-fpm.conf", plan.FileOptions{CustomName: "create php-fpm config"}),
-		plan.NewFileCommand("/start-nginx.sh", "start-nginx.sh", plan.FileOptions{
-			CustomName: "create start nginx script",
-			Mode:       0755,
-		}),
-	})
-
-	nginx.Assets["start-nginx.sh"] = startNginxScriptAsset
 	configFiles, err := p.getConfigFiles(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get config files: %w", err)
 	}
 
-	nginx.Assets["nginx.conf"] = configFiles.NginxConf
-	nginx.Assets["php-fpm.conf"] = configFiles.PhpFpmConf
+	isLaravel := p.usesLaravel(ctx)
 
-	// Composer
+	prepare := ctx.NewCommandStep("prepare")
+	prepare.AddInput(plan.NewStepInput(phpImageStep.Name()))
+	p.Prepare(ctx, prepare, configFiles)
+
+	extensions := ctx.NewCommandStep("extensions")
+	extensions.AddInput(plan.NewStepInput(prepare.Name()))
+	p.InstallExtensions(ctx, extensions)
+
 	composer := ctx.NewCommandStep("install:composer")
-	composer.AddInput(plan.NewStepInput(nginx.Name()))
-	if _, err := p.readComposerJson(ctx); err == nil {
-		composer.AddCache(ctx.Caches.AddCache("composer", "/opt/cache/composer"))
-		composer.AddEnvVars(map[string]string{"COMPOSER_CACHE_DIR": "/opt/cache/composer"})
-
-		composer.AddCommands([]plan.Command{
-			// Copy composer from the composer image
-			plan.CopyCommand{Image: "composer:latest", Src: "/usr/bin/composer", Dest: "/usr/bin/composer"},
-			plan.NewCopyCommand("."),
-			plan.NewExecCommand("composer install --ignore-platform-reqs"),
-		})
-	}
+	composer.AddInput(plan.NewStepInput(extensions.Name()))
+	p.InstallCompose(ctx, composer)
 
 	// Node (if necessary)
 	nodeProvider := node.NodeProvider{}
@@ -80,69 +74,194 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 		return err
 	}
 
-	if p.usesLaravel(ctx) {
+	if isLaravel {
 		ctx.Logger.LogInfo("Found Laravel app")
 	}
 
 	if isNode {
-		err = nodeProvider.Initialize(ctx)
+		err = p.DeployWithNode(ctx, nodeProvider, composer, isLaravel)
 		if err != nil {
 			return err
-		}
-
-		ctx.Logger.LogInfo("Installing Node")
-
-		miseStep := ctx.GetMiseStepBuilder()
-		nodeProvider.InstallMisePackages(ctx, miseStep)
-
-		install := ctx.NewCommandStep("install:node")
-		install.AddInput(plan.NewStepInput(miseStep.Name()))
-		nodeProvider.InstallNodeDeps(ctx, install)
-
-		prune := ctx.NewCommandStep("prune:node")
-		prune.AddInput(plan.NewStepInput(install.Name()))
-		nodeProvider.PruneNodeDeps(ctx, prune)
-
-		build := ctx.NewCommandStep("build")
-		build.Inputs = []plan.Input{
-			plan.NewStepInput(composer.Name()),
-
-			// Include the app and mise packages (node, pnpm, etc.)
-			plan.NewStepInput(install.Name(), plan.InputOptions{
-				Include: append([]string{"."}, miseStep.GetOutputPaths()...),
-			}),
-		}
-		nodeProvider.Build(ctx, build)
-
-		ctx.Deploy.Inputs = []plan.Input{
-			plan.NewStepInput(composer.Name()),
-			plan.NewStepInput(build.Name(), plan.InputOptions{
-				Include: []string{"."},
-				Exclude: []string{"node_modules"},
-			}),
-			plan.NewStepInput(prune.Name(), plan.InputOptions{
-				Include: []string{"/app/node_modules"},
-			}),
-			plan.NewLocalInput("."),
 		}
 	} else {
 		// A manual build command will go here
 		build := ctx.NewCommandStep("build")
 		build.AddInput(plan.NewStepInput(composer.Name()))
-
+		build.AddCommand(plan.NewCopyCommand("."))
 		ctx.Deploy.Inputs = []plan.Input{
 			plan.NewStepInput(build.Name()),
-			plan.NewLocalInput("."),
 		}
 	}
 
-	ctx.Deploy.StartCmd = "bash /start-nginx.sh"
+	ctx.Deploy.StartCmd = "/start-container.sh"
 
-	if p.usesLaravel(ctx) {
-		ctx.Deploy.Variables["IS_LARAVEL"] = "true"
+	return nil
+}
+
+func (p *PhpProvider) Prepare(ctx *generate.GenerateContext, prepare *generate.CommandStepBuilder, configFiles *ConfigFiles) {
+	prepare.AddEnvVars(map[string]string{
+		"APP_ENV":       "production",
+		"APP_DEBUG":     "false",
+		"APP_LOCALE":    "en",
+		"LOG_CHANNEL":   "stderr",
+		"LOG_LEVEL":     "debug",
+		"SERVER_NAME":   ":80",
+		"PHP_INI_DIR":   "/usr/local/etc/php",
+		"OCTANE_SERVER": "frankenphp",
+	})
+	prepare.Assets["Caddyfile"] = configFiles.Caddyfile
+	prepare.Assets["php.ini"] = configFiles.PhpIni
+	prepare.Assets["start-container.sh"] = configFiles.StartContainerScript
+	prepare.AddCommands([]plan.Command{
+		plan.NewExecCommand("mkdir -p /usr/local/etc/php/conf.d"),
+		plan.NewExecCommand("mkdir -p /conf.d/"),
+		plan.NewFileCommand("/usr/local/etc/php/conf.d/php.ini", "php.ini"),
+		plan.NewFileCommand(DefaultCaddyfilePath, "Caddyfile"),
+		plan.NewFileCommand("/start-container.sh", "start-container.sh", plan.FileOptions{
+			CustomName: "create start container script",
+			Mode:       0755,
+		}),
+	})
+	prepare.Secrets = []string{}
+}
+
+func (p *PhpProvider) InstallExtensions(ctx *generate.GenerateContext, extensions *generate.CommandStepBuilder) {
+	phpExtensions := p.getPhpExtensions(ctx)
+
+	if len(phpExtensions) > 0 {
+		extensions.AddCommands([]plan.Command{
+			plan.NewExecCommand(fmt.Sprintf("install-php-extensions %s", strings.Join(phpExtensions, " "))),
+		})
+		extensions.Caches = append(extensions.Caches, ctx.Caches.GetAptCaches()...)
+	}
+	extensions.Secrets = []string{}
+}
+
+func (p *PhpProvider) InstallCompose(ctx *generate.GenerateContext, composer *generate.CommandStepBuilder) {
+	composer.Secrets = []string{}
+	composer.UseSecretsWithPrefixes([]string{"COMPOSER", "PHP"})
+	composer.AddVariables(map[string]string{
+		"COMPOSER_FUND":      "0",
+		"COMPOSER_CACHE_DIR": "/opt/cache/composer",
+	})
+	if _, err := p.readComposerJson(ctx); err == nil {
+		composer.AddCache(ctx.Caches.AddCache("composer", "/opt/cache/composer"))
+		composerFiles := p.ComposerSupportingFiles(ctx)
+
+		// Copy composer from the composer image
+		composer.AddCommand(plan.CopyCommand{Image: "composer:latest", Src: "/usr/bin/composer", Dest: "/usr/bin/composer"})
+
+		for _, file := range composerFiles {
+			composer.AddCommand(plan.NewCopyCommand(file))
+		}
+
+		composer.AddCommands([]plan.Command{
+			plan.NewExecCommand("composer install --optimize-autoloader --no-scripts --no-interaction"),
+		})
+	}
+}
+
+func (p *PhpProvider) DeployWithNode(ctx *generate.GenerateContext, nodeProvider node.NodeProvider, composer *generate.CommandStepBuilder, isLaravel bool) error {
+	err := nodeProvider.Initialize(ctx)
+	if err != nil {
+		return err
+	}
+
+	ctx.Logger.LogInfo("Installing Node")
+
+	miseStep := ctx.GetMiseStepBuilder()
+	nodeProvider.InstallMisePackages(ctx, miseStep)
+
+	install := ctx.NewCommandStep("install:node")
+	install.AddInput(plan.NewStepInput(miseStep.Name()))
+	nodeProvider.InstallNodeDeps(ctx, install)
+
+	prune := ctx.NewCommandStep("prune:node")
+	prune.AddInput(plan.NewStepInput(install.Name()))
+	nodeProvider.PruneNodeDeps(ctx, prune)
+
+	build := ctx.NewCommandStep("build")
+	build.Inputs = []plan.Input{
+		plan.NewStepInput(composer.Name()),
+		plan.NewStepInput(install.Name(), plan.InputOptions{
+			Include: append([]string{"."}, miseStep.GetOutputPaths()...),
+		}),
+	}
+	nodeProvider.Build(ctx, build)
+
+	if isLaravel {
+		build.AddCommands([]plan.Command{
+			plan.NewExecShellCommand("mkdir -p storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache && chmod -R a+rw storage"),
+			plan.NewExecCommand("php artisan optimize:clear"),
+			plan.NewExecCommand("php artisan config:cache"),
+			plan.NewExecCommand("php artisan event:cache"),
+			plan.NewExecCommand("php artisan route:cache"),
+			plan.NewExecCommand("php artisan view:cache"),
+		})
+	}
+
+	ctx.Deploy.Inputs = []plan.Input{
+		plan.NewStepInput(composer.Name()),
+		plan.NewStepInput(build.Name(), plan.InputOptions{
+			Include: []string{"."},
+			Exclude: []string{"node_modules", "vendor"},
+		}),
+		plan.NewStepInput(prune.Name(), plan.InputOptions{
+			Include: []string{"/app/node_modules"},
+		}),
 	}
 
 	return nil
+}
+
+func (p *PhpProvider) ComposerSupportingFiles(ctx *generate.GenerateContext) []string {
+	patterns := []string{
+		"**/composer.json",
+		"**/composer.lock",
+		"artisan",
+	}
+
+	var allFiles []string
+	for _, pattern := range patterns {
+		files, err := ctx.App.FindFiles(pattern)
+		if err != nil {
+			continue
+		}
+		allFiles = append(allFiles, files...)
+
+		dirs, err := ctx.App.FindDirectories(pattern)
+		if err != nil {
+			continue
+		}
+		allFiles = append(allFiles, dirs...)
+	}
+
+	return allFiles
+}
+
+func (p *PhpProvider) getPhpExtensions(ctx *generate.GenerateContext) []string {
+	extensions := []string{}
+
+	composerJson, err := p.readComposerJson(ctx)
+	if err != nil {
+		return extensions
+	}
+
+	if require, ok := composerJson["require"].(map[string]interface{}); ok {
+		for ext := range require {
+			if strings.HasPrefix(ext, "ext-") {
+				extensions = append(extensions, strings.TrimPrefix(ext, "ext-"))
+			}
+		}
+	}
+
+	if extensionsVar, _ := ctx.Env.GetConfigVariable("PHP_EXTENSIONS"); extensionsVar != "" {
+		extensions = append(extensions, strings.FieldsFunc(extensionsVar, func(r rune) bool {
+			return r == ',' || r == ' '
+		})...)
+	}
+
+	return extensions
 }
 
 func (p *PhpProvider) usesLaravel(ctx *generate.GenerateContext) bool {
@@ -150,8 +269,9 @@ func (p *PhpProvider) usesLaravel(ctx *generate.GenerateContext) bool {
 }
 
 type ConfigFiles struct {
-	NginxConf  string
-	PhpFpmConf string
+	Caddyfile            string
+	StartContainerScript string
+	PhpIni               string
 }
 
 func (p *PhpProvider) getConfigFiles(ctx *generate.GenerateContext) (*ConfigFiles, error) {
@@ -167,27 +287,25 @@ func (p *PhpProvider) getConfigFiles(ctx *generate.GenerateContext) (*ConfigFile
 		"IS_LARAVEL":            p.usesLaravel(ctx),
 	}
 
-	nginxConfTemplate, err := ctx.TemplateFiles([]string{"nginx.template.conf", "nginx.conf"}, nginxConfTemplateAsset, data)
+	caddyfile, err := ctx.TemplateFiles([]string{"Caddyfile"}, caddyfileTemplate, data)
 	if err != nil {
 		return nil, err
 	}
 
-	phpFpmConf, err := ctx.TemplateFiles([]string{"php-fpm.template.conf", "php-fpm.conf"}, phpFpmConfTemplateAsset, data)
+	startContainerScript, err := ctx.TemplateFiles([]string{"start-container.sh"}, startContainerScript, data)
 	if err != nil {
 		return nil, err
 	}
 
-	if nginxConfTemplate.Filename != "" {
-		ctx.Logger.LogInfo("Using custom nginx config: %s", nginxConfTemplate.Filename)
-	}
-
-	if phpFpmConf.Filename != "" {
-		ctx.Logger.LogInfo("Using custom php-fpm config: %s", phpFpmConf.Filename)
+	phpIni, err := ctx.TemplateFiles([]string{"php.ini"}, phpIniTemplate, data)
+	if err != nil {
+		return nil, err
 	}
 
 	return &ConfigFiles{
-		NginxConf:  nginxConfTemplate.Contents,
-		PhpFpmConf: phpFpmConf.Contents,
+		Caddyfile:            caddyfile.Contents,
+		StartContainerScript: startContainerScript.Contents,
+		PhpIni:               phpIni.Contents,
 	}, nil
 }
 
@@ -201,7 +319,7 @@ func (p *PhpProvider) phpImagePackage(ctx *generate.GenerateContext) (*generate.
 		return getPhpImage(DEFAULT_PHP_VERSION)
 	})
 
-	imageStep.AptPackages = append(imageStep.AptPackages, "nginx", "git", "zip", "unzip")
+	imageStep.AptPackages = append(imageStep.AptPackages, "git", "zip", "unzip", "ca-certificates")
 
 	// Include both build and runtime apt packages since we don't have a separate runtime image
 	imageStep.AptPackages = append(imageStep.AptPackages, ctx.Config.BuildAptPackages...)
@@ -224,7 +342,13 @@ func (p *PhpProvider) phpImagePackage(ctx *generate.GenerateContext) (*generate.
 	// Ensure that the version is available on Docker Hub
 	imageStep.SetVersionAvailable(php, func(version string) bool {
 		image := getPhpImage(version)
-		url := fmt.Sprintf("https://registry.hub.docker.com/v2/repositories/library/php/tags/%s", strings.TrimPrefix(image, "php:"))
+
+		// dunglas/frankenphp:php8.4.3-bookworm -> [dunglas, frankenphp, php8.4.3-bookworm]
+		parts := strings.Split(image, ":")
+		repository := parts[0] // dunglas/frankenphp
+		tag := parts[1]        // php8.4.3-bookworm
+
+		url := fmt.Sprintf("https://registry.hub.docker.com/v2/repositories/%s/tags/%s", repository, tag)
 		resp, err := http.Get(url)
 		if err != nil {
 			return false
@@ -237,7 +361,7 @@ func (p *PhpProvider) phpImagePackage(ctx *generate.GenerateContext) (*generate.
 }
 
 func getPhpImage(phpVersion string) string {
-	return fmt.Sprintf("php:%s-fpm-bookworm", phpVersion)
+	return fmt.Sprintf("dunglas/frankenphp:php%s-bookworm", phpVersion)
 }
 
 func (p *PhpProvider) readComposerJson(ctx *generate.GenerateContext) (map[string]interface{}, error) {

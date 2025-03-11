@@ -1,5 +1,5 @@
 [
   {
-    "expectedOutput": "Starting Nginx"
+    "expectedOutput": "starting server loop"
   }
 ]
