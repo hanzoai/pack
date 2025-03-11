@@ -100,6 +100,22 @@ func (p *PhpProvider) Plan(ctx *generate.GenerateContext) error {
 }
 
 func (p *PhpProvider) Prepare(ctx *generate.GenerateContext, prepare *generate.CommandStepBuilder, configFiles *ConfigFiles) {
+	if configFiles.Caddyfile.Filename != "" {
+		ctx.Logger.LogInfo("Using custom Caddyfile: %s", configFiles.Caddyfile.Filename)
+	}
+
+	if configFiles.PhpIni.Filename != "" {
+		ctx.Logger.LogInfo("Using custom php.ini: %s", configFiles.PhpIni.Filename)
+	}
+
+	if configFiles.StartContainerScript.Filename != "" {
+		ctx.Logger.LogInfo("Using custom start-container.sh: %s", configFiles.StartContainerScript.Filename)
+	}
+
+	prepare.Assets["Caddyfile"] = configFiles.Caddyfile.Contents
+	prepare.Assets["php.ini"] = configFiles.PhpIni.Contents
+	prepare.Assets["start-container.sh"] = configFiles.StartContainerScript.Contents
+
 	prepare.AddEnvVars(map[string]string{
 		"APP_ENV":       "production",
 		"APP_DEBUG":     "false",
@@ -111,9 +127,6 @@ func (p *PhpProvider) Prepare(ctx *generate.GenerateContext, prepare *generate.C
 		"OCTANE_SERVER": "frankenphp",
 		"IS_LARAVEL":    strconv.FormatBool(p.usesLaravel(ctx)),
 	})
-	prepare.Assets["Caddyfile"] = configFiles.Caddyfile
-	prepare.Assets["php.ini"] = configFiles.PhpIni
-	prepare.Assets["start-container.sh"] = configFiles.StartContainerScript
 	prepare.AddCommands([]plan.Command{
 		plan.NewExecCommand("mkdir -p /usr/local/etc/php/conf.d"),
 		plan.NewExecCommand("mkdir -p /conf.d/"),
@@ -326,9 +339,9 @@ func (p *PhpProvider) usesLaravel(ctx *generate.GenerateContext) bool {
 }
 
 type ConfigFiles struct {
-	Caddyfile            string
-	StartContainerScript string
-	PhpIni               string
+	Caddyfile            *generate.TemplateFileResult
+	StartContainerScript *generate.TemplateFileResult
+	PhpIni               *generate.TemplateFileResult
 }
 
 func (p *PhpProvider) getConfigFiles(ctx *generate.GenerateContext) (*ConfigFiles, error) {
@@ -360,9 +373,9 @@ func (p *PhpProvider) getConfigFiles(ctx *generate.GenerateContext) (*ConfigFile
 	}
 
 	return &ConfigFiles{
-		Caddyfile:            caddyfile.Contents,
-		StartContainerScript: startContainerScript.Contents,
-		PhpIni:               phpIni.Contents,
+		Caddyfile:            caddyfile,
+		StartContainerScript: startContainerScript,
+		PhpIni:               phpIni,
 	}, nil
 }
 
