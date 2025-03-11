@@ -262,6 +262,7 @@ func (p *PhpProvider) getPhpExtensions(ctx *generate.GenerateContext) []string {
 	}
 
 	if p.usesLaravel(ctx) {
+		// https://laravel.com/docs/12.x/deployment#server-requirements
 		extensions = append(extensions,
 			"ctype",
 			"curl",

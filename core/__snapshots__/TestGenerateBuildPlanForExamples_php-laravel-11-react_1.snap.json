@@ -1,5 +1,13 @@
 {
  "caches": {
+  "apt": {
+   "directory": "/var/cache/apt",
+   "type": "locked"
+  },
+  "apt-lists": {
+   "directory": "/var/lib/apt/lists",
+   "type": "locked"
+  },
   "composer": {
    "directory": "/opt/cache/composer",
    "type": "shared"
@@ -102,6 +110,15 @@
    }
   },
   {
+   "caches": [
+    "apt",
+    "apt-lists"
+   ],
+   "commands": [
+    {
+     "cmd": "install-php-extensions ctype curl dom fileinfo filter hash mbstring openssl pcre pdo session tokenizer xml"
+    }
+   ],
    "inputs": [
     {
      "step": "prepare"
