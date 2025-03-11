@@ -261,6 +261,31 @@ func (p *PhpProvider) getPhpExtensions(ctx *generate.GenerateContext) []string {
 		})...)
 	}
 
+	if dbConnection := ctx.Env.GetVariable("DB_CONNECTION"); dbConnection != "" {
+		if dbConnection == "mysql" {
+			extensions = append(extensions, "pdo_mysql")
+		} else if dbConnection == "pgsql" {
+			extensions = append(extensions, "pdo_pgsql")
+		}
+	}
+
+	if p.usesLaravel(ctx) {
+		extensions = append(extensions,
+			"ctype",
+			"curl",
+			"dom",
+			"fileinfo",
+			"filter",
+			"hash",
+			"mbstring",
+			"openssl",
+			"pcre",
+			"pdo",
+			"session",
+			"tokenizer",
+			"xml")
+	}
+
 	return extensions
 }
 
