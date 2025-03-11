@@ -73,10 +73,11 @@ export default defineConfig({
         {
           label: "Languages",
           items: [
-            { label: "Node.js", link: "/languages/node" },
-            { label: "Python", link: "/languages/python" },
-            { label: "Go", link: "/languages/golang" },
             { label: "PHP", link: "/languages/php" },
+            { label: "Go", link: "/languages/golang" },
+            { label: "Java", link: "/languages/java" },
+            { label: "Python", link: "/languages/python" },
+            { label: "Node", link: "/languages/node" },
             { label: "Staticfile", link: "/languages/staticfile" },
             { label: "Shell Scripts", link: "/languages/shell" },
           ],
