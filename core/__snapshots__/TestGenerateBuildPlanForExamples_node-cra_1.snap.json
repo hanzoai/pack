@@ -16,21 +16,21 @@
    },
    {
     "include": [
-     "/bin/caddy"
+     "/railpack/caddy"
     ],
     "step": "packages:caddy"
-   },
-   {
-    "include": [
-     "build"
-    ],
-    "step": "build"
    },
    {
     "include": [
      "/Caddyfile"
     ],
     "step": "caddy"
+   },
+   {
+    "include": [
+     "build"
+    ],
+    "step": "build"
    }
   ],
   "startCommand": "caddy run --config /Caddyfile --adapter caddyfile 2\u003e\u00261",
@@ -143,10 +143,13 @@
   {
    "commands": [
     {
-     "cmd": "mise install-into caddy@2.9.1 /bin"
+     "cmd": "mise install-into caddy@2.9.1 /railpack/caddy"
     },
     {
-     "path": "/bin/caddy"
+     "path": "/railpack/caddy"
+    },
+    {
+     "path": "/railpack/caddy/bin"
     }
    ],
    "inputs": [

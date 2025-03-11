@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/railwayapp/railpack/core"
 	a "github.com/railwayapp/railpack/core/app"
-	"github.com/railwayapp/railpack/core/utils"
+	"github.com/railwayapp/railpack/internal/utils"
 	"github.com/urfave/cli/v3"
 )
 

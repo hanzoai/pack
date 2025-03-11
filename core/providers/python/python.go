@@ -8,7 +8,7 @@ import (
 
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/utils"
+	"github.com/railwayapp/railpack/internal/utils"
 )
 
 const (
@@ -65,6 +65,7 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 
 	build := ctx.NewCommandStep("build")
 	build.AddInput(plan.NewStepInput(install.Name()))
+	build.AddCommand(plan.NewCopyCommand("."))
 
 	ctx.Deploy.StartCmd = p.GetStartCommand(ctx)
 	maps.Copy(ctx.Deploy.Variables, p.GetPythonEnvVars(ctx))
@@ -77,7 +78,6 @@ func (p *PythonProvider) Plan(ctx *generate.GenerateContext) error {
 		plan.NewStepInput(build.Name(), plan.InputOptions{
 			Include: append(installOutputs, "."),
 		}),
-		plan.NewLocalInput("."),
 	}
 
 	return nil

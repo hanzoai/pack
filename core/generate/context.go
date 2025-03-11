@@ -14,7 +14,7 @@ import (
 	"github.com/railwayapp/railpack/core/mise"
 	"github.com/railwayapp/railpack/core/plan"
 	"github.com/railwayapp/railpack/core/resolver"
-	"github.com/railwayapp/railpack/core/utils"
+	"github.com/railwayapp/railpack/internal/utils"
 )
 
 type BuildStepOptions struct {
