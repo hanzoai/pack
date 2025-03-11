@@ -30,10 +30,11 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 	build := ctx.NewCommandStep("build")
 	build.AddCommand(plan.NewCopyCommand("."))
 	build.Inputs = []plan.Input{plan.NewStepInput(ctx.GetMiseStepBuilder().Name())}
+	_ := nil
 
 	if p.usesGradle(ctx) {
-		_ := p.setGradleVersion(ctx)
-		_ := p.setJDKVersion(ctx, ctx.GetMiseStepBuilder())
+		_ = p.setGradleVersion(ctx)
+		_ = p.setJDKVersion(ctx, ctx.GetMiseStepBuilder())
 
 		if ctx.App.HasMatch("gradlew") && !ctx.App.IsFileExecutable("gradlew") {
 			build.AddCommand(plan.NewExecCommand("chmod +x gradlew"))
@@ -54,7 +55,7 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 	}
 
 	runtimeDeps := ctx.NewMiseStepBuilder("mise:install-runtime")
-	_ := p.setJDKVersion(ctx, runtimeDeps)
+	_ = p.setJDKVersion(ctx, runtimeDeps)
 
 	outPath := "target/."
 	if ctx.App.HasMatch("**/build/libs/*.jar") || p.usesGradle(ctx) {
