@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	DEFAULT_PHP_VERSION  = "8.4.3"
+	DEFAULT_PHP_VERSION  = "8.4"
 	DefaultCaddyfilePath = "/Caddyfile"
 )
 

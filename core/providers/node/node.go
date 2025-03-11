@@ -163,11 +163,8 @@ func (p *NodeProvider) GetStartCommand(ctx *generate.GenerateContext) string {
 func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.CommandStepBuilder) {
 	build.AddCommand(plan.NewCopyCommand("."))
 
-	fmt.Printf("packageJson: %v\n", p.packageJson.Scripts)
-
 	_, ok := p.packageJson.Scripts["build"]
 	if ok {
-		fmt.Printf("build script found\n")
 		build.AddCommands([]plan.Command{
 			plan.NewExecCommand(p.packageManager.RunCmd("build")),
 		})

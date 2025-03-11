@@ -3,8 +3,11 @@
 set -e
 
 if [ "$IS_LARAVEL" = "true" ]; then
-  echo "Running migrations and seeding database ..."
-  php artisan migrate --isolated --seed --force || php artisan migrate --seed --force
+  if [ "$RAILPACK_SKIP_MIGRATIONS" != "true" ]; then
+    # Run migrations and seeding
+    echo "Running migrations and seeding database ..."
+    php artisan migrate --isolated --seed --force || php artisan migrate --seed --force
+  fi
 
   php artisan storage:link
   php artisan optimize:clear
