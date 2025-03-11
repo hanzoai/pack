@@ -261,7 +261,63 @@ func (p *PhpProvider) getPhpExtensions(ctx *generate.GenerateContext) []string {
 		})...)
 	}
 
+	if p.usesLaravel(ctx) {
+		// https://laravel.com/docs/12.x/deployment#server-requirements
+		extensions = append(extensions,
+			"ctype",
+			"curl",
+			"dom",
+			"fileinfo",
+			"filter",
+			"hash",
+			"mbstring",
+			"openssl",
+			"pcre",
+			"pdo",
+			"session",
+			"tokenizer",
+			"xml")
+	}
+
+	if dbConnection := ctx.Env.GetVariable("DB_CONNECTION"); dbConnection != "" {
+		if dbConnection == "mysql" {
+			extensions = append(extensions, "pdo_mysql")
+		} else if dbConnection == "pgsql" {
+			extensions = append(extensions, "pdo_pgsql")
+		}
+	}
+
+	if p.needsRedisExtension(ctx, composerJson) {
+		extensions = append(extensions, "redis")
+	}
+
 	return extensions
+}
+
+func (p *PhpProvider) needsRedisExtension(ctx *generate.GenerateContext, composerJson map[string]interface{}) bool {
+	// Check if Redis is explicitly mentioned in environment variables
+	redisHost := ctx.Env.GetVariable("REDIS_HOST")
+	redisUrl := ctx.Env.GetVariable("REDIS_URL")
+	cacheDriver := ctx.Env.GetVariable("CACHE_DRIVER")
+	sessionDriver := ctx.Env.GetVariable("SESSION_DRIVER")
+	queueConnection := ctx.Env.GetVariable("QUEUE_CONNECTION")
+
+	if redisHost != "" || redisUrl != "" ||
+		cacheDriver == "redis" || sessionDriver == "redis" || queueConnection == "redis" {
+		return true
+	}
+
+	// Check for Redis packages in composer.json
+	if require, ok := composerJson["require"].(map[string]interface{}); ok {
+		for pkg := range require {
+			if strings.Contains(pkg, "redis") ||
+				strings.Contains(pkg, "predis") {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func (p *PhpProvider) usesLaravel(ctx *generate.GenerateContext) bool {

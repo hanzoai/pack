@@ -116,7 +116,7 @@
    ],
    "commands": [
     {
-     "cmd": "install-php-extensions pdo_pgsql"
+     "cmd": "install-php-extensions pdo_pgsql ctype curl dom fileinfo filter hash mbstring openssl pcre pdo session tokenizer xml"
     }
    ],
    "inputs": [
