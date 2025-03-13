@@ -20,17 +20,15 @@ A config file looks something like this:
 ```json
 {
   "$schema": "https://schema.railpack.com",
-  "steps": [
-    {
-      "name": "install",
+  "steps": {
+    "install": {
       "commands": ["npm install"]
     },
-    {
-      "name": "build",
+    "build": {
       "inputs": [{ "step": "install" }],
       "commands": ["...", "./my-custom-build.sh"]
     }
-  ],
+  },
   "deploy": {
     "startCommand": "node dist/index.js"
   }
