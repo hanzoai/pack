@@ -17,6 +17,7 @@ import (
 const (
 	DEFAULT_PHP_VERSION  = "8.4"
 	DefaultCaddyfilePath = "/Caddyfile"
+	COMPOSER_CACHE_DIR   = "/opt/cache/composer"
 )
 
 //go:embed Caddyfile
@@ -157,10 +158,10 @@ func (p *PhpProvider) InstallCompose(ctx *generate.GenerateContext, composer *ge
 	composer.UseSecretsWithPrefixes([]string{"COMPOSER", "PHP"})
 	composer.AddVariables(map[string]string{
 		"COMPOSER_FUND":      "0",
-		"COMPOSER_CACHE_DIR": "/opt/cache/composer",
+		"COMPOSER_CACHE_DIR": COMPOSER_CACHE_DIR,
 	})
 	if _, err := p.readComposerJson(ctx); err == nil {
-		composer.AddCache(ctx.Caches.AddCache("composer", "/opt/cache/composer"))
+		composer.AddCache(ctx.Caches.AddCache("composer", COMPOSER_CACHE_DIR))
 		composerFiles := p.ComposerSupportingFiles(ctx)
 
 		// Copy composer from the composer image
