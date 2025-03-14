@@ -77,6 +77,7 @@ export default defineConfig({
             { label: "Go", link: "/languages/golang" },
             { label: "Java", link: "/languages/java" },
             { label: "Python", link: "/languages/python" },
+            { label: "Deno", link: "/languages/deno" },
             { label: "Node", link: "/languages/node" },
             { label: "Staticfile", link: "/languages/staticfile" },
             { label: "Shell Scripts", link: "/languages/shell" },
