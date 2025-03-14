@@ -96,25 +96,39 @@ func (p *PythonProvider) GetStartCommand(ctx *generate.GenerateContext) string {
 		startCommand = p.getDjangoStartCommand(ctx)
 	}
 
-	hasMainPy := ctx.App.HasMatch("main.py")
+	mainPythonFile := p.getMainPythonFile(ctx)
+	hasMainPythonFile := mainPythonFile != ""
 
-	if p.isFasthtml(ctx) && hasMainPy && p.usesDep(ctx, "uvicorn") {
+	if p.isFasthtml(ctx) && hasMainPythonFile && p.usesDep(ctx, "uvicorn") {
 		startCommand = "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"
 	}
 
-	if p.isFlask(ctx) && hasMainPy && p.usesDep(ctx, "gunicorn") {
+	if p.isFlask(ctx) && hasMainPythonFile && p.usesDep(ctx, "gunicorn") {
 		startCommand = "gunicorn --bind 0.0.0.0:${PORT:-8000} main:app"
 	}
 
-	if startCommand == "" && hasMainPy {
-		startCommand = "python main.py"
+	if startCommand == "" && hasMainPythonFile {
+		startCommand = fmt.Sprintf("python %s", mainPythonFile)
 	}
 
 	return startCommand
 }
 
+func (p *PythonProvider) getMainPythonFile(ctx *generate.GenerateContext) string {
+	for _, file := range []string{"main.py", "app.py", "bot.py"} {
+		if ctx.App.HasMatch(file) {
+			return file
+		}
+	}
+	return ""
+}
+
 func (p *PythonProvider) StartCommandHelp() string {
-	return "Railpack will automatically run the main.py file in the root directory as the start command."
+	return "To start your Python application, Railpack will automatically:\n\n" +
+		"1. Start FastAPI projects with uvicorn\n" +
+		"2. Start Flask projects with gunicorn\n" +
+		"3. Start Django projects with the gunicorn production server\n\n" +
+		"Otherwise, it will run the main.py or app.py file in your project root"
 }
 
 func (p *PythonProvider) InstallUv(ctx *generate.GenerateContext, install *generate.CommandStepBuilder) []string {
