@@ -26,15 +26,15 @@ func (p *JavaProvider) StartCommandHelp() string {
 }
 
 func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
-
 	build := ctx.NewCommandStep("build")
 	build.AddCommand(plan.NewCopyCommand("."))
 	build.Inputs = []plan.Input{plan.NewStepInput(ctx.GetMiseStepBuilder().Name())}
-	var _ error
 
 	if p.usesGradle(ctx) {
-		_ = p.setGradleVersion(ctx)
-		_ = p.setJDKVersion(ctx, ctx.GetMiseStepBuilder())
+		ctx.Logger.LogInfo("Using Gradle")
+
+		p.setGradleVersion(ctx)
+		p.setJDKVersion(ctx, ctx.GetMiseStepBuilder())
 
 		if ctx.App.HasMatch("gradlew") && !ctx.App.IsFileExecutable("gradlew") {
 			build.AddCommand(plan.NewExecCommand("chmod +x gradlew"))
@@ -43,8 +43,10 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 		build.AddCommand(plan.NewExecCommand("./gradlew clean build -x check -x test"))
 		build.AddCache(p.gradleCache(ctx))
 	} else {
+		ctx.Logger.LogInfo("Using Maven")
+
 		ctx.GetMiseStepBuilder().Default("maven", "latest")
-		_ = p.setJDKVersion(ctx, nil)
+		p.setJDKVersion(ctx, ctx.GetMiseStepBuilder())
 
 		if ctx.App.HasMatch("mvnw") && !ctx.App.IsFileExecutable("mvnw") {
 			build.AddCommand(plan.NewExecCommand("chmod +x mvnw"))
@@ -54,8 +56,8 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 		build.AddCache(p.mavenCache(ctx))
 	}
 
-	runtimeDeps := ctx.NewMiseStepBuilder("mise:install-runtime")
-	_ = p.setJDKVersion(ctx, runtimeDeps)
+	runtimeMiseStep := ctx.NewMiseStepBuilder("packages:mise:runtime")
+	p.setJDKVersion(ctx, runtimeMiseStep)
 
 	outPath := "target/."
 	if ctx.App.HasMatch("**/build/libs/*.jar") || p.usesGradle(ctx) {
@@ -64,14 +66,16 @@ func (p *JavaProvider) Plan(ctx *generate.GenerateContext) error {
 
 	ctx.Deploy.Inputs = []plan.Input{
 		ctx.DefaultRuntimeInput(),
-		plan.NewStepInput(runtimeDeps.Name(), plan.InputOptions{
-			Include: runtimeDeps.GetOutputPaths(),
+		plan.NewStepInput(runtimeMiseStep.Name(), plan.InputOptions{
+			Include: runtimeMiseStep.GetOutputPaths(),
 		}),
 		plan.NewStepInput(build.Name(), plan.InputOptions{
 			Include: []string{outPath},
 		}),
 	}
 	ctx.Deploy.StartCmd = p.getStartCmd(ctx)
+
+	p.addMetadata(ctx)
 
 	return nil
 }
@@ -85,4 +89,28 @@ func (p *JavaProvider) getStartCmd(ctx *generate.GenerateContext) string {
 	} else {
 		return "java $JAVA_OPTS -jar target/*jar"
 	}
+
+}
+
+func (p *JavaProvider) addMetadata(ctx *generate.GenerateContext) {
+	hasGradle := p.usesGradle(ctx)
+
+	if hasGradle {
+		ctx.Metadata.Set("javaPackageManager", "gradle")
+	} else {
+		ctx.Metadata.Set("javaPackageManager", "maven")
+	}
+
+	var framework string
+	if p.usesSpringBoot(ctx) {
+		framework = "spring-boot"
+	}
+
+	ctx.Metadata.Set("javaFramework", framework)
+}
+
+func (p *JavaProvider) usesSpringBoot(ctx *generate.GenerateContext) bool {
+	return ctx.App.HasMatch("**/spring-boot*.jar") ||
+		ctx.App.HasMatch("**/spring-boot*.class") ||
+		ctx.App.HasMatch("**/org/springframework/boot/**")
 }

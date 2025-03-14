@@ -16,7 +16,7 @@ func (p *JavaProvider) usesGradle(ctx *generate.GenerateContext) bool {
 	return ctx.App.HasMatch("gradlew")
 }
 
-func (p *JavaProvider) setGradleVersion(ctx *generate.GenerateContext) error {
+func (p *JavaProvider) setGradleVersion(ctx *generate.GenerateContext) {
 	miseStep := ctx.GetMiseStepBuilder()
 	gradle := miseStep.Default("gradle", DEFAULT_GRADLE_VERSION)
 
@@ -25,38 +25,38 @@ func (p *JavaProvider) setGradleVersion(ctx *generate.GenerateContext) error {
 	}
 
 	if !ctx.App.HasMatch("gradle/wrapper/gradle-wrapper.properties") {
-		return nil
+		return
 	}
 
 	wrapperProps, err := ctx.App.ReadFile("gradle/wrapper/gradle-wrapper.properties")
 	if err != nil {
-		return err
+		ctx.Logger.LogWarn("Failed to read gradle/wrapper/gradle-wrapper.properties")
+		return
 	}
 
 	versionRegex, err := regexp.Compile(`(distributionUrl[\S].*[gradle])(-)([0-9|\.]*)`)
 	if err != nil {
-		return err
+		return
 	}
 
 	if !versionRegex.Match([]byte(wrapperProps)) {
-		return nil
+		return
 	}
 
 	customVersion := string(versionRegex.FindSubmatch([]byte(wrapperProps))[3])
 
 	parseVersionRegex, err := regexp.Compile(`^(?:[\sa-zA-Z-"']*)(\d*)(?:\.*)(\d*)(?:\.*\d*)(?:["']?)$`)
 	if err != nil {
-		return err
+		return
 	}
 
 	if !parseVersionRegex.Match([]byte(customVersion)) {
-		return nil
+		return
 	}
 
 	parsedVersion := string(parseVersionRegex.FindSubmatch([]byte(customVersion))[1])
 
 	miseStep.Version(gradle, parsedVersion, "gradle-wrapper.properties")
-	return nil
 }
 
 func (p *JavaProvider) gradleCache(ctx *generate.GenerateContext) string {

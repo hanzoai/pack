@@ -18,7 +18,7 @@
      "/etc/mise/config.toml",
      "/root/.local/state/mise"
     ],
-    "step": "mise:install-runtime"
+    "step": "packages:mise:runtime"
    },
    {
     "include": [
@@ -108,7 +108,7 @@
      "image": "ghcr.io/railwayapp/railpack-builder:latest"
     }
    ],
-   "name": "mise:install-runtime",
+   "name": "packages:mise:runtime",
    "variables": {
     "MISE_CACHE_DIR": "/mise/cache",
     "MISE_CONFIG_DIR": "/mise",
