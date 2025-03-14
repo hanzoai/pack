@@ -17,6 +17,8 @@ For example, this installs the latest versions of Node and Bun, and Python 3.10.
 RAILPACK_PACKAGES="node bun@latest python@3.10"
 ```
 
+You can find a list of available packages in the [Mise registry](https://mise.jdx.dev/registry.html).
+
 ## Apt
 
 Apt packages are split into those needed for the build and those needed at
