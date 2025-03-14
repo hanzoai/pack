@@ -54,6 +54,9 @@ func (p PackageManager) installDependencies(ctx *generate.GenerateContext, packa
 		install.AddCommands([]plan.Command{
 			plan.NewCopyCommand(".", "."),
 		})
+
+		// Use all secrets for the install step if there are any pre/post install scripts
+		install.UseSecrets([]string{"*"})
 	} else {
 		for _, file := range p.SupportingInstallFiles(ctx.App) {
 			install.AddCommands([]plan.Command{
