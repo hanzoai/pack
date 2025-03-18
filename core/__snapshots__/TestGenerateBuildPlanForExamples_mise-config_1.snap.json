@@ -37,6 +37,7 @@
      ".yarn"
     ],
     "include": [
+     "/root/.cache",
      "."
     ],
     "step": "build"

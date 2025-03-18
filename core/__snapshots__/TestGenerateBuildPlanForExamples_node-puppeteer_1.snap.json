@@ -8,12 +8,12 @@
    "directory": "/var/lib/apt/lists",
    "type": "locked"
   },
-  "bun-install": {
-   "directory": "/root/.bun/install/cache",
-   "type": "shared"
-  },
   "node-modules": {
    "directory": "/app/node_modules/.cache",
+   "type": "shared"
+  },
+  "npm-install": {
+   "directory": "/root/.npm",
    "type": "shared"
   }
  },
@@ -50,7 +50,7 @@
     "step": "build"
    }
   ],
-  "startCommand": "python --version \u0026\u0026 neofetch $HELLO",
+  "startCommand": "node index.js",
   "variables": {
    "CI": "true",
    "NODE_ENV": "production",
@@ -61,36 +61,10 @@
  },
  "steps": [
   {
-   "caches": [
-    "apt",
-    "apt-lists"
-   ],
-   "commands": [
-    {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
-     "customName": "install apt packages: neofetch"
-    }
-   ],
-   "inputs": [
-    {
-     "image": "ghcr.io/railwayapp/railpack-runtime:latest"
-    }
-   ],
-   "name": "packages:runtime"
-  },
-  {
    "assets": {
     "mise.toml": "[mise.toml]"
    },
-   "caches": [
-    "apt",
-    "apt-lists"
-   ],
    "commands": [
-    {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch nodejs'",
-     "customName": "install apt packages: neofetch nodejs"
-    },
     {
      "path": "/mise/shims"
     },
@@ -101,7 +75,7 @@
     },
     {
      "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
-     "customName": "install mise packages: bun, python"
+     "customName": "install mise packages: node"
     }
    ],
    "inputs": [
@@ -120,7 +94,7 @@
   },
   {
    "caches": [
-    "bun-install"
+    "npm-install"
    ],
    "commands": [
     {
@@ -131,11 +105,11 @@
      "src": "package.json"
     },
     {
-     "dest": "bun.lockb",
-     "src": "bun.lockb"
+     "dest": "package-lock.json",
+     "src": "package-lock.json"
     },
     {
-     "cmd": "bun install --frozen-lockfile"
+     "cmd": "npm ci"
     }
    ],
    "inputs": [
@@ -166,8 +140,8 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c 'neofetch'",
-     "customName": "neofetch"
+     "dest": ".",
+     "src": "."
     }
    ],
    "inputs": [
@@ -178,10 +152,7 @@
    "name": "build",
    "secrets": [
     "*"
-   ],
-   "variables": {
-    "HELLO": "world"
-   }
+   ]
   },
   {
    "caches": [
@@ -190,8 +161,8 @@
    ],
    "commands": [
     {
-     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y neofetch'",
-     "customName": "install apt packages: neofetch"
+     "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y ca-certificates fonts-liberation gconf-service libappindicator1 libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgbm1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 lsb-release wget xdg-utils xvfb'",
+     "customName": "install apt packages: ca-certificates fonts-liberation gconf-service libappindicator1 libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgbm1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 lsb-release wget xdg-utils xvfb"
     }
    ],
    "inputs": [
