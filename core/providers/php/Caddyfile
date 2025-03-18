@@ -34,7 +34,5 @@
 
 	{$CADDY_SERVER_EXTRA_DIRECTIVES}
 
-	php_server {
-		stderr_log_level DEBUG
-	}
+	php_server
 }
