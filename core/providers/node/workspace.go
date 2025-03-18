@@ -122,3 +122,17 @@ func (w *Workspace) GetPackage(path string) *WorkspacePackage {
 	}
 	return nil
 }
+
+func (w *Workspace) HasDependency(dependency string) bool {
+	if w.PackageJson.hasDependency(dependency) {
+		return true
+	}
+
+	for _, pkg := range w.Packages {
+		if pkg.PackageJson.hasDependency(dependency) {
+			return true
+		}
+	}
+
+	return false
+}
