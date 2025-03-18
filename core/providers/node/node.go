@@ -99,7 +99,7 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	}
 
 	// All the files we need to include in the deploy
-	buildIncludeDirs := []string{"."}
+	buildIncludeDirs := []string{"/root/.cache", "."}
 
 	if p.usesCorepack() {
 		buildIncludeDirs = append(buildIncludeDirs, COREPACK_HOME)
@@ -107,6 +107,11 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 
 	if p.packageManager == PackageManagerYarn2 {
 		buildIncludeDirs = append(buildIncludeDirs, p.packageManager.getYarn2GlobalFolder(ctx))
+	}
+
+	runtimeAptPackages := []string{}
+	if p.usesPuppeteer() {
+		runtimeAptPackages = append(runtimeAptPackages, "xvfb", "gconf-service", "libasound2", "libatk1.0-0", "libc6", "libcairo2", "libcups2", "libdbus-1-3", "libexpat1", "libfontconfig1", "libgbm1", "libgcc1", "libgconf-2-4", "libgdk-pixbuf2.0-0", "libglib2.0-0", "libgtk-3-0", "libnspr4", "libpango-1.0-0", "libpangocairo-1.0-0", "libstdc++6", "libx11-6", "libx11-xcb1", "libxcb1", "libxcomposite1", "libxcursor1", "libxdamage1", "libxext6", "libxfixes3", "libxi6", "libxrandr2", "libxrender1", "libxss1", "libxtst6", "ca-certificates", "fonts-liberation", "libappindicator1", "libnss3", "lsb-release", "xdg-utils", "wget")
 	}
 
 	nodeModulesInput := plan.NewStepInput(build.Name(), plan.InputOptions{
@@ -124,7 +129,7 @@ func (p *NodeProvider) Plan(ctx *generate.GenerateContext) error {
 	})
 
 	ctx.Deploy.Inputs = []plan.Input{
-		ctx.DefaultRuntimeInput(),
+		ctx.DefaultRuntimeInputWithPackages(runtimeAptPackages),
 		plan.NewStepInput(miseStep.Name(), plan.InputOptions{
 			Include: miseStep.GetOutputPaths(),
 		}),
@@ -301,6 +306,10 @@ func (p *NodeProvider) hasDependency(dependency string) bool {
 
 func (p *NodeProvider) usesCorepack() bool {
 	return p.packageJson.PackageManager != nil && p.packageManager != PackageManagerBun
+}
+
+func (p *NodeProvider) usesPuppeteer() bool {
+	return p.workspace.HasDependency("puppeteer")
 }
 
 func (p *NodeProvider) getPackageManager(app *app.App) PackageManager {
