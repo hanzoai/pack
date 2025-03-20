@@ -484,5 +484,5 @@ func (p *NodeProvider) isNuxt() bool {
 }
 
 func (p *NodeProvider) isRemix() bool {
-	return p.hasDependency("remix") && p.hasDependency("@remix-run/node")
+	return p.hasDependency("@remix-run/node")
 }
