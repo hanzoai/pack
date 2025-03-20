@@ -153,6 +153,7 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 		"**/.nvmrc",        // NVM config
 		"patches",          // PNPM patches
 		".pnpm-patches",
+		"prisma", // To generate Prisma client on install
 	}
 
 	var allFiles []string
