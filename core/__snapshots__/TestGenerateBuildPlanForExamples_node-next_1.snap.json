@@ -152,7 +152,10 @@
    "name": "build",
    "secrets": [
     "*"
-   ]
+   ],
+   "variables": {
+    "NEXT_TELEMETRY_DISABLED": "1"
+   }
   }
  ]
 }
