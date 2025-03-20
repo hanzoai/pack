@@ -63,6 +63,7 @@ ENV MISE_INSTALL_PATH=/usr/local/bin/mise \
     MISE_DATA_DIR=/mise \
     MISE_CONFIG_DIR=/mise \
     MISE_CACHE_DIR=/mise/cache \
+    LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib \
     PATH=/mise/shims:$PATH
 
 # Copy mise binary from builder
