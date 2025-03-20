@@ -5,7 +5,6 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/railwayapp/railpack/core/app"
-	"github.com/railwayapp/railpack/core/config"
 	c "github.com/railwayapp/railpack/core/config"
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/logger"
@@ -111,7 +110,7 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 }
 
 // GetConfig merges the options, environment, and file config into a single config
-func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions, logger *logger.Logger) (*config.Config, error) {
+func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions, logger *logger.Logger) (*c.Config, error) {
 	optionsConfig := GenerateConfigFromOptions(options)
 
 	envConfig := GenerateConfigFromEnvironment(app, env)
@@ -121,13 +120,13 @@ func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOpt
 		return nil, err
 	}
 
-	mergedConfig := config.Merge(optionsConfig, envConfig, fileConfig)
+	mergedConfig := c.Merge(optionsConfig, envConfig, fileConfig)
 
 	return mergedConfig, nil
 }
 
 // GenerateConfigFromFile generates a config from the config file
-func GenerateConfigFromFile(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions, logger *logger.Logger) (*config.Config, error) {
+func GenerateConfigFromFile(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions, logger *logger.Logger) (*c.Config, error) {
 	config := c.EmptyConfig()
 
 	configFileName := defaultConfigFileName
@@ -164,6 +163,14 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *c.Config
 
 	if env == nil {
 		return config
+	}
+
+	if installCmdVar, _ := env.GetConfigVariable("INSTALL_CMD"); installCmdVar != "" {
+		installStep := config.GetOrCreateStep("install")
+		installStep.Commands = []plan.Command{
+			plan.NewCopyCommand("."),
+			plan.NewExecShellCommand(installCmdVar, plan.ExecOptions{CustomName: installCmdVar}),
+		}
 	}
 
 	if buildCmdVar, _ := env.GetConfigVariable("BUILD_CMD"); buildCmdVar != "" {
