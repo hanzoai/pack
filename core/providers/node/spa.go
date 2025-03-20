@@ -41,6 +41,10 @@ func (p *NodeProvider) isSPA(ctx *generate.GenerateContext) bool {
 }
 
 func (p *NodeProvider) getSPAFramework(ctx *generate.GenerateContext) string {
+	if !p.isSPA(ctx) {
+		return ""
+	}
+
 	if p.isVite(ctx) {
 		return "vite"
 	} else if p.isAstro(ctx) {
