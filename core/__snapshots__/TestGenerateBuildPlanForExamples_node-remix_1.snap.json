@@ -8,6 +8,10 @@
    "directory": "/root/.npm",
    "type": "shared"
   },
+  "remix": {
+   "directory": ".cache",
+   "type": "shared"
+  },
   "vite": {
    "directory": "node_modules/.vite",
    "type": "shared"
@@ -133,6 +137,7 @@
   {
    "caches": [
     "node-modules",
+    "remix",
     "vite"
    ],
    "commands": [
