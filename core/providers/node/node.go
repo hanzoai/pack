@@ -462,6 +462,8 @@ func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
 		return "static"
 	} else if p.isNext() {
 		return "next"
+	} else if p.isNuxt() {
+		return "nuxt"
 	} else if p.isRemix() {
 		return "remix"
 	} else if p.isVite(ctx) {
