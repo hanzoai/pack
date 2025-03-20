@@ -1,15 +1,15 @@
 {
  "caches": {
-  "next-": {
-   "directory": "/app/.next/cache",
-   "type": "shared"
-  },
   "node-modules": {
    "directory": "/app/node_modules/.cache",
    "type": "shared"
   },
   "npm-install": {
    "directory": "/root/.npm",
+   "type": "shared"
+  },
+  "nuxt": {
+   "directory": ".nuxt",
    "type": "shared"
   }
  },
@@ -46,7 +46,7 @@
     "step": "build"
    }
   ],
-  "startCommand": "npm run start",
+  "startCommand": "node .output/server/index.mjs",
   "variables": {
    "CI": "true",
    "NODE_ENV": "production",
@@ -97,12 +97,8 @@
      "path": "/app/node_modules/.bin"
     },
     {
-     "dest": "package.json",
-     "src": "package.json"
-    },
-    {
-     "dest": "package-lock.json",
-     "src": "package-lock.json"
+     "dest": ".",
+     "src": "."
     },
     {
      "cmd": "npm ci"
@@ -133,7 +129,7 @@
   {
    "caches": [
     "node-modules",
-    "next-"
+    "nuxt"
    ],
    "commands": [
     {
@@ -152,10 +148,7 @@
    "name": "build",
    "secrets": [
     "*"
-   ],
-   "variables": {
-    "NEXT_TELEMETRY_DISABLED": "1"
-   }
+   ]
   }
  ]
 }
