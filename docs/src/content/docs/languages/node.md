@@ -112,6 +112,9 @@ Including:
 - Remix: Caches `.cache`
 - Vite: Caches `.vite/cache`
 - Astro: Caches `.astro/cache`
+- Nuxt:
+  - Start command defaults to `node .output/server/index.mjs`
+  - Caches `.nuxt`
 
 As well as a default cache for node modules:
 
