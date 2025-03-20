@@ -63,8 +63,8 @@ ENV MISE_INSTALL_PATH=/usr/local/bin/mise \
     MISE_DATA_DIR=/mise \
     MISE_CONFIG_DIR=/mise \
     MISE_CACHE_DIR=/mise/cache \
-    PATH=/mise/shims:$PATH \
-    LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib:$LD_LIBRARY_PATH
+    LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib \
+    PATH=/mise/shims:$PATH
 
 # Copy mise binary from builder
 COPY --from=ghcr.io/railwayapp/railpack-mise:latest /tmp/mise/target/serious/mise /usr/local/bin/
