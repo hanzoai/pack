@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	a "github.com/railwayapp/railpack/core/app"
 	"github.com/railwayapp/railpack/core/generate"
 	"github.com/railwayapp/railpack/core/plan"
 )
@@ -58,7 +57,7 @@ func (p PackageManager) installDependencies(ctx *generate.GenerateContext, packa
 		// Use all secrets for the install step if there are any pre/post install scripts
 		install.UseSecrets([]string{"*"})
 	} else {
-		for _, file := range p.SupportingInstallFiles(ctx.App) {
+		for _, file := range p.SupportingInstallFiles(ctx) {
 			install.AddCommands([]plan.Command{
 				plan.NewCopyCommand(file, file),
 			})
@@ -136,7 +135,7 @@ func (p PackageManager) GetInstallFolder(ctx *generate.GenerateContext) []string
 }
 
 // SupportingInstallFiles returns a list of files that are needed to install dependencies
-func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
+func (p PackageManager) SupportingInstallFiles(ctx *generate.GenerateContext) []string {
 	patterns := []string{
 		"**/package.json",
 		"**/package-lock.json",
@@ -151,13 +150,21 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 		"**/.npmrc",        // NPM config
 		"**/.node-version", // Node version file
 		"**/.nvmrc",        // NVM config
-		"patches",          // PNPM patches
-		".pnpm-patches",
+		"**/patches",       // PNPM patches
+		"**/.pnpm-patches",
+		"**/prisma", // To generate Prisma client on install
+	}
+
+	if customInstallPatterns, _ := ctx.Env.GetConfigVariable("NODE_INSTALL_PATTERNS"); customInstallPatterns != "" {
+		ctx.Logger.LogInfo("Using custom install patterns: %s", customInstallPatterns)
+		for _, pattern := range strings.Split(customInstallPatterns, " ") {
+			patterns = append(patterns, "**/"+pattern)
+		}
 	}
 
 	var allFiles []string
 	for _, pattern := range patterns {
-		files, err := app.FindFiles(pattern)
+		files, err := ctx.App.FindFiles(pattern)
 		if err != nil {
 			continue
 		}
@@ -167,7 +174,7 @@ func (p PackageManager) SupportingInstallFiles(app *a.App) []string {
 			}
 		}
 
-		dirs, err := app.FindDirectories(pattern)
+		dirs, err := ctx.App.FindDirectories(pattern)
 		if err != nil {
 			continue
 		}

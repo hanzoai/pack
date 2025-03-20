@@ -58,6 +58,18 @@ Railpack determines the start command in the following order:
 2. The `main` field in `package.json`
 3. An `index.js` or `index.ts` file in the root directory
 
+### Config Variables
+
+| Variable                         | Description                             | Example  |
+| -------------------------------- | --------------------------------------- | -------- |
+| `RAILPACK_NODE_VERSION`          | Override the Node.js version            | `22`     |
+| `RAILPACK_BUN_VERSION`           | Override the Bun version                | `1.2`    |
+| `RAILPACK_NO_SPA`                | Disable SPA mode                        | `true`   |
+| `RAILPACK_SPA_OUTPUT_DIR`        | Directory containing built static files | `dist`   |
+| `RAILPACK_PRUNE_DEPS`            | Remove development dependencies         | `true`   |
+| `RAILPACK_NODE_INSTALL_PATTERNS` | Custom patterns to install dependencies | `prisma` |
+| `RAILPACK_ANGULAR_PROJECT`       | Name of the Angular project to build    | `my-app` |
+
 ### Package Managers
 
 Railpack detects your package manager based on lock files:
@@ -68,16 +80,18 @@ Railpack detects your package manager based on lock files:
 - `yarn.lock` for Yarn 1
 - Defaults to npm if no lock file is found
 
-### Config Variables
+### Install
 
-| Variable                   | Description                             | Example  |
-| -------------------------- | --------------------------------------- | -------- |
-| `RAILPACK_NODE_VERSION`    | Override the Node.js version            | `22`     |
-| `RAILPACK_BUN_VERSION`     | Override the Bun version                | `1.2`    |
-| `RAILPACK_NO_SPA`          | Disable SPA mode                        | `true`   |
-| `RAILPACK_SPA_OUTPUT_DIR`  | Directory containing built static files | `dist`   |
-| `RAILPACK_PRUNE_DEPS`      | Remove development dependencies         | `true`   |
-| `RAILPACK_ANGULAR_PROJECT` | Name of the Angular project to build    | `my-app` |
+Railpack will only include the necessary files to install dependencies in order to
+improve cache hit rates. This includes the `package.json` and relevant lock
+files, but there are also a few additional framework specific files that are
+included if they exist in your app. This behaviour is disabled if a `preinstall`
+or `postinstall` script is detected in the `package.json` file.
+
+You can include additional files or directories to include by setting the
+`RAILPACK_NODE_INSTALL_PATTERNS` environment variable. This should be a space
+separated list of patterns to include. Patterns will automatically be prefixed
+with `**/` to match nested files and directories.
 
 ## Static Sites
 
@@ -89,9 +103,12 @@ disable this behaviour by either:
 
 These frameworks are supported:
 
-- **Vite**: Detected if `vite.config.js` or `vite.config.ts` exists, or if the build script contains `vite build`
-- **Astro**: Detected if `astro.config.js` exists and the output is not type `"server"`
-- **CRA**: Detected if `react-scripts` is in dependencies and build script contains `react-scripts build`
+- **Vite**: Detected if `vite.config.js` or `vite.config.ts` exists, or if the
+  build script contains `vite build`
+- **Astro**: Detected if `astro.config.js` exists and the output is not type
+  `"server"`
+- **CRA**: Detected if `react-scripts` is in dependencies and build script
+  contains `react-scripts build`
 - **Angular**: Detected if `angular.json` exists
 
 For both frameworks, Railpack will try to detect the output directory and will
