@@ -1,6 +1,8 @@
 package core
 
 import (
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -113,7 +115,7 @@ func GenerateBuildPlan(app *app.App, env *app.Environment, options *GenerateBuil
 func GetConfig(app *app.App, env *app.Environment, options *GenerateBuildPlanOptions, logger *logger.Logger) (*c.Config, error) {
 	optionsConfig := GenerateConfigFromOptions(options)
 
-	envConfig := GenerateConfigFromEnvironment(app, env)
+	envConfig := GenerateConfigFromEnvironment(env)
 
 	fileConfig, err := GenerateConfigFromFile(app, env, options, logger)
 	if err != nil {
@@ -158,7 +160,7 @@ func GenerateConfigFromFile(app *app.App, env *app.Environment, options *Generat
 }
 
 // GenerateConfigFromEnvironment generates a config from the environment
-func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *c.Config {
+func GenerateConfigFromEnvironment(env *app.Environment) *c.Config {
 	config := c.EmptyConfig()
 
 	if env == nil {
@@ -197,9 +199,7 @@ func GenerateConfigFromEnvironment(app *app.App, env *app.Environment) *c.Config
 		config.Deploy.AptPackages = strings.Split(envAptPackages, " ")
 	}
 
-	for name := range env.Variables {
-		config.Secrets = append(config.Secrets, name)
-	}
+	config.Secrets = append(config.Secrets, slices.Sorted(maps.Keys(env.Variables))...)
 
 	return config
 }
