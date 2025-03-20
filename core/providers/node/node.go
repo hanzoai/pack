@@ -161,6 +161,9 @@ func (p *NodeProvider) GetStartCommand(ctx *generate.GenerateContext) string {
 		return p.packageManager.RunScriptCommand(main)
 	} else if files, err := ctx.App.FindFiles("{index.js,index.ts}"); err == nil && len(files) > 0 {
 		return p.packageManager.RunScriptCommand(files[0])
+	} else if p.isNuxt() {
+		// Default Nuxt start command
+		return "node .output/server/index.mjs"
 	}
 
 	return ""
@@ -174,6 +177,10 @@ func (p *NodeProvider) Build(ctx *generate.GenerateContext, build *generate.Comm
 		build.AddCommands([]plan.Command{
 			plan.NewExecCommand(p.packageManager.RunCmd("build")),
 		})
+
+		if p.isNext() {
+			build.AddVariables(map[string]string{"NEXT_TELEMETRY_DISABLED": "1"})
+		}
 	}
 
 	p.addCaches(ctx, build)
@@ -196,8 +203,13 @@ func (p *NodeProvider) addCaches(ctx *generate.GenerateContext, build *generate.
 	if p.isAstro(ctx) {
 		build.AddCache(p.getAstroCache(ctx))
 	}
+
 	if p.isVite(ctx) {
 		build.AddCache(p.getViteCache(ctx))
+	}
+
+	if p.isNuxt() {
+		build.AddCache(ctx.Caches.AddCache("nuxt", ".nuxt"))
 	}
 }
 
@@ -463,6 +475,10 @@ func (p *NodeProvider) getRuntime(ctx *generate.GenerateContext) string {
 
 func (p *NodeProvider) isNext() bool {
 	return p.hasDependency("next")
+}
+
+func (p *NodeProvider) isNuxt() bool {
+	return p.hasDependency("nuxt")
 }
 
 func (p *NodeProvider) isRemix() bool {
