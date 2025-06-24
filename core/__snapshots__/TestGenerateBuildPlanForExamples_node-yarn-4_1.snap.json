@@ -27,8 +27,7 @@
    {
     "include": [
      "/app/.yarn",
-     "/root/.yarn",
-     "/app/node_modules"
+     "/root/.yarn"
     ],
     "step": "build"
    },
@@ -111,10 +110,6 @@
     {
      "dest": "yarn.lock",
      "src": "yarn.lock"
-    },
-    {
-     "dest": ".yarnrc.yml",
-     "src": ".yarnrc.yml"
     },
     {
      "cmd": "yarn install --check-cache"
