@@ -1,0 +1,38 @@
+name: Release
+
+# pack is the one image the fabric can't build with itself (pack can't pack
+# pack), so it bootstraps through the org's reusable docker-build — the single
+# build path for every hanzoai image. A semver tag publishes :vX.Y.Z and moves
+# :latest; a main push publishes an immutable :sha-<sha7>.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  docker:
+    permissions:
+      contents: read
+      packages: write
+      # Required by the reusable workflow for OIDC. Job-level permissions are
+      # NOT inherited from workflow-level on a reusable call — omitting this is
+      # a startup_failure.
+      id-token: write
+    uses: hanzoai/.github/.github/workflows/docker-build.yml@main
+    with:
+      image: ghcr.io/hanzoai/pack
+      # amd64 only: the online arcd pool is amd64, and this frontend runs
+      # wherever buildkitd runs (the fabric's buildkitd is amd64).
+      platforms: linux/amd64
+      # Pin to the online arcd scale set. docker-build.yml defaults
+      # runner-amd64 to [self-hosted,linux,amd64]; the live scale set registers
+      # hanzo-build-linux-amd64,self-hosted,Linux,X64 (X64, not amd64), so the
+      # default matches nothing and queues forever. Target it by name.
+      runner-amd64: '["hanzo-build-linux-amd64"]'
+    secrets: inherit
