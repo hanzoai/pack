@@ -51,9 +51,9 @@ func hasExec(execs [][]string, sub string) bool {
 	return false
 }
 
-func recipeFor(t *testing.T, files ...string) Recipe {
+func recipeFor(t *testing.T, npm Scripts, files ...string) Recipe {
 	t.Helper()
-	plan, err := Detect(fileset(files...))
+	plan, err := Detect(fileset(files...), npm)
 	if err != nil {
 		t.Fatalf("detect: %v", err)
 	}
@@ -61,7 +61,7 @@ func recipeFor(t *testing.T, files ...string) Recipe {
 }
 
 func TestGoRecipe(t *testing.T) {
-	r := recipeFor(t, "go.mod")
+	r := recipeFor(t, Scripts{}, "go.mod")
 	sources, execs := graph(t, r.State)
 	if !hasSource(sources, "golang:1.23-alpine") {
 		t.Errorf("missing go builder image; sources=%v", sources)
@@ -78,7 +78,7 @@ func TestGoRecipe(t *testing.T) {
 }
 
 func TestNodeRecipe(t *testing.T) {
-	r := recipeFor(t, "package.json", "package-lock.json")
+	r := recipeFor(t, Scripts{Start: true}, "package.json", "package-lock.json")
 	sources, execs := graph(t, r.State)
 	if !hasSource(sources, "node:22-alpine") {
 		t.Errorf("missing node image; sources=%v", sources)
@@ -94,14 +94,14 @@ func TestNodeRecipe(t *testing.T) {
 	}
 
 	// Without a lockfile the install is npm install.
-	_, execs = graph(t, recipeFor(t, "package.json").State)
+	_, execs = graph(t, recipeFor(t, Scripts{Start: true}, "package.json").State)
 	if !hasExec(execs, "npm install") {
 		t.Errorf("no lockfile should build with npm install; execs=%v", execs)
 	}
 }
 
 func TestPythonRecipe(t *testing.T) {
-	r := recipeFor(t, "requirements.txt")
+	r := recipeFor(t, Scripts{}, "requirements.txt")
 	sources, execs := graph(t, r.State)
 	if !hasSource(sources, "python:3.12-slim") {
 		t.Errorf("missing python image; sources=%v", sources)
@@ -114,23 +114,88 @@ func TestPythonRecipe(t *testing.T) {
 	}
 
 	// pyproject-only installs the project itself.
-	_, execs = graph(t, recipeFor(t, "pyproject.toml").State)
+	_, execs = graph(t, recipeFor(t, Scripts{}, "pyproject.toml").State)
 	if !hasExec(execs, "pip install --no-cache-dir .") {
 		t.Errorf("pyproject should pip install .; execs=%v", execs)
 	}
 }
 
+// Plain HTML is already the site: it is exported as it is, unbuilt.
 func TestStaticRecipe(t *testing.T) {
-	r := recipeFor(t, "index.html")
-	sources, _ := graph(t, r.State)
-	if !hasSource(sources, "busybox") {
-		t.Errorf("missing busybox image; sources=%v", sources)
+	r := recipeFor(t, Scripts{}, "index.html")
+	sources, execs := graph(t, r.State)
+	if !hasSource(sources, "local://context") {
+		t.Errorf("the context is the result; sources=%v", sources)
 	}
-	if got := strings.Join(r.Entrypoint, " "); got != "httpd -f -v -p 8080 -h /site" {
-		t.Errorf("entrypoint = %q", got)
+	if len(execs) != 0 {
+		t.Errorf("plain HTML needs no build; execs=%v", execs)
 	}
-	if len(r.Ports) != 1 || r.Ports[0] != "8080/tcp" {
-		t.Errorf("ports = %v", r.Ports)
+	if len(sources) != 1 {
+		t.Errorf("plain HTML pulls no image; sources=%v", sources)
+	}
+}
+
+// A generator is built, and only what the build wrote is exported.
+func TestGeneratedSiteRecipe(t *testing.T) {
+	r := recipeFor(t, Scripts{Build: true}, "package.json", "package-lock.json")
+	sources, execs := graph(t, r.State)
+	if !hasSource(sources, "node:22-alpine") {
+		t.Errorf("missing node image; sources=%v", sources)
+	}
+	if !hasExec(execs, "npm ci") {
+		t.Errorf("lockfile should install with npm ci; execs=%v", execs)
+	}
+	if !hasExec(execs, "npm run build") {
+		t.Errorf("missing build step; execs=%v", execs)
+	}
+	if hasExec(execs, "--if-present") {
+		t.Errorf("the build script is known to exist here; execs=%v", execs)
+	}
+	// The output directory order, first match wins.
+	if !hasExec(execs, "for d in dist build out public _site;") {
+		t.Errorf("missing output directory order; execs=%v", execs)
+	}
+	// Nothing to fall back on: the source must never be exported instead.
+	if !hasExec(execs, "exit 1") {
+		t.Errorf("no build output should fail the build; execs=%v", execs)
+	}
+
+	// Without a lockfile the install is npm install.
+	_, execs = graph(t, recipeFor(t, Scripts{Build: true}, "package.json").State)
+	if !hasExec(execs, "npm install") {
+		t.Errorf("no lockfile should install with npm install; execs=%v", execs)
+	}
+}
+
+// The one difference that matters downstream: a site carries no image config,
+// an app carries one. build returns a bare ref for the first and an image for
+// the second.
+func TestOutputLane(t *testing.T) {
+	cases := []struct {
+		name  string
+		npm   Scripts
+		files []string
+		want  bool // files rather than an image
+	}{
+		{"plain site", Scripts{}, []string{"index.html"}, true},
+		{"generated site", Scripts{Build: true}, []string{"package.json"}, true},
+		{"go", Scripts{}, []string{"go.mod"}, false},
+		{"node", Scripts{Start: true}, []string{"package.json"}, false},
+		{"python", Scripts{}, []string{"requirements.txt"}, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := recipeFor(t, tc.npm, tc.files...)
+			if r.files() != tc.want {
+				t.Fatalf("files() = %v, want %v", r.files(), tc.want)
+			}
+			if !tc.want {
+				return
+			}
+			if r.Base != "" || len(r.Entrypoint) != 0 || r.WorkDir != "" || len(r.Ports) != 0 {
+				t.Fatalf("a site carries no runtime config: %+v", r)
+			}
+		})
 	}
 }
 
@@ -139,7 +204,7 @@ func TestImageOverlay(t *testing.T) {
 	base.Config.Env = []string{"PATH=/usr/local/bin:/usr/bin"}
 	base.Config.Cmd = []string{"node"}
 
-	img := recipeFor(t, "package.json").image(base)
+	img := recipeFor(t, Scripts{Start: true}, "package.json").image(base)
 	if strings.Join(img.Config.Entrypoint, " ") != "npm start" {
 		t.Errorf("entrypoint = %v", img.Config.Entrypoint)
 	}
@@ -155,10 +220,5 @@ func TestImageOverlay(t *testing.T) {
 	// Overlay must not mutate the caller's base config.
 	if base.Config.WorkingDir != "" || len(base.Config.Cmd) != 1 {
 		t.Errorf("base config was mutated: %+v", base.Config)
-	}
-
-	static := recipeFor(t, "index.html").image(&dockerspec.DockerOCIImage{})
-	if _, ok := static.Config.ExposedPorts["8080/tcp"]; !ok {
-		t.Errorf("static image should expose 8080/tcp, got %v", static.Config.ExposedPorts)
 	}
 }
