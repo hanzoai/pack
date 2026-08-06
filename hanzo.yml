@@ -1,0 +1,14 @@
+# pack — the BuildKit gateway frontend every other repo builds through. Its own
+# image is the one bootstrapped with dockerfile.v0, because pack cannot pack
+# itself.
+images:
+  - name: pack
+    context: .
+    dockerfile: Dockerfile
+    repo: ghcr.io/hanzoai/pack
+test:
+  - name: build-and-unit
+    run: |
+      set -euo pipefail
+      go build ./...
+      go test ./...
