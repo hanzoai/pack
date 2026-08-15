@@ -1,51 +1,46 @@
-# pack
+# Railpack
 
-Zero-config [BuildKit gateway frontend](https://docs.docker.com/build/buildkit/frontend/)
-for the Hanzo build fabric. Point it at a source context and it detects the
-ecosystem and produces a runnable OCI image — no Dockerfile, no build config.
-It is the one packer for the fabric; a Dockerfile is the escape hatch.
+[![CI](https://github.com/railwayapp/railpack/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/railwayapp/railpack/actions/workflows/unit-tests.yml)
+[![Run Tests](https://github.com/railwayapp/railpack/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/railwayapp/railpack/actions/workflows/integration-tests.yml)
 
-## Use
+Railpack is a tool for building images from source code with minimal
+configuration. It is the successor to [Nixpacks](https://nixpacks.com) and
+incorporates many of the learnings from running Nixpacks in production at
+[Railway](https://railway.com) for several years.
 
-```sh
-buildctl build \
-  --frontend=gateway.v0 \
-  --opt source=ghcr.io/hanzoai/pack \
-  --opt context=https://github.com/org/repo.git#main \
-  --output type=image,name=ghcr.io/org/repo:tag,push=true
+## Getting Started
+
+```bash
+# Install mise & railpack
+curl -sSL https://mise.run | sh
+mise install github:railwayapp/railpack@latest
+
+# start BuildKit container & let railpack know about it
+docker run --rm --privileged -d --name buildkit moby/buildkit
+export BUILDKIT_HOST='docker-container://buildkit'
+
+# create a Next.js app
+npm create next-app@latest my-app
+cd my-app
+
+# build and run the app!
+railpack build .
+docker run -p 3000:3000 -it my-app
 ```
 
-To opt out, build the Dockerfile path instead:
-`--frontend=dockerfile.v0 --opt context=... --opt filename=Dockerfile`.
+Railpack automatically detects the project type (Next.js, in this case, but many languages & frameworks are supported!) and generates an optimized
+container image.
 
-## Ecosystems
+**Note:** The above steps are for running Railpack locally to experiment and
+test. If you deploy on [Railway](https://railway.com), Railpack
+runs automatically when you push changes to your repository.
 
-Detection reads the context root and takes the first match, in this order:
+## Documentation
 
-| Marker at root | Ecosystem | Build | Runs on |
-|---|---|---|---|
-| `go.mod` | Go | `CGO_ENABLED=0 go build -o /out/app .` | `distroless/static` |
-| `package.json` | Node | `npm ci`\* then `npm run build --if-present` | `node:22-alpine`, `npm start` |
-| `pyproject.toml` / `requirements.txt` | Python | `pip install .` / `pip install -r requirements.txt` | `python:3.12-slim`, `python main.py` |
-| `index.html` | Static | — | `busybox` httpd on :8080 |
+Full documentation for both operators (platforms, like Railway) and users (developers using Railpack to build their applications) is available at
+[railpack.com](https://railpack.com).
 
-\* `npm ci` when a `package-lock.json` is present, else `npm install`.
+## Contributing
 
-Conventions each ecosystem assumes: Go builds the `main` package at the repo
-root; Node starts with `npm start`; Python entry point is `main.py`. Anything
-outside these is the Dockerfile escape hatch.
-
-Not covered: Rust, Ruby, Java, PHP, and other ecosystems. They follow the same
-one-function-per-ecosystem pattern (`Detect` + `Recipe`) when added.
-
-## Develop
-
-```sh
-go test ./...   # detection + LLB graph, no buildkitd needed
-go vet ./...
-```
-
-`detect.go` is the pure detector (files → `Plan`). `recipe.go` turns a `Plan`
-plus the context into an LLB graph and runtime config — both pure and unit
-tested by marshalling the graph. `build.go` is the only impure part: it reads
-the context, runs `Detect`, and drives BuildKit through `dockerui`.
+Railpack is open source and open to contributions. See the
+[CONTRIBUTING.md](CONTRIBUTING.md) file for more information.
