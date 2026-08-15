@@ -1,0 +1,16 @@
+[
+    {
+        "expectedOutput": [
+            "Hello from Sinatra",
+            "Ruby version: 3.1.2"
+        ]
+    },
+    {
+        "httpCheck": {
+            "path": "/",
+            "expected": 200,
+            "internalPort": 4567,
+            "expectedOutput": "Choo Choo! Welcome to your Sinatra server"
+        }
+    }
+]

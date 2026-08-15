@@ -1,0 +1,8 @@
+[
+  {
+    "expectedOutput": [
+      "hello from Bun 1.3.14",
+      "pkg-b depends on: pkg-a"
+    ]
+  }
+]

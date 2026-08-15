@@ -1,0 +1,5 @@
+[
+  {
+    "expectedOutput": ["Node v18.20.5", "Hello from Yarn 2.4.3"]
+  }
+]

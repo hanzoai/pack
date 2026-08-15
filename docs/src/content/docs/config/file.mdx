@@ -1,0 +1,372 @@
+---
+title: Configuration File
+description: Learn about the railpack.json configuration file format and options
+---
+
+Railpack will look for a `railpack.json` file in the root of the directory being
+built. You can override this by setting the `RAILPACK_CONFIG_FILE` environment
+variable to a path relative to the directory being built.
+
+If found, that configuration will be used to change how the plan is built.
+
+A config file looks something like this:
+
+```json
+{
+  "$schema": "https://schema.railpack.com",
+  "steps": {
+    "install": {
+      "commands": ["npm install"]
+    },
+    "build": {
+      "inputs": [{ "step": "install" }],
+      "commands": ["...", "./my-custom-build.sh"]
+    }
+  },
+  "deploy": {
+    "startCommand": "node dist/index.js"
+  }
+}
+```
+
+## Layers
+
+Layers define where a step gets its filesystem from. They can be:
+
+- Another step's output
+- A Docker image
+- Local files
+
+The first input layer for a step is the base file system and cannot include any
+filter.
+
+Layers are used both for steps and for the deploy section. The deploy section
+explicitly has a `base` layer defined that is used as the base file system for
+the final image. For example, the layers of a Node build might look like this:
+
+```json
+"deploy": {
+  "base": {
+    "image": "ghcr.io/railwayapp/railpack-runtime:mise-2026.2.22"
+  },
+  "inputs": [
+    {
+      "step": "packages:mise",
+      "include": [
+        "/mise/shims",
+        "/mise/installs",
+        // ...
+      ]
+    },
+    {
+      "step": "build",
+      "include": ["."]
+    }
+  ]
+}
+```
+
+### Step Layer
+
+Use another step's output as a layer:
+
+```json
+{
+  "step": "install",
+  "include": ["."], // "." represents the working directory (/app)
+  "exclude": ["node_modules"]
+}
+```
+
+### Image Layer
+
+Use a Docker image as a layer:
+
+```json
+{
+  "image": "macabees/neofetch",
+  "include": ["/usr/bin/neofetch"]
+}
+```
+
+### Local Layer
+
+Use local files as a layer:
+
+```json
+{
+  "local": true,
+  "include": ["."]
+}
+```
+
+### Layer Filters
+
+All layer types support these options:
+
+| Field     | Description                                             |
+| :-------- | :------------------------------------------------------ |
+| `include` | Files or directories to include                         |
+| `exclude` | Files or directories to exclude                         |
+
+## Array Extending
+
+You can use the `...` special syntax to extend arrays in the configuration. This
+is useful when you want to add items to an existing array rather than override
+it completely.
+
+For example:
+
+```json
+{
+  "steps": {
+    "build": {
+      // Runs ./my-custom-build.sh after the auto-generated build commands
+      "commands": ["...", "./my-custom-build.sh"]
+    }
+  },
+  "deploy": {
+    "inputs": [
+      "...",
+
+      // Copies the neofetch binary into the final image on top of the auto-generated image
+      { "image": "macabees/neofetch", "include": ["/usr/bin/neofetch"] }
+    ]
+  }
+}
+```
+
+## Root Configuration
+
+The root configuration can have these fields:
+
+| Field              | Description                                                                     |
+| :----------------- | :------------------------------------------------------------------------------ |
+| `provider`         | The provider to use for deployment (optional, autodetected by default)          |
+| `buildAptPackages` | List of apt packages to install during the build step                           |
+| `packages`         | Map of package name to package version                                          |
+| `caches`           | Map of cache name to cache definitions. The cache names are referenced in steps |
+| `secrets`          | List of secrets that should be made available to commands                       |
+| `steps`            | Map of step names to step definitions                                          |
+
+
+For example:
+
+```json
+{
+  "provider": "node",
+  "buildAptPackages": ["git", "curl"],
+  "packages": {
+    "node": "22",
+    "python": "3.13"
+  },
+}
+```
+
+### Provider Values
+
+Railpack autodetects the provider by default. If you need to force a provider,
+set the root `provider` field to one of these values:
+
+| Provider     | Use case                         |
+| :----------- | :------------------------------- |
+| `php`        | PHP and Laravel applications     |
+| `golang`     | Go applications                  |
+| `java`       | Java applications                |
+| `rust`       | Rust applications                |
+| `ruby`       | Ruby and Rails applications      |
+| `elixir`     | Elixir and Phoenix applications  |
+| `python`     | Python applications              |
+| `deno`       | Deno applications                |
+| `dotnet`     | .NET applications                |
+| `node`       | Node.js, Bun, and frontend apps  |
+| `gleam`      | Gleam applications               |
+| `cpp`        | C/C++ applications               |
+| `staticfile` | Static sites with a `Staticfile` |
+| `shell`      | Shell-script based applications  |
+
+Provider names are matched case-insensitively. Package managers are handled
+inside each provider, so `uv` support is part of the `python` provider rather
+than a separate provider value.
+
+## Caches
+
+Caches are used to speed up builds by storing and reusing files between builds.
+Each cache has a type and a directory. Caches **are not persisted** in the final
+image. Cache folders cannot be removed by build scripts once defined (you'll receive
+a `EBUSY: resource busy or locked` error if you try).
+
+The cache name is referenced in the `caches` field of a step. A cache has the
+following properties:
+
+| Field       | Description                                                           |
+| :---------- | :-------------------------------------------------------------------- |
+| `directory` | The directory to cache                                                |
+| `type`      | The type of cache (either "shared" or "locked", defaults to "shared") |
+
+For example:
+
+```json
+{
+  "caches": {
+    "npm-install": {
+      "directory": "/root/.npm",
+      "type": "shared"
+    },
+    "apt": {
+      "directory": "/var/cache/apt",
+      "type": "locked"
+    }
+  }
+}
+```
+
+### Cache Types
+
+- `shared`: Multiple builds can use this cache simultaneously (used for package
+  manager caches)
+- `locked`: Only one build can use this cache at a time (used for apt caches to
+  prevent concurrent package installations)
+
+## Steps
+
+Each step in the build process can have:
+
+| Field          | Description                                                             |
+| :------------- | :---------------------------------------------------------------------- |
+| `inputs`       | List of layers for this step (from other steps, images, or local files) |
+| `commands`     | List of commands to run in this step                                    |
+| `secrets`      | List of secrets that this step uses                                     |
+| `assets`       | Mapping of name to file contents referenced in file commands            |
+| `variables`    | Mapping of name to variable values referenced in variable commands      |
+| `caches`       | List of cache IDs available to all commands in this step                |
+| `deployOutputs`| List of filters that specify which parts of this step should be included in the final image |
+
+## Commands
+
+A list of commands to run in a step. For example:
+
+```json
+{
+  "commands": [
+    // Copy the package.json file from the local context into the build
+    { "src": "package.json", "dest": "package.json" },
+
+    // Install dependencies
+    {
+      "cmd": "npm install",
+      "customName": "Install dependencies"
+    }
+
+    // Make the node_modules/.bin directory available in the PATH
+    { "path": "node_modules/.bin" }
+  ]
+}
+```
+
+### Exec command
+
+Executes a shell command during the build (e.g. 'go build' or 'npm install').
+
+| Field        | Description                                      |
+| :----------- | :----------------------------------------------- |
+| `cmd`        | The shell command to execute                     |
+| `customName` | Optional custom name to display for this command |
+
+If the command is a string, it is assumed to be an exec command in the format
+`sh -c '<cmd>'`.
+
+### Path command
+
+Adds a directory to the global PATH environment variable. This path will be
+available to all subsequent commands in the build.
+
+| Field  | Description                                                   |
+| :----- | :------------------------------------------------------------ |
+| `path` | Directory path to add to the global PATH environment variable |
+
+### Copy command
+
+Copies files or directories during the build. Can copy from a source image or
+local context.
+
+| Field   | Description                                             |
+| :------ | :------------------------------------------------------ |
+| `image` | Optional source image to copy from (e.g. 'node:18')     |
+| `src`   | Source path to copy from (file or directory)            |
+| `dest`  | Destination path to copy to (will be created if needed) |
+
+### File command
+
+Creates or modifies a file during the build with optional Unix file permissions.
+
+| Field        | Description                                             |
+| :----------- | :------------------------------------------------------ |
+| `path`       | Directory path where the file should be created         |
+| `name`       | Name of the file to create                              |
+| `mode`       | Optional Unix file permissions mode (e.g. 0644)         |
+| `customName` | Optional custom name to display for this file operation |
+
+### String format
+
+Commands can also be specified using a string format:
+
+- `npm install` - Executes the command
+- `PATH:/usr/local/bin` - Adds to PATH
+- `COPY:src dest` - Copies files
+
+## Deploy
+
+The deploy section configures how the container runs:
+
+| Field          | Description                                                             |
+| :------------- | :---------------------------------------------------------------------- |
+| `base`         | The base layer for the deploy step (typically a runtime image)          |
+| `startCommand` | The command to run when the container starts                            |
+| `variables`    | Environment variables available to the start command                    |
+| `paths`        | Paths to prepend to the $PATH environment variable                      |
+| `inputs`       | List of layers for the deploy step (from steps, images, or local files) |
+| `aptPackages`  | List of Apt packages to install in the final image                      |
+
+### Locale
+
+Both the builder and runtime images include `en_US.UTF-8`, but do not set
+`LANG` or `LC_ALL` by default. To enable it at runtime, set them in
+`deploy.variables`:
+
+```json
+"deploy": {
+  "variables": {
+    "LANG": "en_US.UTF-8",
+    "LC_ALL": "en_US.UTF-8"
+  }
+}
+```
+
+You can also set `LANG` and `LC_ALL` in your hosting platform's environment
+configuration.
+
+## Editor Support
+
+Railpack allows comments in `railpack.json`, but VS Code treats files with a
+`.json` extension as standard JSON by default. Add this file association to
+your user or workspace `settings.json` so comments are recognized:
+
+```json
+{
+  "files.associations": {
+    "railpack.json": "json5"
+  }
+}
+```
+
+The [`railpack.json` schema](https://schema.railpack.com) should be recognized
+automatically. If your editor does not detect it, add the `$schema` property
+to the root of `railpack.json`:
+
+```json5
+{
+  "$schema": "https://schema.railpack.com",
+  // Additional configuration
+}
+```

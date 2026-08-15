@@ -1,49 +1,34 @@
-# pack — LLM guide
+# pack
 
-BuildKit **gateway frontend** (`gateway.v0`) that packs a source context into a
-runnable OCI image with zero config. Canonical builder for the Hanzo/Lux/Zoo
-fabric; replaces railpack/nixpacks/buildpacks. Referenced from
-hanzo/cloud `clients/platform/k8s.go` as `ghcr.io/hanzoai/pack:latest`.
+A fork of [railpack](https://github.com/railwayapp/railpack) (MIT) — the
+zero-config builder that reads a repository, works out how to build it, and
+emits a BuildKit plan. No Dockerfile.
 
-## Invocation (fabric-forced output)
+## Why a fork and not an implementation
 
-```
-buildctl build --frontend=gateway.v0 \
-  --opt source=ghcr.io/hanzoai/pack \
-  --opt context=<git-ctx> \
-  --output type=image,name=<image>,push=true
-```
+There was an implementation here: nine commits, four Go files, its own
+`detect.go` and `recipe.go`. It was a second answer to a question railpack had
+already answered for 1,077 commits, and the half we would have had to write and
+keep right is the long tail — every language, every package manager, every
+version file, every lockfile dialect. That tail is the entire product. Writing
+it again is how you end up with a builder that handles the three languages you
+tested and silently mis-detects the fourth.
 
-Dockerfile escape hatch: `--frontend=dockerfile.v0 --opt filename=Dockerfile`.
+The nine commits are not deleted. They are the `pre-fork` branch.
 
-## Shape (one way, decomplected)
+## Tracking upstream
 
-- `detect.go` — **pure** `Detect(files) -> Plan`. Precedence is the one source
-  of truth: go.mod → package.json → pyproject/requirements → index.html.
-- `recipe.go` — **pure** `Plan.Recipe(src) -> Recipe`. Recipe = final LLB
-  `State` + runtime config (Base/Entrypoint/WorkDir/Ports). `image()` overlays
-  that config onto the inherited base config (keeps PATH, never mutates base).
-- `build.go` — **only** impure code: `dockerui.NewClient` → `MainContext` →
-  `detectContext` (ReadDir the root, call `Detect`) → `bc.Build` per platform →
-  marshal recipe LLB, `Solve`, return ref + config → `rb.Finalize`.
-- `main.go` — `grpcclient.RunFromEnvironment(appcontext.Context(), build)`.
+`upstream` is railwayapp/railpack. Fetch and merge it; do not rewrite its
+history. A fork earns its keep by staying mergeable, and every local change that
+is not upstreamable is a future conflict we chose.
 
-Purity is the test seam: recipes marshal to an LLB graph and are asserted
-without a buildkitd (`go test ./...`). Add an ecosystem = one `Detect` case +
-one `Recipe` case + tests. Nothing else.
+Local changes should be the ones that cannot go upstream: our registry, our
+build fabric, our brand. Anything else — a new language, a fixed detector, a
+better plan — belongs in a PR to railpack, where it is maintained by more people
+than us.
 
-## Covered
+## Licence
 
-Go, Node, Python, Static. NOT: Rust/Ruby/Java/PHP (same pattern when needed).
-
-## Pins
-
-- `github.com/moby/buildkit v0.16.0` — matches the buildkitd the fabric runs
-  (`moby/buildkit:v0.16.0` in the build Job). Keep them equal.
-- Module is `v0` (new module); never bump a dep above its latest `v1` patch.
-
-## Build (bootstrap only — pack can't pack itself)
-
-`Dockerfile` is multi-stage (golang → distroless). CI / native `/v1/runner`
-`dockerfile.v0` builds and pushes `ghcr.io/hanzoai/pack:latest`. Never build or
-push images from a workstation.
+MIT, upstream's. It stays MIT: the code is theirs, the fork is ours, and
+relicensing someone's MIT work under a house licence is a claim about
+provenance that is not true.

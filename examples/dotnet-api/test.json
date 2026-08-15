@@ -1,0 +1,13 @@
+[
+  {
+    "envs": {
+      "PORT": "8080"
+    },
+    "httpCheck": {
+      "path": "/WeatherForecast",
+      "expected": 200,
+      "internalPort": 8080,
+      "expectedOutput": "temperatureC"
+    }
+  }
+]
