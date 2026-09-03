@@ -27,24 +27,6 @@ import (
 // Example images would overrun GitHub Actions' 10GB cache limit and thrash eviction:
 // https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#usage-limits-and-eviction-policy
 
-type StringOrArray []string
-
-func (s *StringOrArray) UnmarshalJSON(data []byte) error {
-	var str string
-	if err := json.Unmarshal(data, &str); err == nil {
-		*s = []string{str}
-		return nil
-	}
-
-	var arr []string
-	if err := json.Unmarshal(data, &arr); err != nil {
-		return err
-	}
-
-	*s = arr
-	return nil
-}
-
 type TestCase struct {
 	Platform string `json:"platform"`
 	// can be a single string, or an array of strings for multiple expected outputs

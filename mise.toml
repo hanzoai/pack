@@ -138,8 +138,13 @@ run = ["golangci-lint run --fix",
   "go fix ./..."]
 
 # linting, formatting, and static analysis
+# `go build` leads because it asks a question none of the others do. vet, lint
+# and the unit suite all compile _test.go files, so a package whose non-test code
+# depends on a symbol declared in a _test.go file passes every one of them while
+# `go build ./...` fails. That is not hypothetical: integration_tests did exactly
+# that, and the gate stayed green over a tree that would not build.
 [tasks.check]
-run = ["go vet ./...", "go fmt ./...", "golangci-lint run", "go mod verify"]
+run = ["go build ./...", "go vet ./...", "go fmt ./...", "golangci-lint run", "go mod verify"]
 
 [tasks.upgrade]
 description = "Upgrade all Go and Mise packages"
