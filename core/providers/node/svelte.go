@@ -10,7 +10,7 @@ func (p *NodeProvider) configureSvelteKit(ctx *generate.GenerateContext, build *
 	}
 
 	// Causes @sveltejs/adapter-auto to select adapter-node, so the build emits a Node server.
-	// Oddly, GCP_BUILDPACKS is the only env var adapter-auto recognizes for Node; there is no generic/Railway signal.
+	// Oddly, GCP_BUILDPACKS is the only env var adapter-auto recognizes for Node; there is no generic PaaS signal.
 	ctx.Logger.LogInfo("SvelteKit with adapter-auto detected, forcing adapter-node")
 	build.AddVariables(map[string]string{"GCP_BUILDPACKS": "true"})
 }
