@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/resolver"
-	testingUtils "github.com/railwayapp/railpack/core/testing"
+	"github.com/hanzoai/pack/core/plan"
+	"github.com/hanzoai/pack/core/resolver"
+	testingUtils "github.com/hanzoai/pack/core/testing"
 	"github.com/stretchr/testify/require"
 )
 

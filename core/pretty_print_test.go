@@ -6,7 +6,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
-	"github.com/railwayapp/railpack/core/logger"
+	"github.com/hanzoai/pack/core/logger"
 	"github.com/stretchr/testify/require"
 )
 

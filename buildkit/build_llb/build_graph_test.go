@@ -5,7 +5,7 @@ import (
 
 	"github.com/moby/buildkit/client/llb"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/core/plan"
 	"github.com/stretchr/testify/require"
 )
 

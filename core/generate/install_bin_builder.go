@@ -9,8 +9,8 @@ package generate
 import (
 	"fmt"
 
-	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/resolver"
+	"github.com/hanzoai/pack/core/plan"
+	"github.com/hanzoai/pack/core/resolver"
 )
 
 const (

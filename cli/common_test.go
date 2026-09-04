@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/railwayapp/railpack/core/config"
-	"github.com/railwayapp/railpack/core/mise"
-	"github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/core/config"
+	"github.com/hanzoai/pack/core/mise"
+	"github.com/hanzoai/pack/core/plan"
 	"github.com/stretchr/testify/require"
 )
 

@@ -9,16 +9,16 @@ import (
 	"slices"
 
 	"github.com/charmbracelet/log"
-	"github.com/railwayapp/railpack/core/app"
-	c "github.com/railwayapp/railpack/core/config"
-	"github.com/railwayapp/railpack/core/generate"
-	"github.com/railwayapp/railpack/core/logger"
-	"github.com/railwayapp/railpack/core/mise"
-	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/providers"
-	"github.com/railwayapp/railpack/core/providers/procfile"
-	"github.com/railwayapp/railpack/core/resolver"
-	"github.com/railwayapp/railpack/internal/utils"
+	"github.com/hanzoai/pack/core/app"
+	c "github.com/hanzoai/pack/core/config"
+	"github.com/hanzoai/pack/core/generate"
+	"github.com/hanzoai/pack/core/logger"
+	"github.com/hanzoai/pack/core/mise"
+	"github.com/hanzoai/pack/core/plan"
+	"github.com/hanzoai/pack/core/providers"
+	"github.com/hanzoai/pack/core/providers/procfile"
+	"github.com/hanzoai/pack/core/resolver"
+	"github.com/hanzoai/pack/internal/utils"
 )
 
 const (
@@ -191,7 +191,7 @@ func GenerateConfigFromFile(app *app.App, env *app.Environment, options *Generat
 	}
 
 	// always assume config file path is relative to the app source directory
-	// https://github.com/railwayapp/railpack/pull/226
+	// https://github.com/hanzoai/pack/pull/226
 	absConfigFileName := filepath.Join(app.Source, configFileName)
 
 	if _, err := os.Stat(absConfigFileName); err != nil && os.IsNotExist(err) {

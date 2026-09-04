@@ -8,10 +8,10 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
-	"github.com/railwayapp/railpack/core/logger"
-	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/resolver"
-	"github.com/railwayapp/railpack/internal/utils"
+	"github.com/hanzoai/pack/core/logger"
+	"github.com/hanzoai/pack/core/plan"
+	"github.com/hanzoai/pack/core/resolver"
+	"github.com/hanzoai/pack/internal/utils"
 	"github.com/tidwall/pretty"
 )
 

@@ -11,10 +11,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/railwayapp/railpack/buildkit"
-	"github.com/railwayapp/railpack/core"
-	"github.com/railwayapp/railpack/core/app"
-	"github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/buildkit"
+	"github.com/hanzoai/pack/core"
+	"github.com/hanzoai/pack/core/app"
+	"github.com/hanzoai/pack/core/plan"
 	"github.com/urfave/cli/v3"
 )
 

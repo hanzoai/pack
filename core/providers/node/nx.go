@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/railwayapp/railpack/core/generate"
+	"github.com/hanzoai/pack/core/generate"
 )
 
 // isNx reports whether this is an Nx workspace we can drive with nx CLI fallbacks.

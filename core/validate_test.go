@@ -3,10 +3,10 @@ package core
 import (
 	"testing"
 
-	"github.com/railwayapp/railpack/core/app"
-	"github.com/railwayapp/railpack/core/logger"
-	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/providers"
+	"github.com/hanzoai/pack/core/app"
+	"github.com/hanzoai/pack/core/logger"
+	"github.com/hanzoai/pack/core/plan"
+	"github.com/hanzoai/pack/core/providers"
 	"github.com/stretchr/testify/require"
 )
 

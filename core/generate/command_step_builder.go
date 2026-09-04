@@ -4,8 +4,8 @@ import (
 	"maps"
 
 	"github.com/charmbracelet/log"
-	a "github.com/railwayapp/railpack/core/app"
-	"github.com/railwayapp/railpack/core/plan"
+	a "github.com/hanzoai/pack/core/app"
+	"github.com/hanzoai/pack/core/plan"
 )
 
 type CommandStepBuilder struct {
