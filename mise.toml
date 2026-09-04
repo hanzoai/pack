@@ -61,8 +61,8 @@ run = [
   # remove images created by manually running `railpack build` against a project example
   "find examples -name test.json -exec dirname {} \\; | xargs -n 1 basename | xargs -r -I {} docker rmi -f {}",
   # remove railpack builder/frontend base images (ghcr + local tags)
-  "docker images 'ghcr.io/railwayapp/railpack-builder' -q | xargs -r docker rmi -f",
-  "docker images 'ghcr.io/railwayapp/railpack-frontend' -q | xargs -r docker rmi -f",
+  "docker images 'ghcr.io/hanzoai/pack-builder' -q | xargs -r docker rmi -f",
+  "docker images 'ghcr.io/hanzoai/pack-frontend' -q | xargs -r docker rmi -f",
   "docker images 'railpack-builder' -q | xargs -r docker rmi -f",
   "docker images 'railpack-frontend' -q | xargs -r docker rmi -f",
   # tear down Apple container machine + host Docker TCP proxy used by mise-linux-shell

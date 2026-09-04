@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	RailpackRuntimeImage = fmt.Sprintf("ghcr.io/railwayapp/railpack-runtime:mise-%s", mise.Version)
+	RailpackRuntimeImage = fmt.Sprintf("ghcr.io/hanzoai/pack-runtime:mise-%s", mise.Version)
 )
 
 // serialized to railpack.json

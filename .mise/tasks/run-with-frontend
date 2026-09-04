@@ -5,7 +5,7 @@
  *
  * This script validates the production BuildKit frontend flow by:
  * 1. Generating a build plan using `railpack plan`
- * 2. Invoking BuildKit with the frontend container image (ghcr.io/railwayapp/railpack:railpack-frontend)
+ * 2. Invoking BuildKit with the frontend container image (ghcr.io/hanzoai/pack-frontend:latest)
  * 3. Loading the resulting image into Docker
  *
  * This is useful for testing the frontend integration locally before publishing,
@@ -23,7 +23,7 @@ import { spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 
 const PLAN_FILE = "railpack-plan.json";
-const PRODUCTION_FRONTEND_IMAGE_NAME = "ghcr.io/railwayapp/railpack:railpack-frontend";
+const PRODUCTION_FRONTEND_IMAGE_NAME = "ghcr.io/hanzoai/pack-frontend:latest";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
