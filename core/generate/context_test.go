@@ -73,7 +73,7 @@ func TestGenerateContext(t *testing.T) {
 				"commands": ["echo building"]
 			}
 		},
-		"secrets": ["RAILWAY_SECRET_1", "RAILWAY_SECRET_2"],
+		"secrets": ["MY_SECRET_1", "MY_SECRET_2"],
 		"deploy": {
 			"startCommand": "echo hello",
 			"variables": {

@@ -16,8 +16,8 @@
   }
  },
  "secrets": [
-  "RAILWAY_SECRET_1",
-  "RAILWAY_SECRET_2"
+  "MY_SECRET_1",
+  "MY_SECRET_2"
  ],
  "steps": [
   {

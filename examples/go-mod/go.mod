@@ -1,4 +1,4 @@
-module github.com/railwayapp/railpack
+module example.com/go-mod
 
 go 1.23
 

@@ -9,11 +9,11 @@
 	}
 
 	servers {
-		trusted_proxies static private_ranges 100.0.0.0/8 # trust railway's proxy
+		trusted_proxies static private_ranges 100.0.0.0/8 # trust the private-range reverse proxy in front of the app
 	}
 }
 
-# site block, listens on the $PORT environment variable, automatically assigned by railway
+# site block, listens on the $PORT environment variable assigned at deploy time
 :{$PORT:80} {
 	log {
 		format json
