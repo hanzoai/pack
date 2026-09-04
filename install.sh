@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
 # Repository configuration
-REPO_OWNER="railwayapp"
-REPO_NAME="railpack"
+REPO_OWNER="hanzoai"
+REPO_NAME="pack"
 REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}"
+# the compiled binary is still named railpack (see .goreleaser.yml), distinct
+# from the repository name above
+BINARY_NAME="railpack"
 
 help_text="Options
 
@@ -418,7 +421,7 @@ if [ $UNINSTALL == 1 ]; then
   msg=""
   sudo=""
 
-  if test_writeable "$(dirname "$(which ${REPO_NAME})")"; then
+  if test_writeable "$(dirname "$(which ${BINARY_NAME})")"; then
     sudo=""
     msg="Removing railpack, please wait…"
   else
@@ -429,8 +432,8 @@ if [ $UNINSTALL == 1 ]; then
   fi
 
   info "$msg"
-  ${sudo} rm -f "$(which ${REPO_NAME})"
-  ${sudo} rm -rf /tmp/${REPO_NAME}
+  ${sudo} rm -f "$(which ${BINARY_NAME})"
+  ${sudo} rm -rf /tmp/${BINARY_NAME}
 
   info "Removed railpack"
   exit 0
