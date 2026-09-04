@@ -1,6 +1,6 @@
 # Release Process
 
-This document outlines the process for creating new releases of Railpack.
+This document outlines the process for creating new releases of Hanzo Pack.
 
 ## Creating a New Release
 
@@ -23,7 +23,7 @@ This document outlines the process for creating new releases of Railpack.
    workflow](https://github.com/hanzoai/pack/actions/workflows/release.yml)
    will automatically:
    - Build and publish the frontend Docker image to
-     [GHCR](https://github.com/orgs/railwayapp/packages?repo_name=railpack)
+     [GHCR](https://github.com/orgs/hanzoai/packages?repo_name=pack)
    - Create a GitHub release with changelog
    - Build and attach binaries for multiple platforms
 
@@ -42,9 +42,9 @@ git tag -d v0.18.0 && git push --delete origin v0.18.0 && git tag v0.18.0 origin
 The frontend Docker image is published to GitHub Container Registry (GHCR) with
 the following tags:
 
-- `ghcr.io/railpack/railpack-frontend:latest` (on default branch)
-- `ghcr.io/railpack/railpack-frontend:v1.2.3` (specific version)
-- `ghcr.io/railpack/railpack-frontend:1.2` (minor version)
+- `ghcr.io/hanzoai/pack-frontend:latest` (on default branch)
+- `ghcr.io/hanzoai/pack-frontend:v1.2.3` (specific version)
+- `ghcr.io/hanzoai/pack-frontend:1.2` (minor version)
 
 The image is built for both `linux/amd64` and `linux/arm64` platforms.
 
@@ -62,4 +62,4 @@ After pushing a tag:
 2. Verify the [GitHub release](https://github.com/hanzoai/pack/releases)
    is created with the correct artifacts
 3. Confirm the frontend Docker image is available in the [package
-   registry](https://github.com/railwayapp/railpack/pkgs/container/railpack-frontend)
+   registry](https://github.com/hanzoai/pack/pkgs/container/pack-frontend)
