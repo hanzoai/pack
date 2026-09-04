@@ -58,8 +58,6 @@ jobs:
 
   publish-runtime:
     runs-on: ubuntu-latest
-    env:
-      IMAGE_NAME: ${{ github.repository }}-runtime
     steps:
       # duplicated on the integration-tests.yml job, keep these in sync
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd

@@ -1,6 +1,10 @@
 # run automatically when a tag is created by the release.yml workflow
 version: 2
 
+# pinned explicitly: archive names derive from this, and install.sh depends
+# on that name matching its own REPO_NAME
+project_name: pack
+
 # TODO replace with a `go mod tidy -check` when go is upgraded
 before:
   hooks:
