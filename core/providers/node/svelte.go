@@ -1,6 +1,6 @@
 package node
 
-import "github.com/railwayapp/railpack/core/generate"
+import "github.com/hanzoai/pack/core/generate"
 
 const DefaultSvelteKitStartCommand = "node build"
 

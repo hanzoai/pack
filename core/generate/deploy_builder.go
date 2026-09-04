@@ -1,7 +1,7 @@
 package generate
 
 import (
-	"github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/core/plan"
 )
 
 type DeployBuilder struct {

@@ -3,7 +3,7 @@ package node
 import (
 	"strings"
 
-	"github.com/railwayapp/railpack/core/generate"
+	"github.com/hanzoai/pack/core/generate"
 )
 
 const (

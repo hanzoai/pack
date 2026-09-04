@@ -3,8 +3,8 @@ package shell
 import (
 	"errors"
 
-	"github.com/railwayapp/railpack/core/generate"
-	"github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/core/generate"
+	"github.com/hanzoai/pack/core/plan"
 	"mvdan.cc/sh/v3/fileutil"
 )
 

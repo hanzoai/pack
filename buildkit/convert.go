@@ -12,8 +12,8 @@ import (
 	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/util/system"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/railwayapp/railpack/buildkit/build_llb"
-	p "github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/buildkit/build_llb"
+	p "github.com/hanzoai/pack/core/plan"
 )
 
 type ConvertPlanOptions struct {

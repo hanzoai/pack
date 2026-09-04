@@ -3,11 +3,11 @@ package python
 import (
 	"testing"
 
-	"github.com/railwayapp/railpack/core/generate"
-	"github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/core/generate"
+	"github.com/hanzoai/pack/core/plan"
 	"github.com/stretchr/testify/require"
 
-	testingUtils "github.com/railwayapp/railpack/core/testing"
+	testingUtils "github.com/hanzoai/pack/core/testing"
 )
 
 func TestDetect(t *testing.T) {

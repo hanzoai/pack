@@ -2,8 +2,8 @@ package build_llb
 
 import (
 	"github.com/moby/buildkit/client/llb"
-	"github.com/railwayapp/railpack/buildkit/graph"
-	"github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/buildkit/graph"
+	"github.com/hanzoai/pack/core/plan"
 )
 
 type StepNode struct {

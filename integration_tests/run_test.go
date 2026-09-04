@@ -16,10 +16,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/railwayapp/railpack/buildkit"
-	"github.com/railwayapp/railpack/core"
-	"github.com/railwayapp/railpack/core/app"
-	"github.com/railwayapp/railpack/internal/utils"
+	"github.com/hanzoai/pack/buildkit"
+	"github.com/hanzoai/pack/core"
+	"github.com/hanzoai/pack/core/app"
+	"github.com/hanzoai/pack/internal/utils"
 	"github.com/stretchr/testify/require"
 )
 

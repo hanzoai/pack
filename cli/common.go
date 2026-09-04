@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/log"
-	"github.com/railwayapp/railpack/core"
-	a "github.com/railwayapp/railpack/core/app"
-	"github.com/railwayapp/railpack/core/config"
-	"github.com/railwayapp/railpack/core/mise"
-	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/internal/utils"
+	"github.com/hanzoai/pack/core"
+	a "github.com/hanzoai/pack/core/app"
+	"github.com/hanzoai/pack/core/config"
+	"github.com/hanzoai/pack/core/mise"
+	"github.com/hanzoai/pack/core/plan"
+	"github.com/hanzoai/pack/internal/utils"
 	"github.com/urfave/cli/v3"
 )
 

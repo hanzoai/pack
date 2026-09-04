@@ -3,8 +3,8 @@ package node
 import (
 	"testing"
 
-	"github.com/railwayapp/railpack/core/plan"
-	testingUtils "github.com/railwayapp/railpack/core/testing"
+	"github.com/hanzoai/pack/core/plan"
+	testingUtils "github.com/hanzoai/pack/core/testing"
 	"github.com/stretchr/testify/require"
 )
 

@@ -19,7 +19,7 @@ import (
 	"github.com/moby/buildkit/util/appcontext"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/core/plan"
 )
 
 const (

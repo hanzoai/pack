@@ -3,7 +3,7 @@ package dotnet
 import (
 	"testing"
 
-	testingUtils "github.com/railwayapp/railpack/core/testing"
+	testingUtils "github.com/hanzoai/pack/core/testing"
 	"github.com/stretchr/testify/require"
 )
 

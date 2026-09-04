@@ -6,8 +6,8 @@ import (
 
 	semver "github.com/Masterminds/semver/v3"
 	"github.com/charmbracelet/log"
-	"github.com/railwayapp/railpack/core/generate"
-	"github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/core/generate"
+	"github.com/hanzoai/pack/core/plan"
 )
 
 var pnpmPathLayoutVersion = semver.MustParse("11.0.0")
@@ -162,7 +162,7 @@ func (p PackageManager) installDeps(ctx *generate.GenerateContext, install *gene
 		}
 
 		// ideally, `npm ci` should be used instead of `npm install`, but we default to npm install to avoid build failures
-		// https://github.com/railwayapp/railpack/pull/643
+		// https://github.com/hanzoai/pack/pull/643
 		installCmd := "npm install"
 		if customInstallCmd, _ := ctx.Env.GetConfigVariable("NODE_NPM_INSTALL"); customInstallCmd != "" {
 			installCmd = customInstallCmd
@@ -409,7 +409,7 @@ func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext,
 			packages.Version(pnpm, pmVersion, "package.json > packageManager")
 
 			// skip installing via Mise and install with corepack instead
-			// https://github.com/railwayapp/railpack/issues/201
+			// https://github.com/hanzoai/pack/issues/201
 			packages.SkipMiseInstall(pnpm)
 		}
 	}
@@ -438,7 +438,7 @@ func (p PackageManager) GetPackageManagerPackages(ctx *generate.GenerateContext,
 			packages.Version(yarn, pmVersion, "package.json > packageManager")
 
 			// skip installing via Mise and install with corepack instead
-			// https://github.com/railwayapp/railpack/issues/201
+			// https://github.com/hanzoai/pack/issues/201
 			packages.SkipMiseInstall(yarn)
 		}
 	}

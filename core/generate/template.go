@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/railwayapp/railpack/core/app"
+	"github.com/hanzoai/pack/core/app"
 )
 
 type TemplateFileResult struct {

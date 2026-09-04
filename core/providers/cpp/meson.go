@@ -1,8 +1,8 @@
 package cpp
 
 import (
-	"github.com/railwayapp/railpack/core/generate"
-	"github.com/railwayapp/railpack/core/plan"
+	"github.com/hanzoai/pack/core/generate"
+	"github.com/hanzoai/pack/core/plan"
 )
 
 type meson struct{}

@@ -1,4 +1,4 @@
-module github.com/railwayapp/railpack
+module github.com/hanzoai/pack
 
 go 1.26.3
 

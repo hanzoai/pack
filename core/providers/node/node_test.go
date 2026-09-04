@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/railwayapp/railpack/core/app"
-	"github.com/railwayapp/railpack/core/generate"
-	"github.com/railwayapp/railpack/core/plan"
-	testingUtils "github.com/railwayapp/railpack/core/testing"
+	"github.com/hanzoai/pack/core/app"
+	"github.com/hanzoai/pack/core/generate"
+	"github.com/hanzoai/pack/core/plan"
+	testingUtils "github.com/hanzoai/pack/core/testing"
 	"github.com/stretchr/testify/require"
 )
 

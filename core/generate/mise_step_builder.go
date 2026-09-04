@@ -10,10 +10,10 @@ import (
 	"sort"
 	"strings"
 
-	a "github.com/railwayapp/railpack/core/app"
-	"github.com/railwayapp/railpack/core/mise"
-	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/resolver"
+	a "github.com/hanzoai/pack/core/app"
+	"github.com/hanzoai/pack/core/mise"
+	"github.com/hanzoai/pack/core/plan"
+	"github.com/hanzoai/pack/core/resolver"
 )
 
 const (
@@ -286,7 +286,7 @@ func (b *MiseStepBuilder) Build(p *plan.BuildPlan, options *BuildStepOptions) er
 		// Some of these settings (i.e. `install_before`) should be set in the host mise execution
 
 		// Don't verify the asset because recently released versions don't have a public key to verify against
-		// https://github.com/railwayapp/railpack/issues/207
+		// https://github.com/hanzoai/pack/issues/207
 		b.AddMiseSetting("node.verify", false)
 		// Enforces HTTPS and stricter security
 		b.AddMiseSetting("paranoid", true)

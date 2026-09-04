@@ -7,10 +7,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/railwayapp/railpack/core/generate"
-	"github.com/railwayapp/railpack/core/plan"
-	"github.com/railwayapp/railpack/core/providers/node"
-	"github.com/railwayapp/railpack/internal/utils"
+	"github.com/hanzoai/pack/core/generate"
+	"github.com/hanzoai/pack/core/plan"
+	"github.com/hanzoai/pack/core/providers/node"
+	"github.com/hanzoai/pack/internal/utils"
 )
 
 const (

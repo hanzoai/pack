@@ -4,10 +4,10 @@ package testing
 import (
 	"testing"
 
-	"github.com/railwayapp/railpack/core/app"
-	"github.com/railwayapp/railpack/core/config"
-	"github.com/railwayapp/railpack/core/generate"
-	"github.com/railwayapp/railpack/core/logger"
+	"github.com/hanzoai/pack/core/app"
+	"github.com/hanzoai/pack/core/config"
+	"github.com/hanzoai/pack/core/generate"
+	"github.com/hanzoai/pack/core/logger"
 )
 
 // CreateGenerateContext creates a new GenerateContext for testing purposes

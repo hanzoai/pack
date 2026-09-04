@@ -15,7 +15,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/alexflint/go-filemutex"
 	"github.com/charmbracelet/log"
-	"github.com/railwayapp/railpack/internal/utils"
+	"github.com/hanzoai/pack/internal/utils"
 )
 
 const (
@@ -166,7 +166,7 @@ func versionQueryCandidates(version string) []string {
 	}
 
 	// Prefer the normalized semver, then retry idiomatic strings that mise accepts directly.
-	// https://github.com/railwayapp/railpack/issues/203
+	// https://github.com/hanzoai/pack/issues/203
 	return []string{semverVersion, version}
 }
 
