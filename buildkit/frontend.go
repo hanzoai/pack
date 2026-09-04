@@ -1,4 +1,4 @@
-// for platforms: used by `ghcr.io/railwayapp/railpack-frontend` as a buildkit frontend
+// for platforms: used by `ghcr.io/hanzoai/pack-frontend` as a buildkit frontend
 // the buildkit library consumes buildkit input and exposes it to us via the client.Client interface
 // note that `frontend` and `build` are completely separate paths
 
