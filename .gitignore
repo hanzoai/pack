@@ -58,3 +58,8 @@ examples/**/.claude
 .miserc.toml
 # Local env overrides (DOCKER_HOST, etc.)
 mise.local.toml
+node_modules/
+.next/
+.turbo/
+coverage/
+.venv/
