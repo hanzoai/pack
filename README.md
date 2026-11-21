@@ -1,5 +1,7 @@
 # Hanzo Pack
 
+[![Open in Hanzo](https://hanzo.app/badges/open-in-hanzo.svg)](https://hanzo.app/dev/open?repo=github.com/hanzoai/pack&ref=main&action=open) [![Edit with Hanzo](https://hanzo.app/badges/edit-with-hanzo.svg)](https://hanzo.app/dev/open?repo=github.com/hanzoai/pack&ref=main&action=edit) [![Deploy with Hanzo](https://hanzo.app/badges/deploy-with-hanzo.svg)](https://hanzo.app/dev/open?repo=github.com/hanzoai/pack&ref=main&action=deploy)
+
 **Zero-config OCI image builder and BuildKit gateway frontend for the Hanzo Cloud.**
 
 ![Go 1.24](https://img.shields.io/badge/Go-1.24-00ADD8) ![BuildKit](https://img.shields.io/badge/BuildKit-Gateway%20Frontend-informational) ![License](https://img.shields.io/badge/license-MIT-blue)
